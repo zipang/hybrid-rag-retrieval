@@ -1,0 +1,27 @@
+{
+	"name": "slogans-rag-poc",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "bun run src/server/index.ts",
+		"test": "bun test",
+		"index": "bun run scripts/index-slogans.ts",
+		"smoke": "bun run scripts/smoke-retrieval.ts",
+		"setup:qdrant": "bash scripts/setup-qdrant.sh",
+		"lint": "biome check .",
+		"format": "biome check --write ."
+	},
+	"dependencies": {
+		"@ai-sdk/openai-compatible": "^3.0.61",
+		"ai": "^7.0.124",
+		"fastembed": "^3.0.0"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.5.15",
+		"@types/bun": "^1.4.2"
+	},
+	"trustedDependencies": [
+		"onnxruntime-node"
+	]
+}
