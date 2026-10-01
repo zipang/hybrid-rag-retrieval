@@ -88,7 +88,7 @@ schema titles, and generic in-memory and streaming readers.
   - Files: `scripts/index-slogans.ts`, `scripts/index-slogans.test.ts`
   - Depends: T0002 Tasks 2–4, T0001 Tasks 3–4
 
-- [ ] **Task 6: Hybrid retrieval**
+- [x] **Task 6: Hybrid retrieval**
   - Acceptance: `retrieveHybrid(query, { topK, yearFrom, yearTo })` embeds the query (dense) and issues a Qdrant Query API request with two prefetches — dense sent as a raw vector (`{ query: [...], using: "dense", limit }`) and BM25 as `{ query: { text, model: "qdrant/bm25", options }, using: "bm25" }`, with the **same** `options` as ingestion — fused server-side with `{ "rrf": {} }`; prefetch `limit` is `>= topK`; applies year-range payload filters (`range: { gte, lte }` on `annee`); requests `with_payload: true`; returns ranked `{ score, id, annee, marque, campagne, slogan }`; empty query or zero hits returns an empty list, never throws.
   - Verify: `bun test src/lib/retrieval.test.ts` passes (request shape, filter shape, empty result); manual smoke against indexed data.
   - Files: `src/lib/retrieval.ts`, `src/lib/retrieval.test.ts`
