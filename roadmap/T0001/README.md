@@ -90,6 +90,13 @@ The chat calls the retrieval API as a tool. The answer cites the slogans with
 their brand and year. Without a key the chat endpoint returns a clear error.
 The retrieval panel still works.
 
+The OpenCode Go endpoint needs two request headers: a `user-agent` that names
+this application, and a stable `x-opencode-session` value for the conversation.
+The server sends both. Without them the gateway answers `MissingSessionID`.
+
+Use a model that serves the OpenAI-compatible `/v1/chat/completions` route.
+`curl https://opencode.ai/zen/go/v1/models` lists them.
+
 ## Environment
 
 `.env.sample` lists every variable. The important ones are:

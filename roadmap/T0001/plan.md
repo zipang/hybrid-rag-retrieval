@@ -107,7 +107,7 @@ schema titles, and generic in-memory and streaming readers.
   - Depends: Task 7
 
 ### Checkpoint: Core Features
-- [ ] End-to-end: HTTP query returns hybrid results; chat returns an answer grounded in retrieved slogans
+- [x] End-to-end: HTTP query returns hybrid results; chat returns an answer grounded in retrieved slogans
 - [ ] Review the three README example queries with the human before UI polish
 
 ### Phase 3: Polish
