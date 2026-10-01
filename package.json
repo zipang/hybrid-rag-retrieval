@@ -6,6 +6,7 @@
 	"scripts": {
 		"dev": "bun run src/server/index.ts",
 		"test": "bun test",
+		"build:citations": "bun run scripts/build-citations.ts",
 		"index": "bun run scripts/index-slogans.ts",
 		"smoke": "bun run scripts/smoke-retrieval.ts",
 		"setup:qdrant": "bash scripts/setup-qdrant.sh",

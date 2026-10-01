@@ -32,6 +32,30 @@ the block does not pass validation. It then reads the next block. The `id`
 field of each dataset uses the `integer` type, so the reader coerces the source
 `Id` text to a number.
 
+## Citation corpus source
+
+The citation corpus comes from the French and English Wikiquote dumps. Wikiquote
+is a free quote compendium. The Wikimedia Foundation publishes it under the
+Creative Commons Attribution-ShareAlike 4.0 license and the GNU Free
+Documentation License.
+
+`scripts/build-citations.ts` reads the two MediaWiki XML dumps and writes
+`citations.txt`. Download the dumps into `.tmp/` first:
+
+```
+curl -sSL -o .tmp/frwikiquote-pages-articles.xml.bz2 \
+  https://dumps.wikimedia.org/frwikiquote/latest/frwikiquote-latest-pages-articles.xml.bz2
+curl -sSL -o .tmp/enwikiquote-pages-articles.xml.bz2 \
+  https://dumps.wikimedia.org/enwikiquote/latest/enwikiquote-latest-pages-articles.xml.bz2
+bun run scripts/build-citations.ts
+```
+
+The build keeps short quotes only: at most three sentences and at most 500
+characters. It reads the author of a quote from the source reference, never
+from a link inside the quote text. It sets the author to `Anonymous` when the
+source gives none. A missing `year` stays absent. The build fills a missing
+year from a work-title index built from dated citations.
+
 ## Add a dataset
 
 1. Put the corpus file in this directory.
@@ -102,9 +126,12 @@ Do not commit corpus data.
 - **Filter field**: A metadata field that narrows results without entering content indexing.
 - **JSON Schema**: A JSON structure that declares record fields, types, and validation rules.
 - **Lexical search**: Search that matches words instead of meaning.
+- **MediaWiki dump**: A compressed XML file that contains the pages of a Wikimedia wiki.
 - **Query agent**: An LLM that uses schema descriptions to choose content and filter fields for a search.
 - **Record**: One item in a corpus, such as one slogan or citation.
 - **Record identifier**: The source ID that lets the system identify a record.
 - **Rejection reason**: A short message that explains why a block failed to parse or validate.
 - **Schema model**: A module that exports a JSON Schema, inferred TypeScript type, and validation function.
 - **Schema title**: The JSON Schema `title` field that stores a fallback source label when it differs from the property key.
+- **Wikiquote**: A free compendium of sourced quotes, published by the Wikimedia Foundation.
+- **Wikitext**: The source markup of a wiki page.
