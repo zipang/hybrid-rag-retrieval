@@ -100,7 +100,7 @@ schema titles, and generic in-memory and streaming readers.
   - Files: `src/server/index.ts`, `src/server/api.ts`, `src/server/api.test.ts`
   - Depends: Task 6
 
-- [ ] **Task 8: Chat endpoint with AI SDK tool calling**
+- [x] **Task 8: Chat endpoint with AI SDK tool calling**
   - Acceptance: `POST /api/chat` streams a response via the AI SDK; the model is configured from env through an OpenAI-compatible adapter; a `searchSlogans` tool wraps `retrieveHybrid`; the system prompt uses the T0002 slogan schema descriptions to identify the content and filter fields, and instructs the model to answer only from retrieved slogans with brand/year context.
   - Verify: with a valid `AI_API_KEY`/`AI_MODEL`, `curl -N` against `/api/chat` returns a streamed answer that invoked the tool for the query "slogans sur le sucre"; without a key the endpoint returns a clear 500 JSON error.
   - Files: `src/server/index.ts`, `src/server/chat.ts`, `src/server/chat.test.ts`

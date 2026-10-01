@@ -4,6 +4,7 @@ import { createEmbedder } from "../lib/embedder"
 import { createQdrantClient } from "../lib/qdrant"
 import { createRetriever } from "../lib/retrieval"
 import { createSlogansHandler } from "./api"
+import { createChatHandler } from "./chat"
 
 /** Directory that holds the static demo files. */
 const DEMO_DIR = join(import.meta.dir, "..", "..", "demo")
@@ -31,6 +32,7 @@ const embedder = await createEmbedder(process.env)
 const client = createQdrantClient(process.env)
 const retriever = createRetriever({ embedder, client, bm25: bm25Options(process.env) })
 const slogans = createSlogansHandler({ retriever })
+const chat = createChatHandler({ retriever, env: process.env })
 
 const server = Bun.serve({
 	port,
@@ -39,6 +41,10 @@ const server = Bun.serve({
 
 		if (url.pathname === "/api/slogans") {
 			return slogans(request)
+		}
+
+		if (url.pathname === "/api/chat") {
+			return chat(request)
 		}
 
 		return serveStatic(url.pathname)
