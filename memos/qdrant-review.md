@@ -215,8 +215,43 @@ If a later ticket needs maximum ingest speed, add
 `@qdrant/js-client-grpc` with 4–8 workers. It is a drop-in change, but it is not
 worth the dependency or the boilerplate for this POC.
 
+## 5. Web UI for the bare-metal install
+
+The Qdrant binary release does not include the Web UI. The archive
+`qdrant-x86_64-unknown-linux-gnu.tar.gz` for `1.19.1` contains one file,
+`qdrant` (30.68 MB). Qdrant serves the browser interface at `/dashboard` only
+when a directory named `static/` exists next to the running binary. Without it,
+the server logs:
+
+```text
+Static content folder for Web UI './static' does not exist
+```
+
+and `GET /dashboard` returns `404`. The local mirror documents the Web UI and
+the `/dashboard` address in
+`docs/Qdrant - 1.19.1/documentation/web-ui/index.md`.
+
+The project needs the Web UI to inspect the collection during the POC. The
+project rule excludes Docker, so the setup must install the files. The Qdrant
+project publishes the built Web UI in the separate `qdrant-web-ui` repository
+(https://github.com/qdrant/qdrant-web-ui/releases). The release asset
+`dist-qdrant.zip` holds a `dist/` directory with `index.html`, the `assets/`
+directory, and `openapi.json`.
+
+`scripts/setup-qdrant.sh` installs these files. The script downloads the asset
+and moves the `dist/` contents into `qdrant/static/`. The script skips the
+download when `static/index.html` already exists. Set
+`QDRANT_WEB_UI_VERSION` to pin a Web UI release, or leave it at `latest`.
+
+Measurement on the local instance after the install: `GET /dashboard` returns
+`200 OK`, and the server log holds no `static content folder` warning.
+
+Related, not chosen: the Docker image bundles the Web UI, and Qdrant Cloud
+serves it automatically. Both are outside the project rule for this POC.
+
 ## References
 
+- `docs/Qdrant - 1.19.1/documentation/web-ui/index.md`
 - `docs/Qdrant - 1.19.1/documentation/search/text-search/hybrid-search/index.md`
 - `docs/Qdrant - 1.19.1/documentation/search/hybrid-queries/index.md`
 - `docs/Qdrant - 1.19.1/documentation/search/text-search/full-text-search/index.md`
@@ -279,6 +314,8 @@ worth the dependency or the boilerplate for this POC.
   project uses one shard.
 - **sparse vector**: a vector with few non-zero values. Each non-zero value is
   a `(term, weight)` pair. It represents keywords.
+- **static folder**: the directory named `static/` next to the Qdrant binary.
+  Qdrant serves the Web UI only when this directory exists.
 - **stemming**: a text step that reduces a word to its root. It turns
   `citing` into `cite`.
 - **stopword**: a common word that carries little meaning, for example `the` or
@@ -287,4 +324,6 @@ worth the dependency or the boilerplate for this POC.
   vector answers it.
 - **vector database**: a database that stores vectors and finds the nearest
   vectors to a query vector.
+- **Web UI**: the browser interface that shows the collections and the console.
+  Qdrant serves it at `/dashboard`.
 - **worker**: one parallel upload stream. The project uses 2 to 4 workers.

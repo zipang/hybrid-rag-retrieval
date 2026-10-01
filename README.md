@@ -100,8 +100,7 @@ These repositories share commen efforts in indexing and querying text corpa
 
 - **Runtime**: [Bun](https://bun.com/reference) with TypeScript. Bun has native
   clients for Redis and PostgreSQL.
-- **Retrieval**: a vector database with a hybrid index. See
-  `memos/qdrant-review.md` for the current choice and the measurements.
+- **Retrieval**: a vector database with hybrid indexes.
 - **LLM**: a large language model. The model is selected through environment
   variables. It can run in the cloud or on a local server.
 
@@ -125,13 +124,19 @@ A later ticket uses this POC as a bench. The bench compares:
 ## Project layout
 
 ```
-  datasets/   datasets (not committed)
+datasets/   datasets (not committed)
 docs/       local documentation mirrors (not committed)
 memos/      technical review memos
 roadmap/    tickets: spec and plan
 scripts/    setup and indexing scripts
 src/        application source
 ```
+
+## Memos
+
+These memos record our findings
+
+- [QDrant Memo](memos/qdrant-review.md) for the installation process, indexing methods and the measurements.
 
 ## Glossary
 
