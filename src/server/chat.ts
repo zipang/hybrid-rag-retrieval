@@ -23,6 +23,14 @@ export type ChatEnv = {
 	[key: string]: string | undefined
 }
 
+/** Identity that the chat sends to the OpenCode Go gateway. */
+export type ChatIdentity = {
+	/** User agent that names this application. */
+	userAgent: string
+	/** Stable ID of the current conversation, sent in `x-opencode-session`. */
+	sessionId: string
+}
+
 /** Input of the `searchSlogans` tool. */
 export type SearchInput = {
 	/** Natural-language search text. */
@@ -53,6 +61,8 @@ export type ChatDependencies = {
 	retriever: Pick<Retriever, "retrieveHybrid">
 	/** Chat provider configuration. */
 	env: ChatEnv
+	/** Identity that the OpenCode Go gateway expects. */
+	identity: ChatIdentity
 }
 
 /**
@@ -73,6 +83,7 @@ export const buildSystemPrompt = (): string => {
 		"Answer only from the slogans that the tool returns.",
 		"Cite each slogan with its brand (marque) and its year (annee).",
 		"Use the content field as search text and the filter fields as filters.",
+		"Write plain text. Do not use Markdown, bold, or tables.",
 		"",
 		"Slogan fields:",
 		...fields,
@@ -117,12 +128,22 @@ export const createSearchSlogansTool = (retriever: Pick<Retriever, "retrieveHybr
 		execute: (input) => searchSlogans(retriever, input),
 	})
 
-/** Build the OpenAI-compatible chat model from the environment. */
-const createModel = (env: ChatEnv) => {
+/**
+ * Build the OpenAI-compatible chat model from the environment.
+ *
+ * The OpenCode Go gateway needs two extra headers. It routes and caches by
+ * `x-opencode-session`, and it expects a user agent that names the client
+ * instead of a generic SDK name.
+ */
+const createModel = (env: ChatEnv, identity: ChatIdentity) => {
 	const provider = createOpenAICompatible({
 		name: "ai-provider",
 		baseURL: env.AI_PROVIDER_URL ?? "https://api.openai.com/v1",
 		apiKey: env.AI_API_KEY ?? "",
+		headers: {
+			"user-agent": identity.userAgent,
+			"x-opencode-session": identity.sessionId,
+		},
 	})
 
 	return provider(env.AI_MODEL ?? "gpt-4o-mini")
@@ -158,11 +179,14 @@ export const createChatHandler = (dependencies: ChatDependencies) => {
 
 			const tools = { searchSlogans: createSearchSlogansTool(dependencies.retriever) }
 			const result = streamText({
-				model: createModel(dependencies.env),
+				model: createModel(dependencies.env, dependencies.identity),
 				system: buildSystemPrompt(),
 				messages: await convertToModelMessages(body.messages, { tools }),
 				tools,
 				stopWhen: stepCountIs(5),
+				onError: ({ error }) => {
+					console.error("[api/chat] stream error:", error)
+				},
 			})
 
 			return result.toTextStreamResponse()

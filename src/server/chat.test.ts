@@ -26,6 +26,7 @@ const createTestHandler = (
 			},
 		},
 		env,
+		identity: { userAgent: "test/1.0", sessionId: "test-session" },
 	})
 
 	return { handler, calls }

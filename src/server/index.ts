@@ -32,7 +32,13 @@ const embedder = await createEmbedder(process.env)
 const client = createQdrantClient(process.env)
 const retriever = createRetriever({ embedder, client, bm25: bm25Options(process.env) })
 const slogans = createSlogansHandler({ retriever })
-const chat = createChatHandler({ retriever, env: process.env })
+
+/** Identity that the OpenCode Go gateway expects on every chat request. */
+const identity = {
+	userAgent: "hybrid-rag-retrieval/1.0",
+	sessionId: crypto.randomUUID(),
+}
+const chat = createChatHandler({ retriever, env: process.env, identity })
 
 const server = Bun.serve({
 	port,
