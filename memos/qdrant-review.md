@@ -109,11 +109,13 @@ A Qdrant point id accepts only an unsigned 64-bit integer or a UUID. Choose one
 of these two rules:
 
 - the source data already has a numeric key. Map it to the point id, and keep
-  the original value in the payload as a string.
+  the original value in the payload.
 - the source data has no numeric key. Generate a UUID, or let Qdrant generate
   one.
 
-The point id must be unique. The payload keeps the display value.
+The point id must be unique. The payload keeps the display value. The project
+types each dataset `id` as an `integer` in its JSON Schema, so the reader
+coerces the source text to a number and the importer uses it directly.
 
 ### Larger uploads (documented, deferred)
 
@@ -249,6 +251,99 @@ Measurement on the local instance after the install: `GET /dashboard` returns
 Related, not chosen: the Docker image bundles the Web UI, and Qdrant Cloud
 serves it automatically. Both are outside the project rule for this POC.
 
+## 6. Dense indexing benchmark (local e5-large)
+
+### Method
+
+- Qdrant `1.19.1`, bare-metal, one collection, one shard, default settings.
+- Dense model `intfloat/multilingual-e5-large` (1024 dimensions) through
+  `fastembed` `3.x` on the CPU (`onnxruntime-node`).
+- BM25 side: Qdrant server-side inference. The application ships no tokenizer.
+- Client: REST over `fetch`. The importer sends one batch of up to 256 points
+  per request with `wait=true`.
+- Corpus: `datasets/slogans.txt`, 236 records, about 7 words each.
+- Machine: 16 CPU cores, 30.7 GiB RAM.
+- Command: `bun run scripts/index-slogans.ts --limit 500`.
+
+The recorded run uses a warm OS page cache. The first cold run took a similar
+time.
+
+### Baseline results (`maxLength` 512)
+
+| Metric | Value |
+|---|---|
+| Records indexed | 236 |
+| Rejected blocks | 0 |
+| Time to the first log line | 1.6 s |
+| Embedding and upload phase | 256.3 s |
+| Total wall time | 258.8 s (4 min 19 s) |
+| Throughput, total | 0.91 records/s |
+| Throughput, embed phase | 0.92 records/s |
+| Time per record | 1.10 s |
+| Peak resident memory (observed) | about 11 GiB |
+| CPU load (observed) | about 1 400 % (about 14 of 16 threads) |
+
+The importer spends almost all of the time in the dense model. Model session
+creation is fast (1.6 s). The single `fastembed` call pads each text to the
+model `maxLength` of 512 tokens and runs one ONNX inference for the batch. The
+upload of 236 points is not measurable next to it.
+
+### Baseline extrapolation
+
+At 0.91 records/s, the full corpus of 265,266 records takes about 81 hours on
+this machine. The local CPU model is therefore not practical for the full
+corpus. The `--limit` flag keeps the demo run small.
+
+### Padding experiment
+
+Method: embed the first 64 slogans of the corpus (longest record: 12 words)
+through the same model with three `maxLength` values. The model session is
+created for each value.
+
+| `maxLength` | Time, 64 records | Time per record | Speedup |
+|---|---|---|---|
+| 512 | 65,868 ms | 1,029 ms | 1.0x |
+| 32 | 3,397 ms | 53 ms | 19.4x |
+| 16 | 1,656 ms | 26 ms | 39.8x |
+
+The padding to 512 tokens is the main cost. A value of 32 keeps every token of
+this corpus and divides the time by about 19.
+
+### Optimized run (`maxLength` 32)
+
+The local embedder now sets the width from `EMBEDDING_MAX_LENGTH` (default 32).
+The token counts of the 236 records are min 7, p50 13, p90 18, p99 22, and max
+27. A value of 32 keeps every token.
+
+| Metric | Value |
+|---|---|
+| Records indexed | 236 |
+| Rejected blocks | 0 |
+| Time to the first log line | 1.7 s |
+| Embedding and upload phase | 13.9 s |
+| Total wall time | 15.9 s |
+| Throughput, total | 14.9 records/s |
+| Time per record | 67 ms |
+| Speedup, total | 16.3x |
+
+At 14.9 records/s, the full corpus of 265,266 records takes about 5 hours on
+this machine, against about 81 hours at the model default. This is practical
+for a one-time index.
+
+### Options to raise the throughput
+
+- Use a GPU execution provider for `onnxruntime`.
+- Use a cloud embedding provider through the existing embedder factory.
+- Add parallel embedding workers. This option helps only when the CPU has idle
+  cores. One ONNX inference already uses many threads, so the gain is small
+  here.
+
+### Parallelization status
+
+The importer runs one batch at a time. It has no parallel workers. The high CPU
+load comes from the `onnxruntime-node` thread pool inside one inference, not
+from application concurrency.
+
 ## References
 
 - `docs/Qdrant - 1.19.1/documentation/web-ui/index.md`
@@ -308,6 +403,7 @@ serves it automatically. Both are outside the project rule for this POC.
 - **REST**: the HTTP/JSON interface of Qdrant.
 - **RRF (Reciprocal Rank Fusion)**: a fusion method based on ranks. A record
   that appears high in several result lists gets a higher score.
+- **RSS (Resident Set Size)**: the part of a program's memory that is in RAM.
 - **semantic proximity**: a match on the meaning of a text, even with different
   words. The dense vector answers it.
 - **shard**: a part of a collection. Each shard has its own write path. The
@@ -322,6 +418,8 @@ serves it automatically. Both are outside the project rule for this POC.
   `de`. A search often removes it.
 - **syntactic proximity**: a match on the exact words of a text. The BM25
   vector answers it.
+- **throughput**: the number of records that a process handles per unit of
+  time.
 - **vector database**: a database that stores vectors and finds the nearest
   vectors to a query vector.
 - **Web UI**: the browser interface that shows the collections and the console.

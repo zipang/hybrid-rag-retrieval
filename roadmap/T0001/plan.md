@@ -82,7 +82,7 @@ schema titles, and generic in-memory and streaming readers.
 
 ### Phase 2: Core Features
 
-- [ ] **Task 5: Index slogans through the generic reader**
+- [x] **Task 5: Index slogans through the generic reader**
   - Acceptance: `bun run scripts/index-slogans.ts` loads `datasetConfigurations.slogans` and consumes `streamDataset` events from `datasets/slogans.txt`. It logs every rejected block with the corpus path, block number, and reason. It continues to valid records and reports accepted and rejected totals. It reads each valid record's content and identifier through configuration. It computes dense embeddings client-side and upserts the dense vector plus Qdrant's BM25 inference vector. The script stays idempotent, batches points under Qdrant's 32 MB REST request limit, logs progress, exits non-zero on failure, and supports `--limit N` for smoke runs.
   - Verify: `bun test scripts/index-slogans.test.ts` confirms the importer logs the corpus path, block number, and reason, then indexes a following valid record. Also run `bun run scripts/index-slogans.ts --limit 500` and confirm Qdrant reports 500 points.
   - Files: `scripts/index-slogans.ts`, `scripts/index-slogans.test.ts`
@@ -140,7 +140,7 @@ schema titles, and generic in-memory and streaming readers.
 | Payload filter syntax on year range is easy to get wrong | Low | Unit-test the filter shape; verify against real data in the smoke script |
 | BM25 defaults to English, and ingest/query options drift | High | Set `language: "french"`, `ascii_folding: true`, and `avg_len` from env; build one `bm25Options(env)` helper shared by indexing and retrieval |
 | BM25 `avg_len` left at default `256` for short slogans | Med | Set `BM25_AVG_LEN` to the corpus average token count; revisit after indexing |
-| Point id type mismatch (numeric string vs uint64) | Low | Cast each numeric `Id` to an integer for the point id; unit-test a sample |
+| Point id type mismatch (numeric string vs uint64) | Low | Resolved: the record schemas type `id` as `integer`, so the reader coerces it and the importer casts nothing |
 | Payload indexes created after ingestion | Med | Recreate the indexes inside the drop/recreate path before upsert |
 
 ## Open Questions

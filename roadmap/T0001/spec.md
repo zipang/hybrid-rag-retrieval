@@ -11,10 +11,10 @@ Build a minimalist end-to-end RAG proof of concept on the slogan corpus
 2. **Index** the slogans once into a single Qdrant collection using a
    **hybrid strategy**: one dense multilingual vector (client-side) + one
    Qdrant-native BM25 sparse vector per point, with payload fields (id, année,
-   marque, campagne, slogan). The numeric corpus `Id` is the Qdrant point id
-   (unsigned 64-bit); the payload keeps `id` as a string. Payload indexes
-   (`annee` integer, `marque` keyword) are created **before** the points are
-   ingested.
+   marque, campagne, slogan). The corpus `Id` is a typed integer, so it is the
+   Qdrant point id (unsigned 64-bit) directly; the payload keeps `id` as an
+   integer. Payload indexes (`annee` integer, `marque` keyword) are created
+   **before** the points are ingested.
 3. Expose a **retrieval API** (Bun) that fuses dense similarity and BM25 scores
    into one hybrid search endpoint (server-side RRF).
 4. Ship a **minimal chat demo** (single HTML page served by the same Bun app)
@@ -87,8 +87,8 @@ bunx biome check --write .                  # format + lint
 
 Env contract, documented in `.env.sample` (copy it to `.env`; Bun loads `.env`
 automatically): `QDRANT_URL`, `QDRANT_COLLECTION`, `EMBEDDING_PROVIDER`
-(`local` default), `EMBEDDING_MODEL`, `BM25_LANGUAGE`, `BM25_ASCII_FOLDING`,
-`BM25_AVG_LEN`, `AI_PROVIDER_URL`, `AI_API_KEY`, `AI_MODEL`, `PORT`.
+(`local` default), `EMBEDDING_MODEL`, `EMBEDDING_MAX_LENGTH`, `BM25_LANGUAGE`,
+`BM25_ASCII_FOLDING`, `BM25_AVG_LEN`, `AI_PROVIDER_URL`, `AI_API_KEY`, `AI_MODEL`, `PORT`.
 
 ## Project Structure
 
@@ -155,8 +155,9 @@ const records = result.events.filter((event) => event.type === "record")
 - Dense model choice: settled on `intfloat/multilingual-e5-large` (the only built-in French-capable dense model in fastembed-js). Changing it later is an `EMBEDDING_MODEL` alias change.
 - Chunking: slogans are short; no chunking is expected. Index one point per valid slogan record from the T0002 reader.
 - Point id mapping (resolved): the corpus `Id` values are all numeric and unique
-  (265,266 values, 0 non-numeric, 0 duplicates), so they map directly to Qdrant
-  uint64 point ids; the payload keeps `id` as a string for display.
+  (265,266 values, 0 non-numeric, 0 duplicates). The schema types `id` as an
+  integer, so the reader coerces it and the importer uses it as the Qdrant
+  uint64 point id with no conversion. The payload keeps `id` as an integer.
 
 ## Glossary
 
