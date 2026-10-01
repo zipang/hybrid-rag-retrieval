@@ -1,0 +1,36 @@
+/* TextField: the composer input. Flat and square, separated by a hairline
+   border rather than a shadow. */
+.text-field {
+	flex: 1;
+}
+
+.text-field__label {
+	cursor: text;
+}
+
+.text-field__control {
+	background: var(--color-surface-card);
+	border: var(--border-sm) solid var(--color-surface-dark);
+	color: var(--color-text);
+	font-family: var(--font-family-base);
+	font-size: var(--font-size-md);
+	line-height: var(--line-height-normal);
+	padding: var(--space-sm) var(--space-md);
+	width: 100%;
+}
+
+.text-field__control::placeholder {
+	color: var(--color-text-muted);
+}
+
+.text-field__control:focus-visible {
+	border-color: var(--color-brand-accent);
+	outline: var(--border-sm) solid var(--color-brand-accent);
+	outline-offset: 0;
+}
+
+.text-field__control:disabled {
+	background: var(--color-surface-alt);
+	color: var(--color-text-muted);
+	cursor: not-allowed;
+}

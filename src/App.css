@@ -1,0 +1,9 @@
+.app {
+	min-height: 100vh;
+	max-width: 72rem;
+	margin-inline: auto;
+}
+
+.app__row {
+	flex-wrap: wrap;
+}

@@ -1,0 +1,28 @@
+/* ============================================================================
+   FONTS
+   ----------------------------------------------------------------------------
+   The system font stack only. No @font-face rule: this project downloads no
+   font file and requests no web font.
+
+   Family assignments come from the --font-family-* tokens in design-tokens.css.
+   ========================================================================== */
+
+body {
+	font-family: var(--font-family-base);
+	font-size: var(--font-size-base);
+	font-weight: var(--font-weight-regular);
+	line-height: var(--line-height-normal);
+	letter-spacing: var(--letter-spacing-normal);
+	color: var(--color-text);
+	background-color: var(--color-surface);
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+code,
+kbd,
+pre,
+samp {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-sm);
+}

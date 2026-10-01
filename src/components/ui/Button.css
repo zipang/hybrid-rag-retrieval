@@ -1,0 +1,55 @@
+/* Button: the one primary control. Flat and square by Design System rule, so
+   states are carried by surface tone and the derived -active/-muted variants
+   rather than by a shadow. */
+.button {
+	align-items: center;
+	background: transparent;
+	border: var(--border-sm) solid var(--color-brand-accent);
+	color: var(--color-brand-accent);
+	cursor: pointer;
+	display: inline-flex;
+	font-family: var(--font-family-base);
+	font-size: var(--font-size-sm);
+	font-weight: var(--font-weight-medium);
+	justify-content: center;
+	letter-spacing: var(--letter-spacing-normal);
+	line-height: var(--line-height-normal);
+	padding: var(--space-sm) var(--space-base);
+	transition:
+		background-color 120ms ease-out,
+		border-color 120ms ease-out,
+		color 120ms ease-out;
+}
+
+.button:focus-visible {
+	outline: var(--border-md) solid var(--color-brand-accent);
+	outline-offset: var(--space-xs);
+}
+
+.button--solid {
+	background: var(--color-brand-accent);
+	border-color: var(--color-brand-accent);
+	color: var(--color-text-ondark);
+}
+
+.button--solid:hover:not(:disabled) {
+	background: var(--color-brand-accent-active);
+	border-color: var(--color-brand-accent-active);
+}
+
+.button--outline:hover:not(:disabled) {
+	background: var(--color-brand-accent-muted);
+	color: var(--color-text);
+}
+
+.button--full-width {
+	width: 100%;
+}
+
+.button--disabled,
+.button:disabled {
+	background: var(--color-surface-alt);
+	border-color: var(--border-sm) solid var(--color-text-muted);
+	color: var(--color-text-muted);
+	cursor: not-allowed;
+}

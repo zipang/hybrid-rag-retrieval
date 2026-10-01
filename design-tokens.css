@@ -1,0 +1,89 @@
+/* ============================================================================
+   DESIGN TOKENS
+   ----------------------------------------------------------------------------
+   Every value below is also declared in DESIGN.md front matter. The two files
+   must stay identical. Undocumented tokens are forbidden.
+
+   Flat design: every elevation token is `none`. Square: every rounded token
+   is `0`. Depth comes from spacing, type scale, and surface tone.
+
+   Elevation and border widths are imported from presets/, never redefined here.
+   ========================================================================== */
+
+@import "./presets/elevation/flat.css";
+@import "./presets/borders/124.css";
+
+:root {
+	/* --- Colors: brand ------------------------------------------------------ */
+	--color-brand-primary: #1a1a1a;
+	--color-brand-accent: #1d4ed8;
+	--color-brand-secondary: #4b5563;
+	--color-brand-tertiary: #1a1a1a;
+
+	/* --- Colors: action ----------------------------------------------------- */
+	--color-action-success: #15803d;
+	--color-action-info: #1d4ed8;
+	--color-action-warning: #b45309;
+	--color-action-danger: #b91c1c;
+
+	/* --- Colors: text ------------------------------------------------------- */
+	--color-text: #1a1a1a;
+	--color-text-accent: #1d4ed8;
+	--color-text-muted: #6b7280;
+	--color-text-ondark: #fafafa;
+
+	/* --- Colors: surface ---------------------------------------------------- */
+	--color-surface: #fafafa;
+	--color-surface-alt: #f0f0f0;
+	--color-surface-card: #ffffff;
+	--color-surface-dark: #1a1a1a;
+
+	/* --- Typography: families ---------------------------------------------- */
+	--font-family-base:
+		system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+	--font-family-display: var(--font-family-base);
+	--font-family-mono:
+		ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+	/* --- Typography: scale (perfect fourth, ratio 1.333) --------------------- */
+	--font-size-base: 1rem;
+	--font-size-xs: 0.75rem;
+	--font-size-sm: 0.889rem;
+	--font-size-md: 1.185rem;
+	--font-size-lg: 1.58rem;
+	--font-size-xl: 2.11rem;
+	--font-size-2xl: 2.81rem;
+	--font-size-display: 3.75rem;
+
+	/* --- Typography: weights ------------------------------------------------ */
+	--font-weight-regular: 400;
+	--font-weight-medium: 500;
+	--font-weight-semibold: 600;
+	--font-weight-bold: 700;
+
+	/* --- Typography: line heights ------------------------------------------- */
+	--line-height-tight: 1.15;
+	--line-height-normal: 1.5;
+	--line-height-relaxed: 1.7;
+
+	/* --- Typography: letter spacing ----------------------------------------- */
+	--letter-spacing-tight: -0.02em;
+	--letter-spacing-normal: 0;
+	--letter-spacing-wide: 0.02em;
+
+	/* --- Spacing (linear, 4px steps) ----------------------------------------- */
+	--space-xs: 0.25rem;
+	--space-sm: 0.5rem;
+	--space-md: 0.75rem;
+	--space-base: 1rem;
+	--space-lg: 1.5rem;
+	--space-xl: 2.5rem;
+	--space-xxl: 4rem;
+
+	/* --- Rounded (flat design: square) --------------------------------------- */
+	--rounded-none: 0;
+	--rounded-sm: 0;
+	--rounded-md: 0;
+	--rounded-lg: 0;
+	--rounded-full: 0;
+}

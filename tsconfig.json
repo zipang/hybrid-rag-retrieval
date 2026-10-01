@@ -1,10 +1,11 @@
 {
 	"compilerOptions": {
-		"lib": ["ESNext", "DOM"],
+		"lib": ["ESNext", "DOM", "DOM.Iterable"],
 		"target": "ESNext",
 		"module": "Preserve",
 		"moduleResolution": "bundler",
 		"moduleDetection": "force",
+		"jsx": "react-jsx",
 		"allowImportingTsExtensions": true,
 		"verbatimModuleSyntax": true,
 		"noEmit": true,
@@ -13,7 +14,11 @@
 		"noUnusedLocals": true,
 		"noUnusedParameters": true,
 		"noFallthroughCasesInSwitch": true,
-		"types": ["bun"]
+		"types": ["bun", "react"],
+		"paths": {
+			"@components/*": ["./src/components/*"],
+			"@styles/*": ["./src/styles/*"]
+		}
 	},
-	"include": ["src", "scripts", "demo"]
+	"include": ["src", "scripts", "bun-env.d.ts"]
 }
