@@ -19,7 +19,7 @@ export class ApiError extends Error {
 }
 
 /** CORS headers for the JSON API. */
-const CORS_HEADERS = {
+export const CORS_HEADERS = {
 	"access-control-allow-origin": "*",
 	"access-control-allow-methods": "GET, OPTIONS",
 	"access-control-allow-headers": "content-type",
