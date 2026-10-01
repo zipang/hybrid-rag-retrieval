@@ -4,6 +4,8 @@ export type QdrantEnv = {
 	QDRANT_URL?: string
 	/** Collection that stores the points. Defaults to `slogans`. */
 	QDRANT_COLLECTION?: string
+	/** Extra environment values, so `process.env` is assignable. */
+	[key: string]: string | undefined
 }
 
 /** Name of the dense named vector. */
