@@ -9,8 +9,7 @@ export const citationJsonSchema = {
 	properties: {
 		id: {
 			title: "id",
-			type: "string",
-			minLength: 1,
+			type: "integer",
 			description:
 				"Record identifier: Unique source ID. Keep it in record metadata. Do not embed it or use it as a user filter.",
 		},
@@ -55,7 +54,7 @@ export const citationJsonSchema = {
 				"Content field: Citation text. Use it for dense semantic embeddings and BM25 lexical indexing. Do not use it as a metadata filter.",
 		},
 	},
-	required: ["id", "author", "work", "year", "lang", "quote"],
+	required: ["id", "author", "work", "lang", "quote"],
 	additionalProperties: false,
 } as const satisfies DescribedRecordSchema
 

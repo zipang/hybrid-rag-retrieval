@@ -8,6 +8,12 @@ type RequiredStringKey<T> = {
 }[keyof T] &
 	string
 
+/** Keys whose values are a string or a number in a record model. */
+type RequiredIdentifierKey<T> = {
+	[K in keyof T]-?: T[K] extends string | number ? K : never
+}[keyof T] &
+	string
+
 /** Dataset settings that connect a record model to its corpus fields. */
 export type DatasetConfiguration<T extends object> = DatasetReader<T> & {
 	/** Local path to the UTF-8 corpus file. */
@@ -15,7 +21,7 @@ export type DatasetConfiguration<T extends object> = DatasetReader<T> & {
 	/** Record property that supplies searchable text. */
 	contentField: RequiredStringKey<T>
 	/** Record property that identifies the source record. */
-	identifierField: RequiredStringKey<T>
+	identifierField: RequiredIdentifierKey<T>
 }
 
 /** Typed reader settings for each supported corpus. */
@@ -32,6 +38,7 @@ export const datasetConfigurations = {
 		filePath: "datasets/citations.txt",
 		schema: citationJsonSchema,
 		validator: citationValidator,
+		defaults: {},
 		contentField: "quote",
 		identifierField: "id",
 	} satisfies DatasetConfiguration<Citation>,

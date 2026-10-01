@@ -19,6 +19,6 @@ describe("datasetConfigurations", () => {
 		expect(citations.contentField).toBe("quote")
 		expect(citations.identifierField).toBe("id")
 		expect(citations.schema.properties.year.title).toBe("year")
-		expect(citations.defaults).toBeUndefined()
+		expect(citations.defaults).toEqual({})
 	})
 })

@@ -67,7 +67,7 @@ describe("parseDataset", () => {
 			{
 				type: "record",
 				record: {
-					id: "1",
+					id: 1,
 					annee: 2004,
 					marque: "Danone",
 					campagne: "",
@@ -82,7 +82,7 @@ describe("parseDataset", () => {
 			{
 				type: "record",
 				record: {
-					id: "3",
+					id: 3,
 					annee: 1980,
 					marque: "Marque C",
 					campagne: "Campagne C",
@@ -101,7 +101,7 @@ describe("parseDataset", () => {
 			{
 				type: "record",
 				record: {
-					id: "7",
+					id: 7,
 					annee: 2005,
 					marque: "Brand",
 					campagne: "",
@@ -119,7 +119,7 @@ describe("parseDataset", () => {
 			{
 				type: "record",
 				record: {
-					id: "8",
+					id: 8,
 					annee: 2006,
 					marque: "Brand",
 					campagne: "",
@@ -147,7 +147,7 @@ describe("parseDataset", () => {
 			{
 				type: "record",
 				record: {
-					id: "1",
+					id: 1,
 					author: "William Shakespeare",
 					work: "Hamlet",
 					year: 1603,

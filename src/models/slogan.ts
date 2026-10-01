@@ -9,8 +9,7 @@ export const sloganJsonSchema = {
 	properties: {
 		id: {
 			title: "Id",
-			type: "string",
-			minLength: 1,
+			type: "integer",
 			description:
 				"Record identifier: Unique source ID. Keep it in record metadata. Do not embed it or use it as a user filter.",
 		},

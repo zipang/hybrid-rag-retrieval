@@ -70,7 +70,7 @@ export const sloganJsonSchema = {
 	description: "A slogan record. Use the slogan as content and metadata fields as filters.",
 	type: "object",
 	properties: {
-		id: { title: "Id", type: "string", description: "Record identifier: The source ID for this record." },
+		id: { title: "Id", type: "integer", description: "Record identifier: The source ID for this record." },
 		annee: { title: "Année", type: "integer", description: "Filter field: Use for year filters. Do not index as content." },
 		slogan: { title: "Slogan", type: "string", minLength: 1, description: "Content field: Use for semantic and lexical indexing." },
 	},

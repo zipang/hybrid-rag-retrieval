@@ -28,7 +28,9 @@ quote: To be, or not to be: that is the question
 ```
 
 The reader converts values to the types in the schema. It rejects a block when
-the block does not pass validation. It then reads the next block.
+the block does not pass validation. It then reads the next block. The `id`
+field of each dataset uses the `integer` type, so the reader coerces the source
+`Id` text to a number.
 
 ## Add a dataset
 

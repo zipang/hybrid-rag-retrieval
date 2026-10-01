@@ -13,7 +13,7 @@ describe("record models", () => {
 
 		expect(result.error).toBeUndefined()
 		expect(result.value).toEqual({
-			id: "1",
+			id: 1,
 			annee: 2004,
 			marque: "Danone",
 			slogan: "Un peu de sucre, beaucoup d'idées",
@@ -44,13 +44,34 @@ describe("record models", () => {
 
 		expect(result.error).toBeUndefined()
 		expect(result.value).toEqual({
-			id: "3",
+			id: 3,
 			author: "William Shakespeare",
 			work: "Hamlet",
 			year: 1603,
 			lang: "fr",
 			trad: "",
 			quote: "Quelque chose est pourri dans l'État de Danemark",
+		})
+	})
+
+	test("accepts a citation with an unknown year and an anonymous author", () => {
+		const result = validateCitation({
+			id: "7",
+			author: "Anonymous",
+			work: "Proverbes",
+			lang: "fr",
+			trad: "",
+			quote: "Un proverbe sans date.",
+		})
+
+		expect(result.error).toBeUndefined()
+		expect(result.value).toEqual({
+			id: 7,
+			author: "Anonymous",
+			work: "Proverbes",
+			lang: "fr",
+			trad: "",
+			quote: "Un proverbe sans date.",
 		})
 	})
 
