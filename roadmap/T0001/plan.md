@@ -94,7 +94,7 @@ schema titles, and generic in-memory and streaming readers.
   - Files: `src/lib/retrieval.ts`, `src/lib/retrieval.test.ts`
   - Depends: Tasks 3, 4
 
-- [ ] **Task 7: Retrieval API endpoint**
+- [x] **Task 7: Retrieval API endpoint**
   - Acceptance: `GET /api/slogans?q=&topK=&yearFrom=&yearTo=` returns `{ results: [...] }` JSON with CORS; invalid/empty `q` returns 400 with a message; errors are caught and mapped to JSON status codes; `Bun.serve()` entrypoint serves static files from `demo/`.
   - Verify: with Qdrant running and data indexed, `curl "localhost:3000/api/slogans?q=sucre&yearFrom=2004&yearTo=2005"` returns relevant slogans; `bun test src/server/api.test.ts` covers the parameter/error cases with a stubbed retrieval.
   - Files: `src/server/index.ts`, `src/server/api.ts`, `src/server/api.test.ts`
