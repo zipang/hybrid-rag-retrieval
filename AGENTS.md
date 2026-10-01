@@ -139,6 +139,11 @@ The project uses **Biome** (`biome.jsonc` and `.editorconfig`). Use **tabs** for
 
 Before you use the `git-commit` skill, reformat the edited sources with Biome. This keeps the commit limited to meaningful changes.
 
+## Secrets
+
+Reading secrets files like the `.env`, `.env.local`, etc.. IS STRICTLY FORBIDDEN for any agents.
+Just tell the user the values to insert into if they need to be edited.
+
 ## JS and TS lint rules
 
 - IMPORTANT: Declare a proper JSDoc block for every function.
