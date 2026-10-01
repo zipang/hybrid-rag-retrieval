@@ -45,15 +45,16 @@
 	--font-family-mono:
 		ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
 
-	/* --- Typography: scale (perfect fourth, ratio 1.333) --------------------- */
+	/* --- Typography: scale (geometric, ratio 1.2 — every step is 20% larger) -
+   `md` is step 0 and equals `base`, so body text is exactly 1rem. */
 	--font-size-base: 1rem;
-	--font-size-xs: 0.75rem;
-	--font-size-sm: 0.889rem;
-	--font-size-md: 1.185rem;
-	--font-size-lg: 1.58rem;
-	--font-size-xl: 2.11rem;
-	--font-size-2xl: 2.81rem;
-	--font-size-display: 3.75rem;
+	--font-size-xs: 0.694rem;
+	--font-size-sm: 0.833rem;
+	--font-size-md: 1rem;
+	--font-size-lg: 1.2rem;
+	--font-size-xl: 1.44rem;
+	--font-size-2xl: 1.728rem;
+	--font-size-display: 2.074rem;
 
 	/* --- Typography: weights ------------------------------------------------ */
 	--font-weight-regular: 400;

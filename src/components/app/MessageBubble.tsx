@@ -19,8 +19,8 @@ export interface MessageBubbleProps {
 }
 
 /**
- * One chat message. The two roles are distinguished by surface tone and by
- * which edge the block sits against.
+ * One chat message, at the same size as the question field. The two roles are
+ * distinguished by surface tone and by which edge the block sits against.
  *
  * @param props - Author, body, and the streaming flag.
  * @returns The message block.
@@ -35,13 +35,14 @@ export const MessageBubble: FC<MessageBubbleProps> = ({
 	<VStack
 		gap="xs"
 		align="start"
+		id={isStreaming ? "message-streaming" : undefined}
 		className={`message-bubble message-bubble--${role}${isStreaming ? " message-bubble--streaming" : ""}`}
 	>
 		<Text size="xs" weight="medium" as="span" className="message-bubble__author">
 			{role === "user" ? "Vous" : "Assistant"}
 		</Text>
 		<Text
-			size="md"
+			size="sm"
 			tone={role === "user" ? "ondark" : "base"}
 			as="span"
 			className="message-bubble__body"

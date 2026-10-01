@@ -28,6 +28,10 @@ export interface HeadingProps {
 	/** Render as this element instead of the level's native tag.
 	 *  @defaultValue the tag matching `level` */
 	as?: HeadingTag;
+	/** Extra classes appended to the component's own class. @defaultValue none */
+	className?: string;
+	/** Id of the element, for its own scoped rules. @defaultValue none */
+	id?: string;
 	/** Content of the heading. */
 	children: ReactNode;
 }
@@ -58,6 +62,8 @@ export const Heading: FC<HeadingProps> = ({
 	tone = "base",
 	textAlign,
 	as,
+	className = "",
+	id,
 	children,
 }) => {
 	const Tag = (as ?? `h${level}`) as HeadingTag
@@ -66,7 +72,8 @@ export const Heading: FC<HeadingProps> = ({
 
 	return (
 		<Tag
-			className={`heading heading--${sizeToken} heading--${tone}`}
+			id={id}
+			className={[`heading`, `heading--${sizeToken}`, `heading--${tone}`, className].filter(Boolean).join(" ")}
 			style={style}
 			data-level={level}
 		>

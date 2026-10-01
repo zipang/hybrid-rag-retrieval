@@ -23,6 +23,8 @@ export interface GridProps {
 	as?: LayoutTag;
 	/** Extra class for the component's own rules. */
 	className?: string;
+	/** Id of the element, for its own scoped rules. @defaultValue none */
+	id?: string;
 	/** Extra inline styles, merged last. @defaultValue none */
 	style?: CSSProperties;
 }
@@ -47,6 +49,7 @@ export const Grid: FC<GridProps> = ({
 	padding = "none",
 	as = "div",
 	className = "",
+	id,
 	style,
 }) => {
 	const Tag = as
@@ -55,6 +58,7 @@ export const Grid: FC<GridProps> = ({
 
 	return (
 		<Tag
+			id={id}
 			className={classes}
 			style={{
 				gap: `var(--space-${gap})`,

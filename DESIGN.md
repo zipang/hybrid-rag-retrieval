@@ -32,13 +32,13 @@ typography:
   # mono omitted → --font-family-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace
   scale:
     base: "1rem" # step 0, applied to the document
-    xs: "0.75rem" # captions, metadata
-    sm: "0.889rem" # secondary text, list rows
-    md: "1.185rem" # body text
-    lg: "1.58rem" # card titles, section titles
-    xl: "2.11rem" # page titles
-    "2xl": "2.81rem" # hero titles
-    display: "3.75rem" # banner headlines
+    xs: "0.694rem" # captions, metadata, timestamps
+    sm: "0.833rem" # chat messages, list rows, secondary text
+    md: "1rem" # body text, input fields
+    lg: "1.2rem" # section titles
+    xl: "1.44rem" # page title
+    "2xl": "1.728rem" # hero titles
+    display: "2.074rem" # banner headlines
   weights:
     regular: "400"
     medium: "500"
@@ -133,20 +133,22 @@ pressed.
 The system font stack is used throughout, including for display text. No web font
 is downloaded and no font file is served, so `fonts.css` declares no `@font-face`.
 
-The scale is a geometric progression with ratio 1.333 (perfect fourth). Because
-the design has no shadow and no radius, the type scale carries most of the visual
-hierarchy, so consecutive steps are deliberately far apart. No two adjacent
-steps differ by less than about 15 percent, which keeps a heading from ever
-reading as body text.
+The scale is a geometric progression with ratio 1.2, so every step is 20 percent
+larger than the one below it. `md` is step 0 and equals exactly `1rem`, which
+keeps body text at the browser default size.
+
+The application is a dense working tool, so the scale stays small. Chat messages
+use `sm` and are never larger than the input field, which uses `md`.
 
 | Token | Size | Used for |
 |---|---|---|
-| `--font-size-xs` | 0.75rem | Captions, timestamps, panel metadata |
-| `--font-size-sm` | 0.889rem | Secondary text, list rows, hits |
-| `--font-size-md` | 1.185rem | Body text, messages |
-| `--font-size-lg` | 1.58rem | Card titles, section titles |
-| `--font-size-xl` | 2.11rem | Page title |
-| `--font-size-display` | 3.75rem | Reserved for a banner |
+| `--font-size-xs` | 0.694rem | Captions, timestamps, metadata |
+| `--font-size-sm` | 0.833rem | Chat messages, list rows, hits |
+| `--font-size-md` | 1rem | Body text, input fields |
+| `--font-size-lg` | 1.2rem | Section titles |
+| `--font-size-xl` | 1.44rem | Page title |
+| `--font-size-2xl` | 1.728rem | Hero titles |
+| `--font-size-display` | 2.074rem | Reserved for a banner |
 
 ## Layout
 

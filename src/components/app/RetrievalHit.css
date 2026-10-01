@@ -9,11 +9,7 @@
 	padding-bottom: 0;
 }
 
-/* The brand may break mid-name rather than force the panel wider. */
-.retrieval-hit__brand {
-	overflow-wrap: anywhere;
-}
-
+/* A long brand name breaks rather than widening the panel. */
 .retrieval-hit__slogan {
 	min-width: 0;
 	overflow-wrap: anywhere;

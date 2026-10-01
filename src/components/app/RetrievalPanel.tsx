@@ -7,8 +7,6 @@ import { Panel } from "../ui/Panel"
 import type { SloganHit } from "../../lib/retrieval"
 import { RetrievalHit } from "./RetrievalHit"
 
-import "./RetrievalPanel.css"
-
 /** How many slogans the panel shows. */
 const TOP_K = 5
 
@@ -79,23 +77,23 @@ export const RetrievalPanel: FC<RetrievalPanelProps> = ({ query, isVisible = tru
 	}
 
 	return (
-		<Panel as="aside" gap="base" className="retrieval-panel">
+		<Panel as="aside" gap="sm" padding="md" id="retrieval-panel">
 			<Heading level={2} size="md">
 				Slogans trouvés
 			</Heading>
 
 			{error !== "" ? (
-				<Text size="sm" role="alert">
+				<Text size="sm" role="alert" id="retrieval-panel-error">
 					{error}
 				</Text>
 			) : hits.length === 0 ? (
-				<Text size="sm" tone="muted">
+				<Text size="sm" tone="muted" id="retrieval-panel-empty">
 					{query.trim() === ""
 						? "Aucun slogan pour l'instant."
 						: "Aucun slogan ne correspond à cette question."}
 				</Text>
 			) : (
-				<VStack gap="sm">
+				<VStack gap="sm" id="retrieval-panel-hits">
 					{hits.map((hit) => (
 						<RetrievalHit key={String(hit.id)} hit={hit} />
 					))}

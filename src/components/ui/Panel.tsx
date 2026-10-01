@@ -16,7 +16,9 @@ export interface PanelProps {
 	padding?: GapToken;
 	/** Element rendered. @defaultValue "section" */
 	as?: LayoutTag;
-	/** Extra class for the component's own rules. */
+	/** Id of the panel, for its own scoped rules. @defaultValue none (unset) */
+	id?: string;
+	/** Extra class for shared rules. @defaultValue none (unset) */
 	className?: string;
 }
 
@@ -24,16 +26,17 @@ export interface PanelProps {
  * A bordered surface that groups one region of the page. Flat and square: a
  * hairline border separates it, never a shadow.
  *
- * @param props - Gap, inner space, and element override.
+ * @param props - Gap, inner space, id, and element override.
  * @returns The panel surface.
  * @example
- * <Panel as="aside" gap="sm">Slogans</Panel>
+ * <Panel as="aside" id="retrieval-panel" gap="sm">Slogans</Panel>
  */
 export const Panel: FC<PanelProps> = ({
 	children,
 	gap = "md",
 	padding = "lg",
 	as = "section",
+	id,
 	className = "",
 }) => (
 	<VStack
@@ -41,6 +44,7 @@ export const Panel: FC<PanelProps> = ({
 		gap={gap}
 		padding={padding}
 		align="stretch"
+		id={id}
 		className={`panel ${className}`.trim()}
 	>
 		{children}

@@ -33,6 +33,8 @@ export interface TextProps {
 	htmlFor?: string;
 	/** Extra classes appended to the component's own class. */
 	className?: string;
+	/** Id of the element, for its own scoped rules. @defaultValue none */
+	id?: string;
 	/**
 	 * ARIA role, needed when the text carries live status such as an error
 	 * message read by a screen reader.
@@ -63,6 +65,7 @@ export const Text: FC<TextProps> = ({
 	as = "p",
 	htmlFor,
 	className = "",
+	id,
 	role,
 	children,
 }) => {
@@ -74,6 +77,7 @@ export const Text: FC<TextProps> = ({
 
 	return (
 		<Tag
+			id={id}
 			className={allClasses}
 			style={style}
 			{...(htmlFor ? { htmlFor } : {})}

@@ -1,16 +1,30 @@
-/* ChatPage: the single screen. Grid for the two columns, stacks inside. */
-.chat-page {
-	min-height: 100vh;
+/* ChatPage: the single screen. Exactly one viewport tall, so the page itself
+   never scrolls; only the conversation list does. */
+/* Exactly one viewport tall. `100dvh` follows the mobile browser chrome;
+   the `100vh` line is the fallback for browsers that lack it. */
+#page {
+	height: 100vh;
+	height: 100dvh;
 	max-width: 80rem;
 	margin-inline: auto;
+	overflow: hidden;
 }
 
-.chat-page__columns {
-	flex: 1;
-	min-height: 0;
+#page-header {
+	flex-shrink: 0;
 }
 
-.chat-page__toggle {
+#page-header-meta {
+	color: var(--color-text-muted);
+}
+
+#page-toggle {
 	cursor: pointer;
 	white-space: nowrap;
+}
+
+/* The two regions take the rest of the viewport. */
+#page-columns {
+	flex: 1;
+	min-height: 0;
 }

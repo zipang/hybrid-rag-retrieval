@@ -44,8 +44,11 @@ is wrong, fix the primitive.
 - Pure CSS files. No Tailwind, no CSS-in-JS.
 - Read every colour, space, radius, and border through `var(--token)`. A
   literal is a defect.
-- Scope rules in a class named after the component in kebab-case:
-  `RetrievalHit` → `.retrieval-hit`.
+- **Scope a region's specific rules under its id.** `#chat-panel`, `#page`,
+  `#retrieval-panel`: id selectors match one element and cannot leak into a
+  sibling region. Write them as `#chat-panel { … }` in the owning stylesheet.
+- Use a class only for appearance shared by many elements, such as
+  `.retrieval-hit` or `.message-bubble--user`.
 - No `border-radius` and no `box-shadow`. The system is flat and square.
 - Use the derived `-muted` and `-active` variants for interaction states.
 
@@ -57,7 +60,8 @@ another one, pass props instead. Every component has one job.
 ## 6. Files
 
 - One component per file; the file name matches the component.
-- One stylesheet per component, imported last.
+- One stylesheet per component, imported last. The import is required: a
+  component whose stylesheet is not imported renders completely unstyled.
 - No colocated test files in this directory yet. T0003 excluded front-end
   tests; a missing `Foo.test.tsx` is expected, not an oversight.
 

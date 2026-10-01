@@ -35,6 +35,7 @@ group, or align things.
 
 - **No raw layout elements.** Never write `<div>`, `<ul>`, `<ol>`, or `<li>` to arrange things. Use `VStack`, `HStack`, or `Grid`.
 - **No raw text tags.** Never write `<h1>`–`<h6>` or `<p>`. Use `Heading` and `Text`.
+- **An id, not a class, for a region's own rules.** Give each region a unique id (`#chat-panel`, `#retrieval-panel`, `#page`) and write its specific rules in the owning stylesheet, scoped under that id. A class is for shared, reusable appearance; an id is for one element on the page.
 - **No overriding a primitive's basics.** Do not pass `flex`, `display`, or `grid-template-columns` through `style` to fight a prop. If the layout is wrong, fix the component.
 - **No colour literals.** Every value is `var(--token)`. A hex code in a stylesheet is a defect.
 - **No radius, no shadow.** The Design System is flat and square.

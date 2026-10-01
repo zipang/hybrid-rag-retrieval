@@ -1,24 +1,39 @@
-/* ChatPanel: the conversation column. Panel owns the surface, so these rules
-   only handle the scroll area and the composer edge. */
-.chat-panel__list {
+/* ChatPanel: the conversation region. Every rule is scoped under the panel id
+   so nothing here can reach the retrieval panel or the page. */
+#chat-panel {
+	/* Fill the grid row and never grow past the viewport. */
+	height: 100%;
+	min-height: 0;
+	overflow: hidden;
+}
+
+#chat-panel-messages {
 	flex: 1;
 	min-height: 0;
 	min-width: 0;
+	/* The only scrolling area on the page. */
 	overflow-y: auto;
 }
 
-.chat-panel__turns {
+#chat-panel-turns {
 	min-width: 0;
 }
 
-.chat-panel__error {
+#chat-panel-error {
 	background: var(--color-action-danger-muted);
 	border: var(--border-sm) solid var(--color-action-danger);
 	color: var(--color-action-danger);
 	padding: var(--space-sm) var(--space-md);
 }
 
-.chat-panel__composer {
+/* The composer sits in the footer, always reachable. */
+#chat-panel-footer {
+	flex-shrink: 0;
 	border-top: var(--border-sm) solid var(--color-surface-alt);
-	padding-top: var(--space-base);
+	padding-top: var(--space-sm);
+}
+
+#chat-panel-hint {
+	display: block;
+	text-align: right;
 }

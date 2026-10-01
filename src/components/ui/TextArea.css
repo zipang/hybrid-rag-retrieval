@@ -1,35 +1,34 @@
-/* TextField: the composer input. Flat and square, separated by a hairline. */
-.text-field {
+/* TextArea: the question field. Two lines, flat, hairline border. */
+.text-area {
 	flex: 1;
 	min-width: 0;
 }
 
-.text-field__label {
-	cursor: text;
-}
-
-.text-field__control {
+.text-area__control {
 	background: var(--color-surface-card);
 	border: var(--border-sm) solid var(--color-surface-dark);
 	color: var(--color-text);
 	font-family: var(--font-family-base);
+	/* Same size as a chat message, so the field is never smaller. */
 	font-size: var(--font-size-md);
 	line-height: var(--line-height-normal);
 	padding: var(--space-sm) var(--space-md);
+	/* Keeps two lines visible and grows with the author up to this cap. */
+	resize: vertical;
 	width: 100%;
 }
 
-.text-field__control::placeholder {
+.text-area__control::placeholder {
 	color: var(--color-text-muted);
 }
 
-.text-field__control:focus-visible {
+.text-area__control:focus-visible {
 	border-color: var(--color-brand-accent);
 	outline: var(--border-md) solid var(--color-brand-accent);
 	outline-offset: 0;
 }
 
-.text-field__control:disabled {
+.text-area__control:disabled {
 	background: var(--color-surface-alt);
 	color: var(--color-text-muted);
 	cursor: not-allowed;

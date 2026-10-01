@@ -12,13 +12,13 @@ import "./ChatPage.css"
 
 /** Props of the chat page. */
 export interface ChatPageProps {
-	/** Extra class for the component's own rules. @defaultValue none */
+	/** Extra class for shared rules. @defaultValue none */
 	className?: string;
 }
 
 /**
  * The single screen: a header, the conversation, and the ranked slogans beside
- * it. The two columns stack on a narrow viewport.
+ * it. The page is exactly one viewport tall; the conversation scrolls.
  *
  * @param props - Optional extra class.
  * @returns The page composition.
@@ -30,14 +30,22 @@ export const ChatPage: FC<ChatPageProps> = ({ className = "" }) => {
 	const [isRetrievalVisible, setIsRetrievalVisible] = useState(true)
 
 	return (
-		<VStack gap="lg" padding="lg" as="main" className={`chat-page ${className}`.trim()}>
-			<VStack as="header" gap="xs" className="chat-page__header">
-				<Heading level={1}>Recherche de slogans</Heading>
-				<HStack gap="base" align="center" wrap>
-					<Text size="sm" tone="muted">
+		<VStack
+			as="main"
+			gap="base"
+			padding="base"
+			id="page"
+			className={`chat-page ${className}`.trim()}
+		>
+			<VStack as="header" gap="xs" id="page-header">
+				<Heading level={1} size="xl">
+					Recherche de slogans
+				</Heading>
+				<HStack gap="base" align="center" wrap id="page-header-meta">
+					<Text size="sm" tone="muted" as="span">
 						Recherche hybride dense + BM25, réponses par un LLM.
 					</Text>
-					<HStack gap="xs" align="center" as="label" className="chat-page__toggle">
+					<HStack gap="xs" align="center" as="label" id="page-toggle">
 						<input
 							type="checkbox"
 							checked={isRetrievalVisible}
@@ -50,7 +58,7 @@ export const ChatPage: FC<ChatPageProps> = ({ className = "" }) => {
 				</HStack>
 			</VStack>
 
-			<Grid columns="split" gap="lg" className="chat-page__columns">
+			<Grid columns="split" gap="base" id="page-columns">
 				<ChatPanel onQuestionAsked={setQuestion} />
 				<RetrievalPanel query={question} isVisible={isRetrievalVisible} />
 			</Grid>

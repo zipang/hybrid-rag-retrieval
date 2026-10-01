@@ -1,4 +1,4 @@
-import type { CSSProperties, FC, FormEventHandler, ReactNode } from "react"
+import type { CSSProperties, FC, FormEventHandler, ReactNode, Ref } from "react"
 
 import type { GapToken } from "../utils/spacing"
 import type { LayoutTag } from "../utils/tag"
@@ -22,10 +22,14 @@ export interface VStackProps {
 	as?: LayoutTag;
 	/** Extra class for the component's own rules. */
 	className?: string;
+	/** Id of the element, for its own scoped rules. @defaultValue none */
+	id?: string;
 	/** Extra inline styles, merged last. @defaultValue none */
 	style?: CSSProperties;
 	/** Submit handler, forwarded when the stack renders a form. */
 	onSubmit?: FormEventHandler<HTMLElement>;
+	/** Ref to the rendered element, for measuring or scrolling. */
+	ref?: Ref<HTMLElement>;
 }
 
 /** `align` → the CSS `align-items` value. */
@@ -54,14 +58,18 @@ export const VStack: FC<VStackProps> = ({
 	padding = "none",
 	as = "div",
 	className = "",
+	id,
 	style,
 	onSubmit,
+	ref,
 }) => {
 	const Tag = as
 	const classes = ["v-stack", className].filter(Boolean).join(" ")
 
 	return (
 		<Tag
+			id={id}
+			ref={ref as Ref<never>}
 			className={classes}
 			style={{
 				gap: `var(--space-${gap})`,
