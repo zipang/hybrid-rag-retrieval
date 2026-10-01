@@ -1,0 +1,164 @@
+/* ============================================================================
+   YOUTUBE — Design System Reference Stylesheet
+   ----------------------------------------------------------------------------
+   Every token defined in the design-system-tokens skill is exposed here as
+   a CSS variable inside a single :root block, following the naming convention:
+       category.role.variant  ->  --category-role-variant
+   The front matter of DESIGN.md lists the tokens the designer chose to define.
+   Optional tokens omitted there appear below as var() fallbacks to a required
+   token — the "Default" column of the skill's token tables.
+   To re-theme: modify only the :root block below.
+   ========================================================================== */
+
+:root {
+	/* ============================================================================
+       1. TYPOGRAPHY — Roboto everywhere (no separate display face)
+       ----------------------------------------------------------------------------
+       YouTube uses a single family (Roboto) for both body and headings.
+       Arial is the fallback when Roboto fails to load.
+       ========================================================================== */
+
+	/* --- Font families --- */
+	--font-family-base: "Roboto", "Arial", sans-serif;
+	--font-family-display: "Roboto", "Arial", sans-serif;
+	--font-family-mono:
+		ui-monospace, "Courier New", monospace; /* optional → var(--font-family-base) */
+
+	/* --- Typographic scale — geometric, ratio 1.5 (Perfect Fifth) ---
+       size(step) = 1rem * 1.5^step, base = step 0 (always 1rem).
+       xs = step -2, sm = step -1, lg = step +1, xl = step +2.
+       --font-size-2xl and --font-size-display are optional and fall back to
+       var(--font-size-xl) unless overridden here. */
+	--font-size-base: 1rem;
+
+	--font-size-xs: 0.444rem; /* 1.5^-2 — captions, metadata, timestamps  */
+	--font-size-sm: 0.667rem; /* 1.5^-1 — secondary text, list rows       */
+	--font-size-md: 1rem; /* step 0 — body text                       */
+	--font-size-lg: 1.5rem; /* 1.5^1 — section titles, card titles       */
+	--font-size-xl: 2.25rem; /* 1.5^2 — page titles, large prompts       */
+	--font-size-2xl: var(--font-size-xl); /* optional → var(--font-size-xl) */
+	--font-size-display: var(--font-size-xl); /* optional → var(--font-size-xl) */
+
+	/* --- Font weights ---
+       Use Medium (500) for buttons, labels, and navigation;
+       Bold (700) for headings and emphasized titles.
+       semibold and extrabold are optional and fall back to bold. */
+	--font-weight-regular: 400;
+	--font-weight-medium: 500;
+	--font-weight-semibold: var(--font-weight-bold); /* optional → var(--font-weight-bold) */
+	--font-weight-bold: 700;
+	--font-weight-extrabold: var(--font-weight-bold); /* optional → var(--font-weight-bold) */
+
+	/* --- Line heights --- */
+	--line-height-tight: 1.15; /* headings, single-line titles            */
+	--line-height-normal: 1.55; /* body text, multi-line descriptions      */
+	--line-height-relaxed: var(--line-height-normal); /* optional → var(--line-height-normal) */
+
+	/* --- Letter spacing --- */
+	--letter-spacing-tight: -0.02em; /* large headings, display text       */
+	--letter-spacing-normal: 0; /* body text, default tracking             */
+	--letter-spacing-wide: var(--letter-spacing-normal); /* optional → var(--letter-spacing-normal) */
+
+	/* ============================================================================
+       2. COLORS — Brand: Red primary, Blue accent, Gray secondary
+       ----------------------------------------------------------------------------
+       Brand and action colors carry `muted` and `active` variants derived
+       automatically in color-variants.css (included after this file):
+           muted:  hsl(from var(--X) h calc(s * 0.8) calc(l * 1.2))
+           active: hsl(from var(--X) h calc(s * 1.2) calc(l * 1.1))
+       Text and surface colors define their own variants explicitly below.
+       Link and border COLORS are not tokens — components pick the color
+       tokens they need for their states (see the Link example in DESIGN.md).
+       ========================================================================== */
+
+	/* --- Brand: Primary (YouTube Red) — headings, highlights, logo, header --- */
+	--color-brand-primary: #ff0000;
+
+	/* --- Brand: Accent (Link Blue) — CTAs, key accents --- */
+	--color-brand-accent: #065fd4;
+
+	/* --- Brand: Secondary (Neutral Gray) — additional brand color (overridden) --- */
+	--color-brand-secondary: #606060;
+
+	/* --- Brand: Tertiary (optional → primary) --- */
+	--color-brand-tertiary: var(--color-brand-primary);
+
+	/* --- Action: Success (Google Material Green) --- */
+	--color-action-success: #137333;
+
+	/* --- Action: Info (Google Blue) --- */
+	--color-action-info: #1a73e8;
+
+	/* --- Action: Warning (Google Amber) --- */
+	--color-action-warning: #e37400;
+
+	/* --- Action: Danger (Google Error Red) --- */
+	--color-action-danger: #d93025;
+
+	/* --- Text colors ---
+       Only --color-text is required; the rest cover hierarchy and emphasis.
+       #0f0f0f is YouTube's "almost-black" primary text (updated 2022).       */
+	--color-text: #0f0f0f;
+	--color-text-accent: #065fd4; /* overridden — links, headings, highlighted text */
+	--color-text-muted: #606060; /* overridden — visited links, captions       */
+	--color-text-ondark: #ffffff; /* overridden — footer, dark sections       */
+
+	/* --- Surface colors ---
+       #ffffff base, #f9f9f9 alt (sidebar, comments, alt sections).          */
+	--color-surface: #ffffff;
+	--color-surface-alt: #f9f9f9;
+	--color-surface-dark: #0f0f0f; /* overridden — footer, dark sections      */
+	--color-surface-card: var(--color-surface); /* optional → var(--color-surface) */
+
+	/* ============================================================================
+       3. SPACING — 4px linear scale
+       ----------------------------------------------------------------------------
+       space.base = 1rem (16px) = step 0. All values in rem.
+       YouTube's internal spacing is 4px-based; this scale mirrors that.
+       ========================================================================== */
+	--space-xs: 0.25rem; /*  4px — tight gaps, icon-to-text              */
+	--space-sm: 0.5rem; /*  8px — chip padding, compact list rows       */
+	--space-md: 0.75rem; /* 12px — button padding, card internal spacing */
+	--space-base: 1rem; /* 16px — default gap, paragraph spacing        */
+	--space-lg: 1.25rem; /* 20px — section padding, larger card gaps     */
+	--space-xl: 2rem; /* 32px — section-to-section spacing            */
+	--space-xxl: 3rem; /* 48px — page-level vertical rhythm            */
+
+	/* ============================================================================
+       4. ROUNDED — YouTube's corner radii
+       ----------------------------------------------------------------------------
+       4px chips, 12px cards, 18px pill buttons, 9999px circular avatars.
+       ========================================================================== */
+	--rounded-none: 0; /*  0px — none                          */
+	--rounded-sm: 0.25rem; /*  4px — chips, small badges           */
+	--rounded-md: 0.75rem; /* 12px — cards, thumbnails, search bar */
+	--rounded-lg: 1.125rem; /* 18px — pill buttons, large chips     */
+	--rounded-full: 9999px; /* circular — avatars, circular icons   */
+
+	/* ============================================================================
+       5. ELEVATION — Flat preset (YouTube is mostly flat, tonal layering)
+       ----------------------------------------------------------------------------
+       Elevation presets live in presets/elevation/ and are imported rather
+       than redefined — in a real theme use:
+           @import url("../presets/elevation/flat.css");
+       The flat preset sets all elevations to `none`; YouTube conveys depth
+       through background contrast rather than shadows. The tokens are listed
+       here only so this reference file remains self-contained.
+       ========================================================================== */
+	--elevation-sm: none;
+	--elevation-md: none;
+	--elevation-lg: none;
+
+	/* ============================================================================
+       6. BORDERS — 124 preset (1px / 2px / 4px stepped widths)
+       ----------------------------------------------------------------------------
+       Border width presets live in presets/borders/ and are imported rather
+       than redefined — in a real theme use:
+           @import url("../presets/borders/124.css");
+       YouTube uses 1px borders throughout (dividers, input focus, card edges).
+       Border COLORS are not tokens — components pick them.
+       ========================================================================== */
+	--border-sm: 1px; /* dividers, card edges, default separators     */
+	--border-md: 2px; /* focus rings, active selection borders        */
+	--border-lg: 4px; /* strong emphasis, drag-and-drop indicators    */
+}

@@ -1,0 +1,108 @@
+# Datasets
+
+This directory holds local corpus files. Git does not commit these files.
+Get each corpus from its source after you clone the project.
+
+## Text format
+
+A corpus is a UTF-8 text file with one record per block. A line with `---`
+separates blocks. Each field uses the form `label: value`. The schema model
+defines the record fields. Use each schema property key as the canonical label
+in new corpus files. The property `title` stores a fallback label for existing
+or alternate corpus formats.
+
+The reader checks each line label against property keys first. It checks
+property titles second. It does not depend on property or line order.
+
+Example citation block:
+
+```
+id: 1
+author: William Shakespeare
+work: Hamlet
+year: 1603
+lang: en
+trad:
+quote: To be, or not to be: that is the question
+---
+```
+
+The reader converts values to the types in the schema. It rejects a block when
+the block does not pass validation. It then reads the next block.
+
+## Add a dataset
+
+1. Put the corpus file in this directory.
+2. Add its JSON Schema, inferred type, and validation function in `src/models/`.
+3. Set each property's `title` to the legacy source label when it differs from the property key.
+4. Add its path in `src/config/datasets.ts`.
+5. Set its content field and identifier field in the dataset configuration.
+6. Add tests for valid, invalid, and out-of-order records.
+7. Run `bun test`.
+
+## Field roles and query context
+
+Every record schema has a description. Every property description starts with a
+role label. Use `Content field` for text that enters dense and lexical search.
+Use `Filter field` for metadata that narrows search results. Use
+`Record identifier` for the source record ID.
+
+Property keys are the primary source labels. Titles are fallback labels for
+existing corpus files. Query agents use property keys as stable field names and
+read descriptions to select content and filters.
+
+The shared schema type requires each description. Tests reject empty descriptions
+and descriptions without a role label.
+
+| Dataset | Field | Role | Intended use |
+|---|---|---|---|
+| Slogans | `id` | Record identifier | Keep the source ID for record identity. Do not embed or filter on it. |
+| Slogans | `annee` | Filter field | Filter by publication year. Exclude it from content indexing. |
+| Slogans | `marque` | Filter field | Filter by brand or issuing organization. Exclude it from content indexing. |
+| Slogans | `campagne` | Filter field | Filter by campaign when the value is not empty. Exclude it from content indexing. |
+| Slogans | `slogan` | Content field | Use for dense semantic embeddings and BM25 lexical indexing. |
+| Citations | `id` | Record identifier | Keep the source ID for record identity. Do not embed or filter on it. |
+| Citations | `author` | Filter field | Filter by citation author. Exclude it from content indexing. |
+| Citations | `work` | Filter field | Filter by the work that contains the citation. Exclude it from content indexing. |
+| Citations | `year` | Filter field | Filter by the work's publication year. Exclude it from content indexing. |
+| Citations | `lang` | Filter field | Filter by citation language. Exclude it from content indexing. |
+| Citations | `trad` | Filter field | Filter by translator when the value is not empty. Exclude it from content indexing. |
+| Citations | `quote` | Content field | Use for dense semantic embeddings and BM25 lexical indexing. |
+
+Query agents use the JSON Schema descriptions as context. They search the
+content field and apply filters to fields that have the `Filter field` role.
+For example, a request for Danone slogans from 2004 uses `slogan` as content and
+uses `marque` and `annee` as filters. A request for Hamlet citations about
+ambition uses `quote` as content and `author` and `work` as filters.
+
+These roles describe the intended use of each field. T0001 decides which filter
+fields need a Qdrant payload index.
+
+## Rejected records
+
+The reader reports each rejected block with its block number and a reason. The
+T0001 importer logs the corpus path, block number, and reason for each rejected
+block. It then continues with the next block. Use the reason to find and correct
+the source line.
+
+## Version control
+
+Git ignores corpus files. Git keeps only this `README.md` and `AGENTS.md`.
+Do not commit corpus data.
+
+## Glossary
+
+- **BM25**: A ranking method that scores records by their matching words.
+- **Content field**: The text field that carries the record's meaning and enters semantic and lexical indexing.
+- **Corpus**: The complete set of records that the project reads.
+- **Dataset configuration**: Settings that link a corpus file and schema to content and identifier fields.
+- **Dense vector**: A list of numbers that represents the meaning of text.
+- **Filter field**: A metadata field that narrows results without entering content indexing.
+- **JSON Schema**: A JSON structure that declares record fields, types, and validation rules.
+- **Lexical search**: Search that matches words instead of meaning.
+- **Query agent**: An LLM that uses schema descriptions to choose content and filter fields for a search.
+- **Record**: One item in a corpus, such as one slogan or citation.
+- **Record identifier**: The source ID that lets the system identify a record.
+- **Rejection reason**: A short message that explains why a block failed to parse or validate.
+- **Schema model**: A module that exports a JSON Schema, inferred TypeScript type, and validation function.
+- **Schema title**: The JSON Schema `title` field that stores a fallback source label when it differs from the property key.

@@ -1,5 +1,5 @@
 {
-	"name": "slogans-rag-poc",
+	"name": "hybrid-rag-poc",
 	"version": "0.1.0",
 	"private": true,
 	"type": "module",
@@ -15,7 +15,8 @@
 	"dependencies": {
 		"@ai-sdk/openai-compatible": "^3.0.61",
 		"ai": "^7.0.124",
-		"fastembed": "^3.0.0"
+		"fastembed": "^3.0.0",
+		"tjs": "7.0.0"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.5.15",
