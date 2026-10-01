@@ -1,7 +1,7 @@
-/* TextField: the composer input. Flat and square, separated by a hairline
-   border rather than a shadow. */
+/* TextField: the composer input. Flat and square, separated by a hairline. */
 .text-field {
 	flex: 1;
+	min-width: 0;
 }
 
 .text-field__label {
@@ -25,7 +25,7 @@
 
 .text-field__control:focus-visible {
 	border-color: var(--color-brand-accent);
-	outline: var(--border-sm) solid var(--color-brand-accent);
+	outline: var(--border-md) solid var(--color-brand-accent);
 	outline-offset: 0;
 }
 

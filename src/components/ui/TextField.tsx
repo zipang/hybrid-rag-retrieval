@@ -6,82 +6,59 @@ import { Text } from "../base/Text"
 
 import "./TextField.css"
 
-/** Text-like input types accepted by `TextField`. */
-export type TextFieldType = "text" | "search";
-
-/** Props of the Design System text field. */
+/** Props of the text field. */
 export interface TextFieldProps {
 	/** Accessible label rendered above the control. */
 	label: string;
-	/** Input type. @defaultValue "text" */
-	type?: TextFieldType;
 	/** Controlled value. */
-	value?: string;
-	/** Change callback. */
-	onValueChange?: (value: string) => void;
-	/** Placeholder text shown inside the empty control. */
+	value: string;
+	/** Reports each keystroke. */
+	onValueChange: (value: string) => void;
+	/** Placeholder shown while the field is empty. @defaultValue none */
 	placeholder?: string;
-	/** Makes the field mandatory. @defaultValue false */
-	required?: boolean;
-	/** Native autocomplete hint. */
-	autoComplete?: string;
+	/** Field name sent with the form. */
+	name?: string;
 	/** Disables the control. @defaultValue false */
 	disabled?: boolean;
-	/** Field name, used by the enclosing form on submit. */
-	name?: string;
 }
 
 /**
- * Renders a labelled text control styled from the Design System tokens. Used
- * for the chat composer input.
+ * A labelled single-line input, styled from the Design System tokens.
  *
- * @param props - Label, input type, value hooks, and native constraints.
- * @returns The label and input markup, stacked with token spacing.
+ * @param props - Label, value, change handler, and native attributes.
+ * @returns The label and input, stacked.
  * @example
- * <TextField label="Votre question" placeholder="Slogans sur le sucre" />
+ * <TextField label="Votre question" value={draft} onValueChange={setDraft} />
  */
 export const TextField: FC<TextFieldProps> = ({
 	label,
-	type = "text",
 	value,
 	onValueChange,
 	placeholder,
-	required = false,
-	autoComplete = "off",
-	disabled = false,
 	name,
+	disabled = false,
 }) => {
-	// Bridges the DOM change event to the value-only callback.
-	const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
-		onValueChange?.(event.target.value)
-	}
-
-	// Ties the label to the input so clicking it focuses the control.
 	const controlId = useId()
+
+	// Bridges the DOM event to a plain string callback.
+	const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+		onValueChange(event.target.value)
+	}
 
 	return (
 		<VStack gap="xs" className="text-field">
-			<Text
-				size="xs"
-				tone="muted"
-				weight="medium"
-				as="label"
-				htmlFor={controlId}
-				className="text-field__label"
-			>
+			<Text size="xs" tone="muted" weight="medium" as="label" htmlFor={controlId}>
 				{label}
 			</Text>
-			{/* A raw input is required: no layout primitive renders a form control. */}
 			<input
-				className="text-field__control"
 				id={controlId}
-				type={type}
+				className="text-field__control"
 				name={name}
+				type="text"
 				value={value}
 				onChange={handleChange}
 				placeholder={placeholder}
-				required={required}
-				autoComplete={autoComplete}
+				autoComplete="off"
 				disabled={disabled}
 			/>
 		</VStack>

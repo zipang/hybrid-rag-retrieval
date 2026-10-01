@@ -1,0 +1,20 @@
+/* RetrievalHit: one slogan in the result list. */
+.retrieval-hit {
+	padding-bottom: var(--space-sm);
+	border-bottom: var(--border-sm) solid var(--color-surface-alt);
+}
+
+.retrieval-hit:last-child {
+	border-bottom: 0;
+	padding-bottom: 0;
+}
+
+/* The brand may break mid-name rather than force the panel wider. */
+.retrieval-hit__brand {
+	overflow-wrap: anywhere;
+}
+
+.retrieval-hit__slogan {
+	min-width: 0;
+	overflow-wrap: anywhere;
+}

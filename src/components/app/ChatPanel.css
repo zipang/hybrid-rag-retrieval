@@ -1,0 +1,24 @@
+/* ChatPanel: the conversation column. Panel owns the surface, so these rules
+   only handle the scroll area and the composer edge. */
+.chat-panel__list {
+	flex: 1;
+	min-height: 0;
+	min-width: 0;
+	overflow-y: auto;
+}
+
+.chat-panel__turns {
+	min-width: 0;
+}
+
+.chat-panel__error {
+	background: var(--color-action-danger-muted);
+	border: var(--border-sm) solid var(--color-action-danger);
+	color: var(--color-action-danger);
+	padding: var(--space-sm) var(--space-md);
+}
+
+.chat-panel__composer {
+	border-top: var(--border-sm) solid var(--color-surface-alt);
+	padding-top: var(--space-base);
+}

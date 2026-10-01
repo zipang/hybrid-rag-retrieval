@@ -127,10 +127,26 @@ A later ticket uses this POC as a bench. The bench compares:
 datasets/   datasets (not committed)
 docs/       local documentation mirrors (not committed)
 memos/      technical review memos
+presets/    elevation and border-width presets
 roadmap/    tickets: spec and plan
 scripts/    setup and indexing scripts
 src/        application source
+DESIGN.md   design tokens and component rules
+design-tokens.css   the same tokens as CSS variables
 ```
+
+## Front end
+
+The chat interface is a React application served by the Bun server on the same
+origin as the API. Start it with `bun run dev` and open
+<http://localhost:3000>.
+
+Its structure follows Atomic Design. `VStack`, `HStack`, and `Grid` in
+`src/components/layout/` are the only way to arrange anything; `Heading` and
+`Text` are the only way to write text. A component styles itself through the
+tokens in `design-tokens.css` and never writes a colour, radius, or shadow
+literally. See [`src/components/README.md`](src/components/README.md) for the
+rules.
 
 ## Memos
 
@@ -140,16 +156,31 @@ These memos record our findings
 
 ## Glossary
 
+- **Atomic Design**: the folder rule that places generic components low and
+  product components high, so imports flow in one direction only.
+- **color literal**: a raw color value written in a stylesheet instead of read
+  from a design token. It is a defect in this project.
+- **component kit**: the set of components in `src/components/` that every
+  screen is built from.
 - **content field**: the one short text field that carries the meaning of a
   record, for example the citation text.
 - **corpus**: the full set of records that the project indexes.
 - **dense vector**: a fixed-length list of numbers that represents the meaning
   of a text. It answers a semantic search.
+- **design token**: a named value, such as a color or a spacing step, defined
+  once in `design-tokens.css` and used everywhere through `var()`.
+- **Design System**: the pair of files, `DESIGN.md` and `design-tokens.css`,
+  that define every token and every component rule.
 - **filter field**: a payload field that narrows a search, for example the year
   or the author. It does not enter the vectors.
+- **flat design**: a style with no shadow and no corner radius. This project
+  separates surfaces with a border and with space instead.
+- **gap**: the space between the children of a stack or a grid.
 - **hybrid search**: a search that combines a keyword search and a semantic
   search.
 - **index**: the data structure that makes a search fast.
+- **layout primitive**: one of `VStack`, `HStack`, or `Grid`. They are the only
+  way to arrange content in this project.
 - **LLM (Large Language Model)**: a model that reads and writes natural
   language. The chat application uses it to answer a question.
 - **RAG (Retrieval-Augmented Generation)**: a method. The application first

@@ -1,0 +1,7 @@
+/* Panel: the bordered surface. Flat and square by Design System rule, so the
+   border is a hairline and there is no shadow. */
+.panel {
+	background: var(--color-surface-card);
+	border: var(--border-sm) solid var(--color-surface-alt);
+	min-width: 0;
+}

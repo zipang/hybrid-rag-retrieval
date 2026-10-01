@@ -1,26 +1,4 @@
 .h-stack {
 	display: flex;
 	flex-direction: row;
-	gap: var(--layout-gap, var(--space-base));
-	flex-wrap: var(--layout-wrap, nowrap);
-	justify-content: var(--layout-stack-items, flex-start);
-	align-items: var(--layout-align-items, center);
-	margin: var(--layout-margin, 0);
-	margin-inline: var(--layout-margin-x, var(--layout-margin, 0));
-	margin-block: var(--layout-margin-y, var(--layout-margin, 0));
-	margin-top: var(--layout-margin-top, var(--layout-margin-y, var(--layout-margin, 0)));
-	margin-right: var(--layout-margin-right, var(--layout-margin-x, var(--layout-margin, 0)));
-	margin-bottom: var(--layout-margin-bottom, var(--layout-margin-y, var(--layout-margin, 0)));
-	margin-left: var(--layout-margin-left, var(--layout-margin-x, var(--layout-margin, 0)));
-	padding: var(--layout-padding, 0);
-	padding-inline: var(--layout-padding-x, var(--layout-padding, 0));
-	padding-block: var(--layout-padding-y, var(--layout-padding, 0));
-	padding-top: var(--layout-padding-top, var(--layout-padding-y, var(--layout-padding, 0)));
-	padding-right: var(--layout-padding-right, var(--layout-padding-x, var(--layout-padding, 0)));
-	padding-bottom: var(--layout-padding-bottom, var(--layout-padding-y, var(--layout-padding, 0)));
-	padding-left: var(--layout-padding-left, var(--layout-padding-x, var(--layout-padding, 0)));
-}
-
-.h-stack--inline {
-	display: inline-flex;
 }

@@ -33,6 +33,12 @@ export interface TextProps {
 	htmlFor?: string;
 	/** Extra classes appended to the component's own class. */
 	className?: string;
+	/**
+	 * ARIA role, needed when the text carries live status such as an error
+	 * message read by a screen reader.
+	 * @defaultValue none (unset)
+	 */
+	role?: "alert" | "status";
 	/** Content of the text block. */
 	children: ReactNode;
 }
@@ -57,6 +63,7 @@ export const Text: FC<TextProps> = ({
 	as = "p",
 	htmlFor,
 	className = "",
+	role,
 	children,
 }) => {
 	const Tag = as
@@ -70,6 +77,7 @@ export const Text: FC<TextProps> = ({
 			className={allClasses}
 			style={style}
 			{...(htmlFor ? { htmlFor } : {})}
+			{...(role ? { role } : {})}
 		>
 			{children}
 		</Tag>

@@ -1,84 +1,93 @@
-import { type CSSProperties, type FC } from "react"
+import type { CSSProperties, FC, ReactNode } from "react"
 
+import type { GapToken } from "../utils/spacing"
 import type { LayoutTag } from "../utils/tag"
-import { buildSpacingStyle, type GapProps, type SpacingProps } from "../utils/spacing"
-import { type StackBaseProps, stackContentStyle } from "./utils/stack"
 
 import "./HStack.css"
 
-/** Cross-row alignment of children inside a horizontal stack. */
-type HStackAlign = "top" | "bottom" | "center" | "baseline" | "flex-start" | "flex-end";
+/** How children are placed along the row. */
+type HStackJustify = "start" | "center" | "end" | "between";
 
-/** Props of the horizontal flex stack. */
-export interface HStackProps extends SpacingProps, GapProps, StackBaseProps {
-	/** Where children sit along the row. @defaultValue "left" */
-	stackItems?: "left" | "right" | "center" | "justify" | "evenly";
-	/** How children line up across the row. @defaultValue "center" */
-	alignItems?: HStackAlign;
-	/** Semantic grouping element rendered by the stack. @defaultValue "div" */
+/** How children line up across the row. */
+type HStackAlign = "start" | "center" | "end" | "baseline" | "stretch";
+
+/** Props of the horizontal stack. */
+export interface HStackProps {
+	/** Content laid out in a row. */
+	children?: ReactNode;
+	/** Space between children. @defaultValue "md" */
+	gap?: GapToken;
+	/** How children are distributed along the row. @defaultValue "start" */
+	justify?: HStackJustify;
+	/** How children line up across the row. @defaultValue "stretch" */
+	align?: HStackAlign;
+	/** Space around the stack, on every side. @defaultValue none */
+	padding?: GapToken;
+	/** Allow children to wrap onto new lines. @defaultValue false */
+	wrap?: boolean;
+	/** Element rendered. @defaultValue "div" */
 	as?: LayoutTag;
+	/** Extra class for the component's own rules. */
+	className?: string;
+	/** Extra inline styles, merged last. @defaultValue none */
+	style?: CSSProperties;
 }
 
-/** `stackItems` → `--layout-stack-items` value (only non-default values needed). */
-const STACK_ITEMS: Record<Exclude<HStackProps["stackItems"], undefined>, string> = {
-	left: "flex-start",
-	right: "flex-end",
+/** `justify` → the CSS `justify-content` value. */
+const JUSTIFY: Record<HStackJustify, string> = {
+	start: "flex-start",
 	center: "center",
-	justify: "space-between",
-	evenly: "space-evenly",
+	end: "flex-end",
+	between: "space-between",
 };
 
-/** `alignItems` → `--layout-align-items` value (only non-default values needed). */
-const ALIGN_ITEMS: Record<HStackAlign, string> = {
-	top: "flex-start",
-	bottom: "flex-end",
+/** `align` → the CSS `align-items` value. */
+const ALIGN: Record<HStackAlign, string> = {
+	start: "flex-start",
 	center: "center",
+	end: "flex-end",
 	baseline: "baseline",
-	"flex-start": "flex-start",
-	"flex-end": "flex-end",
+	stretch: "stretch",
 };
 
 /**
  * Horizontal flex container: children flow left to right.
- * Compose rows of controls and chips with it instead of raw divs.
  *
- * @param props - Stack direction is fixed; everything else comes from
- *   spacing/gap tokens plus the intuitive placement keywords.
- * @returns A flex row element (`as`, default `<div>`).
+ * @param props - Gap, distribution, alignment, padding, wrapping, and element
+ *   override.
+ * @returns A flex row element.
  * @example
- * <HStack gap="sm" alignItems="top" as="header">
+ * <HStack gap="sm" justify="between" as="header">
  *   <Heading level={1}>Titre</Heading>
  *   <Button>Envoyer</Button>
  * </HStack>
  */
 export const HStack: FC<HStackProps> = ({
 	children,
+	gap = "md",
+	justify = "start",
+	align = "stretch",
+	padding = "none",
+	wrap = false,
+	as = "div",
 	className = "",
 	style,
-	gap = "base",
-	wrap = false,
-	inline = false,
-	as = "div",
-	stackItems,
-	alignItems,
-	...spacing
 }) => {
 	const Tag = as
-	const mergedStyle: CSSProperties = {
-		...buildSpacingStyle(spacing),
-		...stackContentStyle(gap, wrap),
-		...(stackItems ? { "--layout-stack-items": STACK_ITEMS[stackItems] } : {}),
-		...(alignItems ? { "--layout-align-items": ALIGN_ITEMS[alignItems] } : {}),
-		...style,
-	}
-
-	const baseClass = inline ? "h-stack h-stack--inline" : "h-stack"
-
-	// Compose classes without stray spaces when className is empty.
-	const allClasses = [baseClass, className].filter(Boolean).join(" ")
+	const classes = ["h-stack", className].filter(Boolean).join(" ")
 
 	return (
-		<Tag className={allClasses} style={mergedStyle}>
+		<Tag
+			className={classes}
+			style={{
+				gap: `var(--space-${gap})`,
+				justifyContent: JUSTIFY[justify],
+				alignItems: ALIGN[align],
+				padding: padding === "none" ? undefined : `var(--space-${padding})`,
+				flexWrap: wrap ? "wrap" : "nowrap",
+				...style,
+			}}
+		>
 			{children}
 		</Tag>
 	)

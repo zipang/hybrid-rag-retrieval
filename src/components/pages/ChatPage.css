@@ -1,0 +1,16 @@
+/* ChatPage: the single screen. Grid for the two columns, stacks inside. */
+.chat-page {
+	min-height: 100vh;
+	max-width: 80rem;
+	margin-inline: auto;
+}
+
+.chat-page__columns {
+	flex: 1;
+	min-height: 0;
+}
+
+.chat-page__toggle {
+	cursor: pointer;
+	white-space: nowrap;
+}

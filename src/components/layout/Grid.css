@@ -1,23 +1,28 @@
 .grid {
 	display: grid;
-	gap: var(--layout-gap, var(--space-base));
-	column-gap: var(--layout-column-gap, var(--layout-gap, var(--space-base)));
-	row-gap: var(--layout-row-gap, var(--layout-gap, var(--space-base)));
-	grid-template-columns: var(--grid-template-columns, none);
-	grid-template-rows: var(--grid-template-rows, none);
-	grid-auto-rows: var(--grid-auto-rows, auto);
-	margin: var(--layout-margin, 0);
-	margin-inline: var(--layout-margin-x, var(--layout-margin, 0));
-	margin-block: var(--layout-margin-y, var(--layout-margin, 0));
-	margin-top: var(--layout-margin-top, var(--layout-margin-y, var(--layout-margin, 0)));
-	margin-right: var(--layout-margin-right, var(--layout-margin-x, var(--layout-margin, 0)));
-	margin-bottom: var(--layout-margin-bottom, var(--layout-margin-y, var(--layout-margin, 0)));
-	margin-left: var(--layout-margin-left, var(--layout-margin-x, var(--layout-margin, 0)));
-	padding: var(--layout-padding, 0);
-	padding-inline: var(--layout-padding-x, var(--layout-padding, 0));
-	padding-block: var(--layout-padding-y, var(--layout-padding, 0));
-	padding-top: var(--layout-padding-top, var(--layout-padding-y, var(--layout-padding, 0)));
-	padding-right: var(--layout-padding-right, var(--layout-padding-x, var(--layout-padding, 0)));
-	padding-bottom: var(--layout-padding-bottom, var(--layout-padding-y, var(--layout-padding, 0)));
-	padding-left: var(--layout-padding-left, var(--layout-padding-x, var(--layout-padding, 0)));
+	grid-template-columns: minmax(0, 1fr);
+}
+
+/* Column counts as classes, not inline styles, so a media query can
+   collapse the grid on a narrow viewport. */
+.grid--cols-2 {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.grid--cols-3 {
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+/* The two-region layout: a wide conversation beside a narrower result list. */
+.grid--split {
+	grid-template-columns: 2fr 1fr;
+}
+
+/* Every multi-column layout collapses to one column on a narrow viewport. */
+@media (max-width: 48rem) {
+	.grid--cols-2,
+	.grid--cols-3,
+	.grid--split {
+		grid-template-columns: minmax(0, 1fr);
+	}
 }

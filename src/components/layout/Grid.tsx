@@ -1,93 +1,67 @@
-import { type CSSProperties, type FC, type ReactNode } from "react"
+import type { CSSProperties, FC, ReactNode } from "react"
 
-import {
-	buildSpacingStyle,
-	type SpaceToken,
-	type SpacingProps,
-	spaceVar,
-} from "../utils/spacing"
+import type { GapToken } from "../utils/spacing"
 import type { LayoutTag } from "../utils/tag"
 
 import "./Grid.css"
 
-/** Props of the grid layout container. */
-export interface GridProps extends SpacingProps {
-	/** Content laid out by the grid. */
+/** Props of the grid container. */
+export interface GridProps {
+	/** Content laid out in a grid. */
 	children?: ReactNode;
-	/** Fixed number of equal columns. @defaultValue unset */
-	columns?: number;
-	/** Explicit CSS grid-template-columns value (escape hatch). */
-	templateColumns?: string;
-	/** Explicit CSS grid-template-rows value (escape hatch). */
-	templateRows?: string;
-	/** Height of implicitly created rows. */
-	autoRows?: string;
-	/** Space between all children. @defaultValue base */
-	gap?: SpaceToken;
-	/** Overrides the column gap only. */
-	columnGap?: SpaceToken;
-	/** Overrides the row gap only. */
-	rowGap?: SpaceToken;
-	/** Extra classes appended to the component's own class. */
-	className?: string;
-	/** Semantic grouping element rendered by the grid. @defaultValue div */
+	/**
+	 * Named column layout. `"split"` is a wide region beside a narrower one;
+	 * the numeric values are equal columns.
+	 * @defaultValue 1
+	 */
+	columns?: 1 | 2 | 3 | "split";
+	/** Space between children. @defaultValue "md" */
+	gap?: GapToken;
+	/** Space around the grid, on every side. @defaultValue none */
+	padding?: GapToken;
+	/** Element rendered. @defaultValue "div" */
 	as?: LayoutTag;
+	/** Extra class for the component's own rules. */
+	className?: string;
+	/** Extra inline styles, merged last. @defaultValue none */
+	style?: CSSProperties;
 }
 
 /**
- * Grid container for card layouts and tiled content.
- * Simple mode repeats `columns` equal tracks; combine with spacing tokens.
+ * Grid container. Use it for the page's main regions; use the stacks for
+ * everything inside a region. The column layout is a class, so a media query
+ * in `Grid.css` collapses it on a narrow viewport.
  *
- * @param props - Track count plus token-based gaps and spacing.
- * @returns A grid element (`as`, default `<div>`).
+ * @param props - Column layout, gap, and padding.
+ * @returns A grid element.
  * @example
- * <Grid columns={3} gap="md" padding="lg">
- *   <Card />
- *   <Card />
+ * <Grid columns="split" gap="lg" as="main">
+ *   <ChatPanel />
+ *   <RetrievalPanel />
  * </Grid>
  */
 export const Grid: FC<GridProps> = ({
 	children,
-	columns,
-	templateColumns,
-	templateRows,
-	autoRows,
-	gap = "base",
-	columnGap,
-	rowGap,
-	className = "",
+	columns = 1,
+	gap = "md",
+	padding = "none",
 	as = "div",
-	...spacing
+	className = "",
+	style,
 }) => {
 	const Tag = as
-	const style: CSSProperties = {
-		...buildSpacingStyle(spacing),
-		"--layout-gap": spaceVar(gap),
-		...(columnGap ? { "--layout-column-gap": spaceVar(columnGap) } : {}),
-		...(rowGap ? { "--layout-row-gap": spaceVar(rowGap) } : {}),
-		...(templateColumns ? { "--grid-template-columns": templateColumns } : {}),
-		...(templateRows ? { "--grid-template-rows": templateRows } : {}),
-		...(autoRows ? { "--grid-auto-rows": autoRows } : {}),
-	}
-
-	// Templates are escape hatches: they win over the simple column mode.
-	if (!templateColumns && columns) {
-		style["--grid-template-columns"] = `repeat(${columns}, 1fr)`
-	}
-
-	// Mixing the simple mode with escape hatches signals a props mistake.
-	// The check runs in every environment; bun test exposes no DEV flag.
-	const usesTemplates = Boolean(templateColumns || templateRows || autoRows)
-	if (columns && usesTemplates) {
-		console.warn(
-			"Grid: 'columns' is ignored because template props are set. Remove one of the two modes.",
-		)
-	}
-
-	const allClasses = ["grid", className].filter(Boolean).join(" ")
+	const layoutClass = typeof columns === "number" ? `grid--cols-${columns}` : `grid--${columns}`
+	const classes = ["grid", layoutClass, className].filter(Boolean).join(" ")
 
 	return (
-		<Tag className={allClasses} style={style}>
+		<Tag
+			className={classes}
+			style={{
+				gap: `var(--space-${gap})`,
+				padding: padding === "none" ? undefined : `var(--space-${padding})`,
+				...style,
+			}}
+		>
 			{children}
 		</Tag>
 	)

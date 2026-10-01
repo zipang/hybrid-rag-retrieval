@@ -1,11 +1,8 @@
 /**
- * Semantic HTML elements a layout container may render as.
+ * Elements a layout container may render as.
  *
- * The union is the enforcement: TS rejects non-grouping tags (`span`, `a`,
- * `i`, `b`, `hr`, `img`, `br`, `li`, `p`, …) at every call site of a layout
- * component's `as` prop — a layout container must be a grouping element.
- *
- * @defaultValue `"div"` (chosen by each component)
+ * The union is the enforcement: it rejects non-grouping tags (`span`, `li`,
+ * `p`, …) so a layout container stays a grouping element.
  */
 export type LayoutTag =
 	| "div"
@@ -19,5 +16,5 @@ export type LayoutTag =
 	| "ul"
 	| "ol"
 	| "form"
+	| "label"
 	| "figure"
-	| "fieldset"
