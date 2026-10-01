@@ -118,7 +118,7 @@ schema titles, and generic in-memory and streaming readers.
   - Files: `demo/index.html`
   - Depends: Task 8
 
-- [ ] **Task 10: Smoke script + ticket docs**
+- [x] **Task 10: Smoke script + ticket docs**
   - Acceptance: `bun run scripts/smoke-retrieval.ts` runs the three README example queries and prints ranked results for manual inspection; a short `roadmap/T0001/README.md` documents setup → index → query → chat; `.env.sample` is complete.
   - Verify: smoke script produces non-empty sensible results for all three queries; a fresh reader can follow the README from zero.
   - Files: `scripts/smoke-retrieval.ts`, `roadmap/T0001/README.md`
