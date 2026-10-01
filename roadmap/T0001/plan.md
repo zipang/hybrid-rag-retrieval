@@ -70,14 +70,14 @@ schema titles, and generic in-memory and streaming readers.
   - Files: `src/lib/embedder.ts`, `src/lib/embedder.test.ts`
   - Depends: Task 1
 
-- [ ] **Task 4: Qdrant client helpers + collection schema**
+- [x] **Task 4: Qdrant client helpers + collection schema**
   - Acceptance: thin `fetch` wrapper (`ensureCollection`, `upsert`, `queryHybrid`, `deleteCollection`) reads `QDRANT_URL`; `ensureCollection` creates `slogans` with a `dense` (Cosine, size 1024) named vector and a `bm25` sparse vector with `modifier: "idf"`, then creates payload indexes `annee` (integer) and `marque` (keyword); the collection is created only if absent (probe `GET /collections/{name}/exists`). `ensureCollection` must run before any upsert so the payload indexes exist before ingestion (required for Qdrant's filterable HNSW).
   - Verify: `bun test src/lib/qdrant.test.ts` passes with a stubbed `fetch`; manually, `curl localhost:6333/collections/slogans` shows both vector configs and the two payload indexes after running the helper.
   - Files: `src/lib/qdrant.ts`, `src/lib/qdrant.test.ts`
   - Depends: Task 1
 
 ### Checkpoint: Foundation
-- [ ] `bun test` green; Qdrant starts from the binary and the collection can be created
+- [x] `bun test` green; Qdrant starts from the binary and the collection can be created
 - [ ] Review with human before indexing the corpus
 
 ### Phase 2: Core Features
