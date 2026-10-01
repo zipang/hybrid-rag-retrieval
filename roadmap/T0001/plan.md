@@ -112,7 +112,7 @@ schema titles, and generic in-memory and streaming readers.
 
 ### Phase 3: Polish
 
-- [ ] **Task 9: Demo chat UI**
+- [x] **Task 9: Demo chat UI**
   - Acceptance: `demo/index.html` is a single raw HTML/JS page (no build step) with a message list, input, streaming token rendering, and a toggle/listing of the slogans the last turn retrieved; it posts to `/api/chat` and renders markdown-free plain text.
   - Verify: open `localhost:3000`; ask each README example query; answers stream and cited slogans match `/api/slogans` results.
   - Files: `demo/index.html`
