@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { buildEmbedder, createEmbedder, type DenseModel } from "./embedder"
+import { buildEmbedder, createEmbedder, type DenseModel, resolveMaxLength } from "./embedder"
 
 describe("buildEmbedder", () => {
 	const dense: DenseModel = {
@@ -53,5 +53,24 @@ describe("createEmbedder", () => {
 		await expect(
 			createEmbedder({ EMBEDDING_PROVIDER: "voyage", EMBEDDING_API_KEY: "secret" }),
 		).rejects.toThrow(/no adapter/)
+	})
+})
+
+describe("resolveMaxLength", () => {
+	test("defaults to the corpus-sized 32 tokens", () => {
+		expect(resolveMaxLength({})).toBe(32)
+	})
+
+	test("reads a positive integer from the environment", () => {
+		expect(resolveMaxLength({ EMBEDDING_MAX_LENGTH: "16" })).toBe(16)
+	})
+
+	test("rejects a non-positive or non-numeric value", () => {
+		expect(() => resolveMaxLength({ EMBEDDING_MAX_LENGTH: "0" })).toThrow(
+			/Invalid EMBEDDING_MAX_LENGTH/,
+		)
+		expect(() => resolveMaxLength({ EMBEDDING_MAX_LENGTH: "many" })).toThrow(
+			/Invalid EMBEDDING_MAX_LENGTH/,
+		)
 	})
 })

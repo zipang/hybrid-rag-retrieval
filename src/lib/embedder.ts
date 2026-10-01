@@ -26,6 +26,10 @@ export type EmbedderEnv = {
 	EMBEDDING_PROVIDER?: string
 	EMBEDDING_MODEL?: string
 	EMBEDDING_API_KEY?: string
+	/** Dense model max token length. Defaults to `DEFAULT_MAX_LENGTH`. */
+	EMBEDDING_MAX_LENGTH?: string
+	/** Extra environment values, so `process.env` is assignable. */
+	[key: string]: string | undefined
 }
 
 /** Provider names that require a remote API key; no adapter ships in this POC. */
@@ -33,6 +37,32 @@ const CLOUD_PROVIDERS = new Set(["openai", "voyage", "cohere", "mistral"])
 
 /** Default local dense model alias. */
 const DEFAULT_DENSE_MODEL = "intfloat/multilingual-e5-large"
+
+/**
+ * Default dense model max token length.
+ *
+ * FastEmbed pads every text to this width, so the value drives the compute
+ * cost. The slogan corpus measures 27 tokens at the maximum (236 records), so
+ * 32 keeps every token with a small margin. The FastEmbed default is 512.
+ */
+const DEFAULT_MAX_LENGTH = 32
+
+/** Resolve the dense model max token length from the environment. */
+export const resolveMaxLength = (env: EmbedderEnv): number => {
+	const raw = env.EMBEDDING_MAX_LENGTH
+
+	if (raw === undefined || raw === "") {
+		return DEFAULT_MAX_LENGTH
+	}
+
+	const value = Number(raw)
+
+	if (!Number.isSafeInteger(value) || value <= 0) {
+		throw new Error(`Invalid EMBEDDING_MAX_LENGTH "${raw}"; expected a positive integer.`)
+	}
+
+	return value
+}
 
 /** Combine a dense model behind the embedder interface. */
 export const buildEmbedder = (dense: DenseModel, dims: number): Embedder => ({
@@ -64,7 +94,10 @@ const createLocalEmbedder = async (env: EmbedderEnv): Promise<Embedder> => {
 		)
 	}
 
-	const dense = await FlagEmbedding.init({ model: selection.model })
+	const dense = await FlagEmbedding.init({
+		model: selection.model,
+		maxLength: resolveMaxLength(env),
+	})
 
 	return buildEmbedder(dense, selection.dim)
 }
