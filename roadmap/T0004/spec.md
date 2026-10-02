@@ -97,7 +97,7 @@ Profiles have these proposed definitions:
 | Detail | `coarse` | `detailed` |
 | --- | --- | --- |
 | Dependency connections | Retain | Retain |
-| Universal word classes | Retain | Retain |
+| Universal word classes | Retain, with `PROPN` mapped to `NOUN` | Retain |
 | Relative word order | Retain | Retain |
 | Dependency labels | Retain base labels | Retain full labels, including subtypes |
 | Grammatical features | Remove | Retain an explicit allowlist |
@@ -107,6 +107,18 @@ Profiles have these proposed definitions:
 The proposed detailed allowlist is `Definite`, `Gender`, `Mood`, `Number`, `Person`, `Tense`, `VerbForm`, and `Voice`.
 Record missing features consistently. Do not infer missing features from lexical identity.
 Canonicalize annotation order so equivalent annotations generate identical representations.
+
+### Word-class normalization
+
+A word class can carry a lexical difference that has no place in a structural
+comparison. The class `PROPN` (proper noun) and the class `NOUN` (common noun)
+are both nominal. Whether a word is a "named thing" or a "common thing" is a
+property of the word, not of the structure.
+
+The `coarse` profile maps `PROPN` onto `NOUN`, so a proper noun and a common
+noun compare as one nominal class. The `detailed` profile keeps the raw class.
+This rule was added after the parser evaluation showed the same interjection
+tagged as `NOUN` in one sentence and `PROPN` in another.
 
 Support sentence fragments that produce valid trees, because slogans often omit complete clauses.
 For multiple sentences, preserve sentence boundaries in a grammatical forest and encode the complete content field.

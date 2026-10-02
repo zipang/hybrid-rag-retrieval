@@ -94,6 +94,18 @@ const encodeGold = (
 	return encodeTree(abstractTree(parsed, profile), config).map((vector) => vector.values)
 }
 
+/** Token-level accuracy of the parser against the gold trees. */
+export type ParserAccuracy = {
+	/** Tokens compared, over the texts whose token count matches the gold. */
+	total: number
+	/** Share of tokens with the correct `UPOS`. */
+	upos: number
+	/** Share of tokens with the correct `HEAD`. */
+	head: number
+	/** Share of tokens with the correct `DEPREL`. */
+	deprel: number
+}
+
 /** Shape of the evaluation report. */
 export type SyntaxReport = {
 	profile: SyntaxProfile
@@ -103,6 +115,8 @@ export type SyntaxReport = {
 	structural: { total: number; correct: number; accuracy: number }
 	failures: string[]
 	latencyMs: { encode: number; parse: number }
+	/** Parser token accuracy, present only for the parser source. */
+	parser?: ParserAccuracy
 }
 
 /** Options for one evaluation run. */
@@ -233,16 +247,82 @@ const parseProfile = (argv: readonly string[]): SyntaxProfile => {
 	return value
 }
 
+/**
+ * Measure the parser's token accuracy against the gold trees.
+ *
+ * The function compares `UPOS`, `HEAD`, and `DEPREL` token by token. It compares
+ * a text only when the parser produces the same number of sentences and the
+ * same number of tokens. It reports the share of matching tokens.
+ */
+export const parserAccuracy = (data: TestData, parsed: Map<string, ParsedText>): ParserAccuracy => {
+	let total = 0
+	let uposOk = 0
+	let headOk = 0
+	let deprelOk = 0
+
+	for (const [text, entry] of Object.entries(data.texts)) {
+		const gold = entry.sentences
+		const produced = parsed.get(text)?.sentences
+
+		if (produced === undefined || produced.length !== gold.length) {
+			continue
+		}
+
+		for (const [sentenceIndex, goldSentence] of gold.entries()) {
+			const producedSentence = produced[sentenceIndex]
+
+			if (producedSentence === undefined || producedSentence.length !== goldSentence.length) {
+				continue
+			}
+
+			for (const [tokenIndex, goldToken] of goldSentence.entries()) {
+				const producedToken = producedSentence[tokenIndex]
+
+				if (producedToken === undefined) {
+					continue
+				}
+
+				total += 1
+
+				if (goldToken[2] === producedToken[2]) {
+					uposOk += 1
+				}
+
+				if (Number(goldToken[3]) === producedToken[3]) {
+					headOk += 1
+				}
+
+				if (goldToken[4] === producedToken[4]) {
+					deprelOk += 1
+				}
+			}
+		}
+	}
+
+	const share = (value: number): number => (total === 0 ? 0 : value / total)
+
+	return { total, upos: share(uposOk), head: share(headOk), deprel: share(deprelOk) }
+}
+
 /** Format a report as a readable text block. */
 export const formatReport = (report: SyntaxReport): string => {
 	const percent = (value: number): string => `${(value * 100).toFixed(1)}%`
-
-	return [
+	const lines = [
 		`Syntax evaluation (${report.profile}, ${report.source}, encoder ${report.encoderVersion})`,
 		`  ranking accuracy:    ${percent(report.ranking.accuracy)} (${report.ranking.correct}/${report.ranking.total})`,
 		`  structural accuracy: ${percent(report.structural.accuracy)} (${report.structural.correct}/${report.structural.total})`,
 		`  failures:            ${report.failures.length}`,
-	].join("\n")
+	]
+
+	if (report.parser !== undefined) {
+		lines.push(
+			`  parser UPOS:         ${percent(report.parser.upos)} (${report.parser.total} tokens)`,
+			`  parser HEAD:         ${percent(report.parser.head)}`,
+			`  parser DEPREL:       ${percent(report.parser.deprel)}`,
+		)
+	}
+
+	return lines.join("\n")
 }
 
 /** Run the command-line evaluation. */
@@ -263,6 +343,7 @@ const main = async (): Promise<void> => {
 	// End-to-end run: parse every text with the real model, then encode.
 	const parser = createSyntaxParser(process.env)
 	const encoded = new Map<string, EncodedText>()
+	const parsed = new Map<string, ParsedText>()
 	const failures: string[] = []
 	let parseMs = 0
 	let encodeMs = 0
@@ -271,12 +352,13 @@ const main = async (): Promise<void> => {
 		const startParse = performance.now()
 
 		try {
-			const parsed = await parser.parse(text)
+			const tree = await parser.parse(text)
 			const startEncode = performance.now()
 
+			parsed.set(text, tree)
 			encoded.set(
 				text,
-				encodeTree(abstractTree(parsed, profile)).map((vector) => vector.values),
+				encodeTree(abstractTree(tree, profile)).map((vector) => vector.values),
 			)
 			parseMs += startEncode - startParse
 			encodeMs += performance.now() - startEncode
@@ -288,6 +370,7 @@ const main = async (): Promise<void> => {
 	const report = evaluateSyntax(data, { profile, source: "parser", encoded })
 	report.failures = [...new Set([...report.failures, ...failures])]
 	report.latencyMs = { parse: parseMs, encode: encodeMs }
+	report.parser = parserAccuracy(data, parsed)
 
 	console.log(formatReport(report))
 	console.log(`  parser failures:     ${failures.length}`)

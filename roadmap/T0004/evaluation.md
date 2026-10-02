@@ -198,6 +198,18 @@ The evaluation reports these numbers for each profile:
 The project fixes the judgments before it tunes the encoder weights. The
 held-out list stays out of every tuning step.
 
+The project reports the parser numbers separately from the encoder numbers. The
+gold evaluation measures the encoder with the hand-made trees. The parser
+evaluation measures the whole pipeline with the real model. A ranking case that
+fails only in the parser run is a parser error, not an encoder error. The
+project records the cause of each parser run failure before it judges the
+encoder.
+
+The coarse profile maps `PROPN` onto `NOUN`. The parser tags the same
+interjection as `NOUN` in one sentence and `PROPN` in another. The map removes
+that lexical difference, because it is not structural. See `spec.md`, "Word-class
+normalization".
+
 ## Review protocol
 
 The reviewer checks these points:

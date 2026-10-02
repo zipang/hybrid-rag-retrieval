@@ -312,27 +312,52 @@ The scores for three sample queries:
 
 | Pair | Reading | flat | role | nodeboost |
 | --- | --- | --- | --- | --- |
-| `x021` / `x019` | same negation and frame | 0.9081 | 0.8784 | 0.9041 |
-| `x021` / `x020` | no negation, different complement | 0.8405 | 0.8675 | 0.8967 |
-| `x021` / `x054` | shared adverbs only | 0.6498 | 0.6932 | 0.8236 |
-| `x021` / `x001` | unrelated base tree | 0.0552 | 0.0377 | 0.0510 |
-| `x012` / `x011` | shared frame and particle | 0.8895 | 0.9392 | 0.9221 |
-| `x012` / `x001` | unrelated base tree | 0.6699 | 0.7181 | 0.7618 |
+| "Il n'est jamais trop tard…" / "Il n'est jamais trop tôt…" | same negation and frame | 0.9081 | 0.8784 | 0.9041 |
+| "Il n'est jamais trop tard…" / "Il est toujours trop tard…" | no negation, different complement | 0.8405 | 0.8675 | 0.8967 |
+| "Il n'est jamais trop tard…" / "Toujours plus vite" | shared adverbs only | 0.6498 | 0.6932 | 0.8236 |
+| "Il n'est jamais trop tard…" / "Le garçon regarde le soleil" | unrelated base tree | 0.0552 | 0.0377 | 0.0510 |
+| "La voiture s'arrêta net…" / "Le dernier métro s'arrêta…" | shared frame and particle | 0.8895 | 0.9392 | 0.9221 |
+| "La voiture s'arrêta net…" / "Le garçon regarde le soleil" | unrelated base tree | 0.6699 | 0.7181 | 0.7618 |
 
 The `role` scheme changes the result in the intended direction:
 
-1. The missing negation costs less. `x021` / `x020` rises from `0.8405` to
-   `0.8675`, and it approaches `x019`, the true kin.
-2. A real kin rises. `x012` / `x011` rises from `0.8895` to `0.9392`.
-3. Unrelated trees stay at the floor. `x021` / `x001` stays near zero.
+1. The missing negation costs less. "Il n'est jamais trop tard…" / "Il est toujours trop tard…" rises from `0.8405` to
+   `0.8675`, and it approaches "Il n'est jamais trop tôt…", the true kin.
+2. A real kin rises. "La voiture s'arrêta net…" / "Le dernier métro s'arrêta…" rises from `0.8895` to `0.9392`.
+3. Unrelated trees stay at the floor. "Il n'est jamais trop tard…" / "Le garçon regarde le soleil" stays near zero.
 
-The measure also shows a risk. `role` raises `x012` / `x001` from `0.6699` to
+The measure also shows a risk. `role` raises "La voiture s'arrêta net…" / "Le garçon regarde le soleil" from `0.6699` to
 `0.7181`. The scheme can compress the gap between a real kin and a base tree.
 The final weights need the frozen evaluation in Task 11.
 
 The user approved the direction at Checkpoint B. The exact weights stay open for
 Task 11. The project must freeze them in a versioned encoder configuration
 before it indexes the corpus.
+
+### The coarse profile maps PROPN onto NOUN
+
+The parser evaluation found a class of error that is not structural. It tagged
+the same interjection as `NOUN` in one sentence and `PROPN` in another:
+
+- "Janvier ! Janvier !" → `Janvier/NOUN`.
+- "Février ! Février !" → `Février/PROPN`.
+
+The two sentences have the same shape. They differ only in the word class that
+the parser chose. The `NOUN` and `PROPN` classes are both nominal. The choice
+between a common noun and a proper noun is a lexical property of the word. The
+coarse profile exists to ignore lexical properties.
+
+The coarse profile therefore maps `PROPN` onto `NOUN`. Two nominal words always
+compare as one class. The detailed profile keeps the raw class.
+
+The user approved the map at a Checkpoint E review. The function `canonicalUpos`
+in `src/lib/syntax/abstraction.ts` applies it. The map raised the parser
+structural accuracy from `76.5%` to `82.4%` and kept the gold accuracy at
+`100%`.
+
+The map is narrow. The project keeps the other classes as they are, because the
+other parser disagreements are genuine tree errors. A fuller list is in
+section 12.
 
 ### Transport quirks on Qdrant 1.19.1
 
@@ -440,6 +465,106 @@ commercial use.
 - The project must mirror the `udpipe-wasm` and UDPipe documentation before
   adoption, as the specification requires.
 
+## 12. Parser behavior and failure modes
+
+The parser is `UDPipe 1.3.1` with the `french-gsd` model. The project measured
+it on the reviewed test data set. The run parses every text and encodes the
+result. The project recorded the failure cases and their cause.
+
+### Accuracy
+
+The parser run reports two kinds of number. The token accuracy measures the
+parse against the gold trees. The task accuracy measures the encoder over the
+parser trees.
+
+| Measure | Gold trees | Parser trees |
+| --- | --- | --- |
+| Ranking accuracy | 100.0% | 79.3% |
+| Structural accuracy | 100.0% | 82.4% |
+| Token `UPOS` | — | 95.1% |
+| Token `HEAD` | — | 82.2% |
+| Token `DEPREL` | — | 80.8% |
+| Failures | 0 | 0 |
+
+The gold run measures the encoder alone. It reaches 100%. The parser run
+measures the whole pipeline. It drops to about 80%. The difference is parser
+quality, not encoder quality. The head accuracy of `82.2%` is the main cause.
+
+### Failure classes
+
+The project grouped every failure by cause. Each class below gives the parser
+output for the failing text.
+
+**1. A wrong tree on a numeral sentence.** The parser built a different tree for
+two sentences that must match:
+
+- "Trois enfants jouent dans le parc" → `jouent/VERB/root`, `chats` is the
+  subject.
+- "Trois chats dorment dans le jardin" → `chats/NOUN/root`,
+  `dorment/ADV/advmod`.
+
+The second tree is wrong. The parser made the noun the root and tagged the verb
+as an adverb. This is a genuine parser error. No feature change repairs it.
+
+**2. A wrong subject on a fronted adverb.** The parser analyzed two future
+sentences differently:
+
+- "Demain, nous partirons tôt" → `Demain/PROPN/nsubj`, `nous/PRON/obj`.
+- "Demain, elle partira tôt" → `Demain/ADV/advmod`, `elle/PRON/nsubj`.
+
+The first tree is wrong. The parser made the fronted `Demain` the subject. The
+second tree is correct.
+
+**3. A wrong tag on a coordinated clause.**
+
+- "Le chat noir dort et le chien blanc veille" → `dort/ADJ/amod`,
+  `veille/VERB/root`.
+- "La fille chante et le garçon danse" → `chante/ADJ/amod`, `danse/ADJ/amod`.
+
+The parser tagged the finite verbs as adjectives. Both trees are wrong.
+
+**4. A verbless sentence scored below one.** Two adverb fragments share one
+shape, but the parser gave them slightly different features:
+
+- "Toujours plus vite" and "Souvent trop tard" score `0.893`, not `1.0`.
+
+The trees are the same shape. The small drop comes from a feature that the
+coarse profile keeps.
+
+**5. A cleft pair scored one where gold says different.** The parser gave two
+cleft sentences the same tree:
+
+- "C'est le gentil garçon qui regardait la lune en souriant".
+- "C'est la petite fille qui admirait la lune en chantant".
+
+Both parse as `NOUN/root` with one `ADJ/amod` and one relative `acl:relcl`. The
+two adjectives make the trees equal. The gold pair says `different`, because the
+gold trees use `advcl:cleft` and differ in depth. The parser is more consistent
+than the gold pair here. This case is a gold judgment to review, not a parser
+error.
+
+### Label mapping
+
+The parser uses the UD 2.5 label set. The gold trees use the current French
+guidelines. The known label differences are:
+
+- `acl:relcl` (parser) against `advcl:cleft` (gold) for clefts.
+- `nsubj` and `expl:subj` for the impersonal subject.
+- `obl:mod`, `obl` (parser) against `obl` (gold) for a modifier.
+
+The coarse profile keeps the base label, so most of these differences vanish.
+`acl:relcl` becomes `acl` and `advcl:cleft` becomes `advcl`, which still differ.
+
+### Effect on the project
+
+The encoder is validated on the gold trees at 100%. The parser adds noise. The
+noise is acceptable for a proof of concept. The project records the parser error
+rate. A future ticket can compare another parser or a better model.
+
+The failed cases do not block the pipeline. They show which structures the
+parser misses: numerals, fronted adverbs, coordinated verbs, and a few tag
+choices.
+
 ## References
 
 - [UD CoNLL-U format specification](https://universaldependencies.org/format.html)
@@ -463,6 +588,8 @@ commercial use.
 
 - **Adjacency list**: a tree form in which each node stores the index of its
   parent, instead of nested child lists.
+- **Common noun**: a word class for a general class of things, for example a
+  "chat" or a "jardin". In UD its tag is `NOUN`.
 - **CoNLL-U**: the plain-text file format that carries Universal Dependencies
   annotation as one line of ten fields per word.
 - **Component score**: the normalized score of one index for one record. It lies
@@ -473,6 +600,8 @@ commercial use.
   its governor, for example `nsubj` or `obj`.
 - **Dependency tree**: a syntax tree whose nodes are words. Each word points to
   one governor. The label on the link names the relation.
+- **Distinct pairing**: the rule that pairs each query sentence with its own
+  record sentence. One record sentence cannot match two query sentences.
 - **Edge**: the link between a word and its governor. The dependency label names
   the link.
 - **Feature weight**: the multiplier that one feature contributes to the vector.
@@ -480,6 +609,8 @@ commercial use.
 - **Governor**: the head word that another word depends on.
 - **Head accuracy**: the share of words whose governor the parser identifies
   correctly.
+- **Hungarian algorithm**: a method that pairs two sets to maximize the total
+  match. The project uses it to pair query sentences with record sentences.
 - **License**: the legal terms that govern the use and the redistribution of a
   work.
 - **MaxSim**: a comparator for multivectors. It sums, for each query row, the
@@ -502,6 +633,8 @@ commercial use.
   MaxSim sum by the larger sentence count on the two sides.
 - **Phrase node**: a node in a constituency tree that groups words, for example
   `NP`.
+- **Proper noun**: a word class for a named entity, for example a person or a
+  month. In UD its tag is `PROPN`. The coarse profile maps it onto `NOUN`.
 - **Relation accuracy**: the share of words whose dependency label the parser
   identifies correctly.
 - **Role**: the grammatical function of an edge, taken from its dependency
@@ -522,6 +655,8 @@ commercial use.
   dependency parsing.
 - **Universal Dependencies (UD)**: a cross-language standard for dependency
   annotation and word classes.
+- **UPOS equivalence**: a rule that treats two word classes as one for a
+  profile. The coarse profile treats `PROPN` and `NOUN` as one class.
 - **UPOS**: the universal word-class tag of a word, for example `NOUN` or
   `VERB`.
 - **Word class**: the grammatical category of a word, for example noun, verb,

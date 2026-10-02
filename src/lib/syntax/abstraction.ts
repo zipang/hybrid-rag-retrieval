@@ -83,6 +83,32 @@ const isPunctuation = (upos: string): boolean => upos === "PUNCT"
 const baseLabel = (deprel: string): string => deprel.split(":")[0] ?? deprel
 
 /**
+ * Word classes that mean the same thing for the coarse profile.
+ *
+ * `NOUN` and `PROPN` are both nominal. The choice between a common noun and a
+ * proper noun is a lexical property of the word, not a structural one. The
+ * coarse profile compares structure only, so it maps a proper noun onto the
+ * common-noun class. The detailed profile keeps the raw class.
+ */
+export const COARSE_UPOS_EQUIVALENCE: Record<string, string> = {
+	PROPN: "NOUN",
+}
+
+/**
+ * Return the word class for one profile.
+ *
+ * The coarse profile maps an equivalent class onto its canonical class, for
+ * example `PROPN` onto `NOUN`. The detailed profile keeps the raw class.
+ */
+export const canonicalUpos = (upos: string, profile: SyntaxProfile): string => {
+	if (profile === "coarse") {
+		return COARSE_UPOS_EQUIVALENCE[upos] ?? upos
+	}
+
+	return upos
+}
+
+/**
  * Filter and canonicalize a feature string.
  *
  * The function splits the raw `FEATS` value on `|`, keeps the allowlisted keys,
@@ -153,7 +179,7 @@ export const abstractSentence = (
 		}
 
 		nodes.push({
-			upos,
+			upos: canonicalUpos(upos, profile),
 			deprel: profile === "coarse" ? baseLabel(deprel) : deprel,
 			head: newHead,
 			feats: canonicalFeatures(feats, profile),

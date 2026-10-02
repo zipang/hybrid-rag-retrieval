@@ -3,7 +3,9 @@ import {
 	AbstractionError,
 	abstractSentence,
 	abstractTree,
+	COARSE_UPOS_EQUIVALENCE,
 	canonicalFeatures,
+	canonicalUpos,
 	DETAILED_FEATURE_ALLOWLIST,
 } from "./abstraction"
 import type { ParsedSentence, ParsedText } from "./parser"
@@ -26,6 +28,27 @@ const SIMPLE: ParsedSentence = [
 	token("le", "le", "DET", 5, "det", "Definite=Def|Gender=Masc"),
 	token("soleil", "soleil", "NOUN", 3, "obj", "Gender=Masc|Number=Sing"),
 ]
+
+describe("canonicalUpos", () => {
+	test("maps a proper noun onto a common noun for the coarse profile", () => {
+		// A named month and a common noun share one nominal class.
+		expect(canonicalUpos("PROPN", "coarse")).toBe("NOUN")
+		expect(canonicalUpos("NOUN", "coarse")).toBe("NOUN")
+	})
+
+	test("keeps every other class unchanged for the coarse profile", () => {
+		expect(canonicalUpos("VERB", "coarse")).toBe("VERB")
+		expect(canonicalUpos("ADV", "coarse")).toBe("ADV")
+	})
+
+	test("keeps the raw class for the detailed profile", () => {
+		expect(canonicalUpos("PROPN", "detailed")).toBe("PROPN")
+	})
+
+	test("declares only the noun equivalence", () => {
+		expect(COARSE_UPOS_EQUIVALENCE).toEqual({ PROPN: "NOUN" })
+	})
+})
 
 describe("canonicalFeatures", () => {
 	test("removes every feature for the coarse profile", () => {
