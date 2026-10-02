@@ -1,6 +1,11 @@
 import { datasetConfigurations } from "../src/config/datasets"
 import { type Bm25Options, bm25Options } from "../src/lib/bm25"
 import { createEmbedder, type Embedder } from "../src/lib/embedder"
+import {
+	createIndexStateStore,
+	DEFAULT_INDEX_STATE_PATH,
+	type IndexStateStore,
+} from "../src/lib/index-state"
 import { createQdrantClient, type Point, type QdrantClient } from "../src/lib/qdrant"
 import type { Slogan } from "../src/models/slogan"
 import { streamDataset } from "../src/utils/data-utils"
@@ -16,8 +21,12 @@ export type IndexerDependencies = {
 	embedder: Pick<Embedder, "embedDenseDocuments">
 	/** BM25 options, shared with query time. */
 	bm25: Bm25Options
+	/** Durable index generation state. */
+	state: Pick<IndexStateStore, "beginRebuild" | "publish">
 	/** Sink for progress and rejection messages. */
 	log?: (message: string) => void
+	/** Encoding or scoring configuration identifier for the state record. */
+	configId?: string
 }
 
 /** Runtime options for one indexing run. */
@@ -90,6 +99,9 @@ export const indexSlogans = async (
 		log(`Indexed ${indexed} records`)
 	}
 
+	const begun = await dependencies.state.beginRebuild({ configId: dependencies.configId })
+	log(`Rebuild generation ${begun.generation}`)
+
 	await dependencies.client.deleteCollection()
 	await dependencies.client.ensureCollection()
 	log(`Indexing ${filePath}`)
@@ -115,6 +127,14 @@ export const indexSlogans = async (
 	}
 
 	await flush()
+
+	await dependencies.state.publish({
+		writer: begun.writer,
+		expectedGeneration: begun.generation,
+		recordCount: indexed,
+		configId: dependencies.configId,
+	})
+
 	log(`Done: ${indexed} indexed, ${accepted} read, ${rejected} rejected`)
 
 	return { accepted, rejected, indexed }
@@ -150,8 +170,9 @@ if (import.meta.main) {
 		const limit = parseLimit(process.argv.slice(2))
 		const client = createQdrantClient(process.env)
 		const embedder = await createEmbedder(process.env)
+		const state = createIndexStateStore(process.env.INDEX_STATE_PATH ?? DEFAULT_INDEX_STATE_PATH)
 		const summary = await indexSlogans(
-			{ client, embedder, bm25: bm25Options(process.env), log: logger },
+			{ client, embedder, bm25: bm25Options(process.env), state, log: logger },
 			{ limit },
 		)
 

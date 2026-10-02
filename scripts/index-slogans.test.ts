@@ -54,11 +54,13 @@ const createFakes = () => {
 	const calls: string[] = []
 	const upserts: Point[][] = []
 	const messages: string[] = []
+	const published: Array<{ recordCount: number }> = []
 
 	return {
 		calls,
 		upserts,
 		messages,
+		published,
 		dependencies: {
 			client: {
 				deleteCollection: async () => {
@@ -78,6 +80,14 @@ const createFakes = () => {
 				embedDenseDocuments: async (texts: string[]) => texts.map((text) => [text.length, 1]),
 			},
 			bm25: { language: "french", ascii_folding: true, avg_len: 7 },
+			state: {
+				beginRebuild: async () => ({ generation: "gen-1", writer: "writer-1" }),
+				publish: async (options: { recordCount: number }) => {
+					published.push({ recordCount: options.recordCount })
+
+					return { generation: "gen-1", status: "ready" as const }
+				},
+			},
 			log: (message: string) => {
 				messages.push(message)
 			},
@@ -128,6 +138,30 @@ describe("indexSlogans", () => {
 			expect(summary).toEqual({ accepted: 2, rejected: 0, indexed: 2 })
 			expect(fakes.upserts.flat()).toHaveLength(2)
 			expect(fakes.upserts.flat().map((point) => point.id)).toEqual([10, 11])
+		})
+	})
+
+	test("publishes the ready generation with the indexed count", async () => {
+		await withCorpus(THREE_VALID_BLOCKS_CORPUS, async (filePath) => {
+			const fakes = createFakes()
+
+			await indexSlogans(fakes.dependencies, { filePath, limit: 2 })
+
+			expect(fakes.published).toEqual([{ recordCount: 2 }])
+		})
+	})
+
+	test("leaves the generation unpublished when the writer fails", async () => {
+		await withCorpus(THREE_VALID_BLOCKS_CORPUS, async (filePath) => {
+			const fakes = createFakes()
+			fakes.dependencies.embedder.embedDenseDocuments = async () => {
+				throw new Error("embedder unavailable")
+			}
+
+			await expect(indexSlogans(fakes.dependencies, { filePath })).rejects.toThrow(
+				"embedder unavailable",
+			)
+			expect(fakes.published).toEqual([])
 		})
 	})
 
