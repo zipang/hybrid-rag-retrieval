@@ -195,5 +195,14 @@ These memos record our findings
   It answers a syntactic search.
 - **syntactic proximity**: a match on the exact words of a text. The sparse
   keyword vector answers it.
+- **syntax search**: retrieval by grammatical-tree resemblance, independent of
+  vocabulary and meaning. T0004 specifies this additional search mode.
+- **test data set**: the reviewed French sentences and their grammatical
+  annotations that the T0004 evaluation uses. The project keeps the term
+  "fixture" for the test runner only.
+- **test environment**: the isolated services, parser, and model that one test
+  run uses. A test builds the test environment from the test data set.
 - **vector database**: a database that stores vectors and finds the nearest
   vectors to a query vector.
+- **weighted retrieval**: the T0004 retrieval contract that combines normalized
+  index scores with explicit weights and returns records meeting a minimum score.

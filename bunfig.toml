@@ -1,0 +1,7 @@
+# Bun runtime and test configuration.
+
+[test]
+# `references/` holds read-only links to sibling projects. Bun follows the
+# links during test discovery, so prune the directory and run only this
+# project's tests.
+pathIgnorePatterns = ["references/**"]
