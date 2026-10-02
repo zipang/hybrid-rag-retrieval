@@ -143,20 +143,19 @@ specification:
 - Compute the cosine similarity, then apply `max(0, min(1, cosine))`.
 
 The similarity between one query text and one record uses the multivector rule
-from the memo, section 9. Every sentence is one row. The raw MaxSim value is the
-sum, over the query rows, of the best match against the record rows. The score
-divides that sum by the larger sentence count on the two sides:
+from the memo, section 9. Every sentence is one row. The rule pairs each query
+sentence with a **distinct** record sentence, using the optimal assignment. An
+unpaired sentence scores zero. The score divides the matched total by the larger
+sentence count on the two sides:
 
 ```text
-score = rawMaxSim / max(queryRows, recordRows)
+score = matchedTotal / max(queryRows, recordRows)
 ```
 
-A perfect equal-length match scores one. An unmatched sentence on the longer
-side scores zero, and the divisor averages that zero into the result.
-
-The reference implementation is in `/tmp/opencode/final-syntax-rank.py`. The
-project must move it into the repository as a real evaluation tool in Task 11.
-The numbers below are a first reference, not a frozen encoder result.
+A perfect equal-length match scores one. A query with two sentences against a
+record with one sentence scores `0.5` when the record sentence matches the first
+query sentence. The function `multivectorSimilarity` in `src/lib/scoring.ts`
+implements the rule. `scripts/evaluate-syntax.ts` uses it.
 
 ### Sample selection
 
@@ -433,17 +432,17 @@ not select syntax must work without a parser.
 - Confirm the caller defaults in the table above.
 - Confirm `BM25_SCALE = 3` after the real corpus statistics exist.
 - Confirm the syntax default weight for the first combined retrieval release.
-- Confirm the multivector normalization `rawMaxSim / max(queryRows, recordRows)`.
-  The user approved this rule at Checkpoint B.
-- Decide whether the coarse encoder needs an argument-order feature. Table 1
-  shows that a subject-object reversal scores `1.0000`. This is a Checkpoint E
-  question.
-- Freeze role-based feature weights in Task 11. Checkpoint B found that uniform
-  weights over-weight a single missing node. The `role` scheme in
-  `memos/syntax-trees.md`, section 9, moves the scores in the intended
-  direction. The exact weights stay open.
-- Move the reference scorer into the repository as a real evaluation tool in
-  Task 11.
+- Confirm the multivector rule: pair each query sentence with a distinct record
+  sentence, score an unpaired sentence as zero, divide by
+  `max(queryRows, recordRows)`. The user approved this rule at Checkpoint B.
+- Argument order: resolved. A subject-object reversal scores `1.0000`, and that
+  is correct. The coarse profile compares the tree shape alone, so the two
+  sentences share one tree. The test data set now marks that pair `equal`.
+- Feature weights are frozen in the encoder configuration
+  (`DEFAULT_ENCODER_CONFIG` in `src/lib/syntax/encoder.ts`). The role weights
+  make a core role count more than a modifier.
+- The reference scorer is now `scripts/evaluate-syntax.ts`. It runs the encoder
+  against the reviewed test data set.
 
 ## References
 

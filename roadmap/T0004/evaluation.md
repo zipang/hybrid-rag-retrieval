@@ -90,56 +90,97 @@ evaluation honest.
 
 A `structuralPairs` entry declares one relation for one profile:
 
-- `equal`: the two canonical trees must match. The encoder must produce the same
-  vector.
-- `different`: the two canonical trees must differ. The encoder must produce
-  different vectors.
+- `equal`: the two texts produce the same syntax score of one. Only exactly
+  isomorphic trees qualify.
+- `different`: the two texts produce a score below one. Any structural
+  difference makes the relation `different`.
+
+The relation is binary. The project does not use a middle "similar" band,
+because no review has established where such a band would start.
+
+### Similarity rule
+
+One text is a matrix of sentence vectors. The similarity pairs each query
+sentence with a **distinct** record sentence, using the optimal assignment. An
+unpaired sentence scores zero. The score divides the matched total by the larger
+sentence count:
+
+```text
+score = matchedTotal / max(queryRows, recordRows)
+```
+
+A query with two sentences against a record with one sentence scores `0.5` when
+the record sentence matches the first query sentence. The function
+`multivectorSimilarity` in `src/lib/scoring.ts` implements the rule.
 
 ## Inventory
 
 The test data set covers these structural families. Each family has two
-hand-written texts, so a ranking case can pair them.
+hand-written texts, so a ranking case can pair them. The table names each text
+by its own sentence.
 
-| Category | Texts | Grammatical feature under test |
+| Category | Text | Grammatical feature under test |
 | --- | --- | --- |
-| vocabulary | `x001` `x002` `x004` | Same tree, different words |
-| connection change | `x003` | Same words, different heads |
-| relative clause | `x005` `x006` | Cleft, relative clause, gerund |
-| passé simple | `x007` `x008` | Past tense, possessive, preposition |
-| oblique | `x009` `x010` | Two prepositional phrases |
-| reflexive | `x011` `x012` | Pronominal verb, adverb, preposition |
-| interjection | `x013` `x014` | Two exclamative fragments |
-| interrogative fragment | `x015` `x016` | Dislocated fragment, `Pourquoi pas ?` |
-| comparative | `x017` `x018` | `encore mieux` / `bien pire` |
-| negation-never | `x019` `x021` | `ne ... jamais`, impersonal `il` |
-| adverb tard/tot | `x020` `x021` | `tard` versus `tôt` |
-| infinitive subject | `x022` `x023` | `Voir, c'est croire`, comma |
-| coordination nominal | `x024` `x025` | Two coordinated nouns, no verb |
-| nominal PP | `x026` `x027` | Noun with a prepositional modifier |
-| adjective and adverb | `x028` `x029` | Attributive adjective, adverb |
-| numeral | `x030` `x031` | Number determiner, locative phrase |
-| future | `x032` `x033` | Future tense, fronted adverb |
-| fronted oblique | `x034` `x035` | Fronted prepositional phrase |
-| imperative | `x036` `x037` | Imperative mood |
-| infinitive complement | `x038` `x039` | `xcomp` with an infinitive |
-| clausal complement | `x040` `x041` | `que` complement clause |
-| gerund | `x042` `x043` | `en` + present participle |
-| passive | `x044` `x045` | Passive voice, optional agent |
-| exclamative | `x046` `x047` | `Quelle belle journée` |
-| coordination clausal | `x048` `x049` | Two coordinated clauses |
-| multiple sentences | `x050` `x051` | Sentence boundaries and a forest |
-| interjection multi-sentence | `x013` `x015` | Repeated exclamation, two fragments |
-| nominal fragment | `x052` `x053` | Verbless noun phrase |
-| adverbial fragment | `x054` `x055` | Verbless adverb phrase |
+| vocabulary | Le garçon regarde le soleil | Same tree, different words |
+| vocabulary | Un chat mange une souris | Same tree, different words |
+| vocabulary | La fille admire la lune | Same tree, different words |
+| connection change | Le soleil regarde le garçon | Same tree as the vocabulary texts |
+| relative clause | C'est le gentil garçon qui regardait la lune en souriant | Cleft, relative clause, gerund |
+| relative clause | C'est la petite fille qui admirait la lune en chantant | Cleft, relative clause, gerund |
+| passé simple | La petite fille posa sa main sur le chat | Past tense, possessive, preposition |
+| passé simple | La jeune femme posa son sac sur la table | Past tense, possessive, preposition |
+| oblique | Le train arrive en gare en retard | Two prepositional phrases |
+| oblique | Le bateau arrive au port en avance | Two prepositional phrases |
+| reflexive | Le dernier métro s'arrêta net au terminus | Pronominal verb, adverb, preposition |
+| reflexive | La voiture s'arrêta net devant la maison | Pronominal verb, adverb, preposition |
+| interjection | Janvier ! Janvier ! | Exclamative fragment |
+| interjection | Février ! Février ! | Exclamative fragment |
+| interrogative fragment | Vous ici ? Pourquoi pas ? | Dislocated fragment, two sentences |
+| interrogative fragment | Toi là ? Et alors ? | Dislocated fragment, two sentences |
+| comparative | C'est encore mieux en le disant | `encore mieux` |
+| comparative | C'est bien pire en le cachant | `bien pire` |
+| negation-never | Il n'est jamais trop tôt pour un espresso | `ne ... jamais`, impersonal `il` |
+| adverb tard/tot | Il est toujours trop tard pour se souvenir | `tard` |
+| adverb tard/tot | Il n'est jamais trop tard pour bien faire | `tard`, `ne ... jamais` |
+| infinitive subject | Voir, c'est croire | `Voir, c'est croire` |
+| infinitive subject | Partir, c'est mourir un peu | Comma, infinitive subject |
+| coordination nominal | Le pain et le fromage | Two coordinated nouns, no verb |
+| coordination nominal | Le sel et le poivre | Two coordinated nouns, no verb |
+| nominal PP | Le vieux monsieur avec un chapeau noir | Noun with a prepositional modifier |
+| nominal PP | La vieille dame avec une robe bleue | Noun with a prepositional modifier |
+| adjective and adverb | Une voiture rouge roule vite | Attributive adjective, adverb |
+| adjective and adverb | Un chien noir court vite | Attributive adjective, adverb |
+| numeral | Trois enfants jouent dans le parc | Number determiner, locative phrase |
+| numeral | Trois chats dorment dans le jardin | Number determiner, locative phrase |
+| future | Demain, nous partirons tôt | Future tense, fronted adverb |
+| future | Demain, elle partira tôt | Future tense, fronted adverb |
+| fronted oblique | Dans la forêt, un loup marche | Fronted prepositional phrase |
+| fronted oblique | Sur la colline, un berger chante | Fronted prepositional phrase |
+| imperative | Ferme la porte | Imperative mood |
+| imperative | Ouvre la fenêtre | Imperative mood |
+| infinitive complement | Il veut manger une pomme | `xcomp` with an infinitive |
+| infinitive complement | Elle veut boire un café | `xcomp` with an infinitive |
+| clausal complement | Je pense qu'il pleut | `que` complement clause |
+| clausal complement | Je crois qu'elle chante | `que` complement clause |
+| gerund | En marchant, il chante | `en` + present participle |
+| gerund | En courant, elle rit | `en` + present participle |
+| passive | La lettre a été écrite par Marie | Passive voice, optional agent |
+| passive | La lettre a été lue par Paul | Passive voice, optional agent |
+| exclamative | Quelle belle journée ! | `Quelle belle journée` |
+| exclamative | Quel beau paysage ! | `Quel beau paysage` |
+| coordination clausal | Le chat noir dort et le chien blanc veille | Two coordinated clauses |
+| coordination clausal | La fille chante et le garçon danse | Two coordinated clauses |
+| multiple sentences | Le garçon regarde le soleil. Le chat mange une souris. | Sentence boundaries and a forest |
+| multiple sentences | La fille admire la lune. Le chien dort. | Sentence boundaries and a forest |
+| nominal fragment | Le petit garçon | Verbless noun phrase |
+| nominal fragment | La grande maison | Verbless noun phrase |
+| adverbial fragment | Toujours plus vite | Verbless adverb phrase |
+| adverbial fragment | Souvent trop tard | Verbless adverb phrase |
 
-The interjection texts `x013` and `x015` are multi-sentence. They test the
-grammatical forest and the MaxSim multivector. The multiple-sentence texts
-`x050` and `x051` test two full sentences.
-
-The fragment texts test the specification rule that slogans often omit a
-complete clause. The multiple-sentence texts test the grammatical forest and
-the complete content field. The author removed several near-duplicate simple
-texts to keep the set varied.
+The multi-sentence texts test the grammatical forest and the multivector
+similarity. The fragment texts test the specification rule that slogans often
+omit a complete clause. The author removed several near-duplicate simple texts
+to keep the set varied.
 
 ## Measurement
 

@@ -261,26 +261,36 @@ The measurement shows three facts:
    structural similarity.
 
 The raw value cannot be a component score. A component score lies in `[0, 1]`.
-The project divides the raw value by the larger row count:
+The project uses a pairing rule:
 
 ```text
-score = rawMaxSim / max(queryRows, recordRows)
+score = matchedTotal / max(queryRows, recordRows)
 ```
 
-The rule gives a perfect equal-length match a score of one. An unmatched
-sentence on the longer side scores zero, and the divisor averages that zero into
-the result. The project verified the rule against the gold trees of the test
-data set:
+The rule pairs each query sentence with a **distinct** record sentence. The
+matching is optimal, so one record sentence cannot satisfy two query sentences.
+An unpaired sentence scores zero. The divisor then averages those zeros into the
+result.
 
-| Case | Raw | Divided | Reading |
-| --- | --- | --- | --- |
-| One sentence against itself | 1.0 | 1.0 | Exact self-match. |
-| Two sentences against themselves | 2.0 | 1.0 | Exact self-match. |
-| Two equal sentences, perfect match | 2.0 | 1.0 | Exact match. |
-| One sentence against two sentences | 1.0 | 0.5 | The extra record sentence is unmatched. |
-| Two sentences against one sentence | 2.0 | 1.0 | Both query sentences find a match. |
+The user found the naive rule's defect. The raw sum reuses the best record row
+for every query row, so a one-sentence record matched a two-sentence query at
+`2.0 / 2 = 1.0`. That is wrong: a query sentence with no partner must score
+zero. The project measured the corrected rule on the gold trees:
 
-The rule is a project decision. The user approved it at Checkpoint B.
+| Case | Reading | Score |
+| --- | --- | --- |
+| One sentence against itself | Exact self-match. | 1.0 |
+| Two sentences against themselves | Exact self-match. | 1.0 |
+| Two sentences against two, both match | Exact match. | 1.0 |
+| Two sentences against one | The second query sentence is unpaired. | 0.5 |
+| One sentence against two | The extra record sentence is unpaired. | 0.5 |
+
+The rule is a project decision. The user approved the distinct-pairing rule at
+Checkpoint B.
+
+The function `multivectorSimilarity` in `src/lib/scoring.ts` implements the
+rule. It uses `maximizeAssignment` (the Hungarian algorithm) for the optimal
+pairing.
 
 ### Feature weights must depend on the grammatical role
 

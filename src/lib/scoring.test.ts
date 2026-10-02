@@ -5,7 +5,10 @@ import {
 	clamp01,
 	combineScores,
 	compareIdentifiers,
+	cosineSimilarity,
+	maximizeAssignment,
 	meetsThreshold,
+	multivectorSimilarity,
 	NORMALIZATION_VERSION,
 	normalizeBm25,
 	normalizeCosine,
@@ -128,6 +131,85 @@ describe("normalizeMultivectorMaxSim", () => {
 		expect(normalizeMultivectorMaxSim(Number.POSITIVE_INFINITY, 1, 1)).toBe(0)
 		expect(normalizeMultivectorMaxSim(1, 0, 0)).toBe(0)
 		expect(normalizeMultivectorMaxSim(1, Number.NaN, 1)).toBe(0)
+	})
+})
+
+describe("cosineSimilarity", () => {
+	test("returns the dot product of two unit vectors clipped to [0, 1]", () => {
+		expect(cosineSimilarity([1, 0], [1, 0])).toBe(1)
+		expect(cosineSimilarity([1, 0], [0, 1])).toBe(0)
+		expect(cosineSimilarity([1, 0], [-1, 0])).toBe(0)
+	})
+})
+
+describe("maximizeAssignment", () => {
+	test("assigns each row to a distinct column with the largest total", () => {
+		// Row 0 prefers column 1, row 1 prefers column 0.
+		const assignment = maximizeAssignment([
+			[0.2, 0.9],
+			[0.8, 0.1],
+		])
+
+		expect(assignment).toEqual([1, 0])
+	})
+
+	test("does not let one column satisfy two rows", () => {
+		// Both rows want column 0. One must take column 1.
+		const assignment = maximizeAssignment([
+			[0.9, 0.8],
+			[0.9, 0.1],
+		])
+
+		expect(new Set(assignment).size).toBe(2)
+	})
+
+	test("finds the optimal assignment, not a greedy one", () => {
+		// Greedy takes (row0, col0) = 0.9, then row1 has only 0.1. The optimal
+		// pairs (row0, col1) = 0.8 and (row1, col0) = 0.85, a larger total.
+		const assignment = maximizeAssignment([
+			[0.9, 0.8],
+			[0.85, 0.1],
+		])
+
+		expect(assignment).toEqual([1, 0])
+	})
+})
+
+describe("multivectorSimilarity", () => {
+	test("scores a perfect equal-length match at one", () => {
+		const rows = [
+			[1, 0],
+			[0, 1],
+		]
+
+		expect(multivectorSimilarity(rows, rows)).toBe(1)
+	})
+
+	test("scores a two-sentence query against a one-sentence record as the average", () => {
+		// Sentence 1 matches; sentence 2 has no partner and scores zero.
+		const query = [
+			[1, 0],
+			[0, 1],
+		]
+		const record = [[1, 0]]
+
+		expect(multivectorSimilarity(query, record)).toBe(0.5)
+	})
+
+	test("pairs each query row with a distinct record row", () => {
+		// One record row cannot satisfy both query rows.
+		const query = [
+			[1, 0],
+			[1, 0],
+		]
+		const record = [[1, 0]]
+
+		expect(multivectorSimilarity(query, record)).toBe(0.5)
+	})
+
+	test("returns zero for an empty side", () => {
+		expect(multivectorSimilarity([], [[1, 0]])).toBe(0)
+		expect(multivectorSimilarity([[1, 0]], [])).toBe(0)
 	})
 })
 

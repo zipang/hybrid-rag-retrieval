@@ -8,15 +8,16 @@ import { join } from "node:path"
  * The set drives the parser and the encoder evaluation. A malformed token hides
  * a schema change and breaks the adapters later. These tests fail on any
  * deviation from the declared token shape and tree rules.
+ *
+ * The file keys every text by its own sentence. A reference to a text is the
+ * sentence string itself, so a reader sees what a case compares.
  */
 
 /** One CoNLL-U token as stored in the test data set. */
 type Token = string[]
 
-/** One text entry of the test data set. */
+/** One text entry: the gold sentence trees. */
 type TextEntry = {
-	id: string
-	text: string
 	sentences: Token[][]
 }
 
@@ -44,7 +45,7 @@ type TestData = {
 	language: string
 	tokenFields: string[]
 	profileFeatures: string[]
-	texts: TextEntry[]
+	texts: Record<string, TextEntry>
 	rankingCases: RankingCase[]
 	structuralPairs: StructuralPair[]
 	split: { development: string[]; heldOut: string[] }
@@ -67,8 +68,8 @@ const upos = (token: Token): string => field(token, 2)
 /** Read the governor position of a token. A root has `HEAD` zero. */
 const head = (token: Token): number => Number.parseInt(field(token, 3), 10)
 
-/** Read the identifier of a text entry. */
-const idOf = (text: TextEntry): string => text.id
+/** Every text of the data set as `[sentence, entry]` pairs. */
+const entries = (data: TestData): Array<[string, TextEntry]> => Object.entries(data.texts)
 
 describe("french test data set", () => {
 	const data = loadTestData()
@@ -80,39 +81,31 @@ describe("french test data set", () => {
 	})
 
 	test("gives every token exactly one value per declared field", () => {
-		for (const text of data.texts) {
-			for (const sentence of text.sentences) {
-				for (const token of sentence) {
-					expect({ id: text.id, width: token.length }).toEqual({ id: text.id, width })
+		for (const [sentence, entry] of entries(data)) {
+			for (const tokens of entry.sentences) {
+				for (const token of tokens) {
+					expect({ sentence, width: token.length }).toEqual({ sentence, width })
 				}
 			}
 		}
 	})
 
-	test("assigns every text a unique identifier", () => {
-		const ids = data.texts.map(idOf)
-
-		expect(new Set(ids).size).toBe(ids.length)
-	})
-
-	test("gives every token a positional index from one", () => {
-		for (const text of data.texts) {
-			for (const sentence of text.sentences) {
-				sentence.forEach((_, index) => {
-					expect(Number.isInteger(index + 1)).toBe(true)
-				})
-			}
+	test("keys every text by a nonempty sentence", () => {
+		for (const [sentence, entry] of entries(data)) {
+			expect(sentence.trim().length).toBeGreaterThan(0)
+			expect(entry.sentences.length).toBeGreaterThan(0)
 		}
 	})
 
 	test("keeps every governor inside the sentence range", () => {
-		for (const text of data.texts) {
-			for (const sentence of text.sentences) {
-				const size = sentence.length
+		for (const [sentence, entry] of entries(data)) {
+			for (const tokens of entry.sentences) {
+				const size = tokens.length
 
-				for (const token of sentence) {
+				for (const token of tokens) {
 					const parent = head(token)
 
+					expect({ sentence, parent }).toEqual({ sentence, parent })
 					expect(parent).toBeGreaterThanOrEqual(0)
 					expect(parent).toBeLessThanOrEqual(size)
 				}
@@ -121,9 +114,9 @@ describe("french test data set", () => {
 	})
 
 	test("gives every sentence at least one root", () => {
-		for (const text of data.texts) {
-			for (const sentence of text.sentences) {
-				const roots = sentence.filter((token) => head(token) === 0)
+		for (const entry of Object.values(data.texts)) {
+			for (const tokens of entry.sentences) {
+				const roots = tokens.filter((token) => head(token) === 0)
 
 				expect(roots.length).toBeGreaterThanOrEqual(1)
 			}
@@ -131,16 +124,16 @@ describe("french test data set", () => {
 	})
 
 	test("reaches a root from every token without a cycle", () => {
-		for (const text of data.texts) {
-			for (const sentence of text.sentences) {
-				sentence.forEach((_, start) => {
+		for (const entry of Object.values(data.texts)) {
+			for (const tokens of entry.sentences) {
+				tokens.forEach((_, start) => {
 					const seen = new Set<number>()
 					let current = start + 1
 
 					while (current !== 0) {
 						expect(seen.has(current)).toBe(false)
 						seen.add(current)
-						current = head(sentence[current - 1] ?? [])
+						current = head(tokens[current - 1] ?? [])
 					}
 				})
 			}
@@ -148,31 +141,51 @@ describe("french test data set", () => {
 	})
 
 	test("uses a nonempty word class for every token", () => {
-		for (const text of data.texts) {
-			for (const sentence of text.sentences) {
-				for (const token of sentence) {
+		for (const entry of Object.values(data.texts)) {
+			for (const tokens of entry.sentences) {
+				for (const token of tokens) {
 					expect(upos(token).length).toBeGreaterThan(0)
 				}
 			}
 		}
 	})
 
+	test("gives no content word a punctuation governor", () => {
+		// A punctuation token cannot govern a content word. The abstraction
+		// removes punctuation, so such a link would break the tree.
+		for (const entry of Object.values(data.texts)) {
+			for (const tokens of entry.sentences) {
+				tokens.forEach((token) => {
+					const parent = head(token)
+
+					if (parent === 0) {
+						return
+					}
+
+					const governor = tokens[parent - 1]
+
+					expect(upos(governor ?? [])).not.toBe("PUNCT")
+				})
+			}
+		}
+	})
+
 	test("resolves every ranking-case text reference", () => {
-		const ids = new Set(data.texts.map(idOf))
+		const keys = new Set(Object.keys(data.texts))
 
 		for (const testCase of data.rankingCases) {
 			for (const reference of [testCase.query, testCase.positive, testCase.negative]) {
-				expect(ids.has(reference)).toBe(true)
+				expect(keys.has(reference)).toBe(true)
 			}
 		}
 	})
 
 	test("resolves every structural-pair text reference", () => {
-		const ids = new Set(data.texts.map(idOf))
+		const keys = new Set(Object.keys(data.texts))
 
 		for (const pair of data.structuralPairs) {
 			for (const reference of [pair.a, pair.b]) {
-				expect(ids.has(reference)).toBe(true)
+				expect(keys.has(reference)).toBe(true)
 			}
 		}
 	})

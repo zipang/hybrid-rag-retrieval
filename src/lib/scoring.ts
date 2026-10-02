@@ -127,6 +127,149 @@ export const normalizeMultivectorMaxSim = (
 	return clamp01(rawMaxSim / divisor)
 }
 
+/**
+ * Return the cosine similarity of two unit vectors, clipped into `[0, 1]`.
+ *
+ * Both vectors come from an encoder that L2-normalizes its output, so the
+ * cosine is the dot product. A negative value becomes zero.
+ */
+export const cosineSimilarity = (left: number[], right: number[]): number => {
+	const size = Math.min(left.length, right.length)
+	let sum = 0
+
+	for (let index = 0; index < size; index += 1) {
+		sum += (left[index] ?? 0) * (right[index] ?? 0)
+	}
+
+	return clamp01(sum)
+}
+
+/**
+ * Assign each row of a square cost matrix to a distinct column, maximizing the
+ * total cost.
+ *
+ * The function uses the Hungarian algorithm. It returns, for each row, the
+ * column it is assigned to. The matrix must be square. The algorithm is exact,
+ * so a query sentence never steals the best record sentence from a query
+ * sentence that needs it more.
+ */
+export const maximizeAssignment = (cost: number[][]): number[] => {
+	const size = cost.length
+
+	if (size === 0) {
+		return []
+	}
+
+	// Pad the matrix so it is square.
+	const size_ = cost[0]?.length ?? 0
+	const n = Math.max(size, size_)
+	const matrix = Array.from({ length: n }, (_, row) =>
+		Array.from({ length: n }, (_, column) => cost[row]?.[column] ?? 0),
+	)
+	// Negate for a minimization assignment.
+	const a = matrix.map((row) => row.map((value) => -value))
+	const u = new Array<number>(n + 1).fill(0)
+	const v = new Array<number>(n + 1).fill(0)
+	const p = new Array<number>(n + 1).fill(0)
+	const way = new Array<number>(n + 1).fill(0)
+
+	for (let i = 1; i <= n; i += 1) {
+		p[0] = i
+		let j0 = 0
+		const minv = new Array<number>(n + 1).fill(Number.POSITIVE_INFINITY)
+		const used = new Array<boolean>(n + 1).fill(false)
+
+		do {
+			used[j0] = true
+			const i0 = p[j0] ?? 0
+			let delta = Number.POSITIVE_INFINITY
+			let j1 = 0
+
+			for (let j = 1; j <= n; j += 1) {
+				if (used[j]) {
+					continue
+				}
+
+				const current = (a[i0 - 1]?.[j - 1] ?? 0) - (u[i0] ?? 0) - (v[j] ?? 0)
+
+				if (current < (minv[j] ?? Number.POSITIVE_INFINITY)) {
+					minv[j] = current
+					way[j] = j0
+				}
+
+				if ((minv[j] ?? Number.POSITIVE_INFINITY) < delta) {
+					delta = minv[j] ?? Number.POSITIVE_INFINITY
+					j1 = j
+				}
+			}
+
+			for (let j = 0; j <= n; j += 1) {
+				if (used[j]) {
+					u[p[j] ?? 0] = (u[p[j] ?? 0] ?? 0) + delta
+					v[j] = (v[j] ?? 0) - delta
+				} else {
+					minv[j] = (minv[j] ?? Number.POSITIVE_INFINITY) - delta
+				}
+			}
+
+			j0 = j1
+		} while ((p[j0] ?? 0) !== 0)
+
+		do {
+			const j1 = way[j0] ?? 0
+
+			p[j0] = p[j1] ?? 0
+			j0 = j1
+		} while (j0 !== 0)
+	}
+
+	const assignment = new Array<number>(size).fill(-1)
+
+	for (let j = 1; j <= n; j += 1) {
+		const row = (p[j] ?? 0) - 1
+
+		if (row >= 0 && row < size) {
+			assignment[row] = j - 1
+		}
+	}
+
+	return assignment
+}
+
+/**
+ * Return the frozen syntax similarity of two multivectors.
+ *
+ * Each row is one sentence. The function pairs each query row with a distinct
+ * record row, using the optimal assignment, so one record sentence cannot
+ * satisfy two query sentences. An unpaired sentence scores zero. The result
+ * divides the matched total by the larger row count on the two sides.
+ *
+ * A query with two sentences and a record with one sentence scores
+ * `(1 + 0) / 2 = 0.5` when the single record sentence matches the first query
+ * sentence perfectly.
+ */
+export const multivectorSimilarity = (query: number[][], record: number[][]): number => {
+	if (query.length === 0 || record.length === 0) {
+		return 0
+	}
+
+	const cost = query.map((queryRow) =>
+		record.map((recordRow) => cosineSimilarity(queryRow, recordRow)),
+	)
+	const assignment = maximizeAssignment(cost)
+	let total = 0
+
+	for (const [row, column] of assignment.entries()) {
+		if (column >= 0 && column < record.length) {
+			total += cost[row]?.[column] ?? 0
+		}
+	}
+
+	const divisor = Math.max(query.length, record.length)
+
+	return clamp01(total / divisor)
+}
+
 /** Read the value of one index in a partial record, or `undefined`. */
 const readIndexValue = (record: IndexScores, index: IndexName): number | undefined => {
 	return record[index]

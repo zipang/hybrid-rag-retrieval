@@ -12,10 +12,8 @@
 		"VerbForm",
 		"Voice"
 	],
-	"texts": [
-		{
-			"id": "x001",
-			"text": "Le garçon regarde le soleil",
+	"texts": {
+		"Le garçon regarde le soleil": {
 			"sentences": [
 				[
 					["Le", "le", "DET", 2, "det", "Definite=Def|Gender=Masc|Number=Sing"],
@@ -33,9 +31,7 @@
 				]
 			]
 		},
-		{
-			"id": "x002",
-			"text": "Un chat mange une souris",
+		"Un chat mange une souris": {
 			"sentences": [
 				[
 					["Un", "un", "DET", 2, "det", "Definite=Ind|Gender=Masc|Number=Sing"],
@@ -53,9 +49,7 @@
 				]
 			]
 		},
-		{
-			"id": "x003",
-			"text": "Le soleil regarde le garçon",
+		"Le soleil regarde le garçon": {
 			"sentences": [
 				[
 					["Le", "le", "DET", 2, "det", "Definite=Def|Gender=Masc|Number=Sing"],
@@ -73,9 +67,7 @@
 				]
 			]
 		},
-		{
-			"id": "x004",
-			"text": "La fille admire la lune",
+		"La fille admire la lune": {
 			"sentences": [
 				[
 					["La", "le", "DET", 2, "det", "Definite=Def|Gender=Fem|Number=Sing"],
@@ -93,9 +85,7 @@
 				]
 			]
 		},
-		{
-			"id": "x005",
-			"text": "C'est le gentil garçon qui regardait la lune en souriant",
+		"C'est le gentil garçon qui regardait la lune en souriant": {
 			"sentences": [
 				[
 					["C'", "ce", "PRON", 5, "expl", "Gender=Masc|Number=Sing|Person=3"],
@@ -119,9 +109,7 @@
 				]
 			]
 		},
-		{
-			"id": "x006",
-			"text": "C'est la petite fille qui admirait la lune en chantant",
+		"C'est la petite fille qui admirait la lune en chantant": {
 			"sentences": [
 				[
 					["C'", "ce", "PRON", 4, "expl", "Gender=Fem|Number=Sing|Person=3"],
@@ -144,9 +132,7 @@
 				]
 			]
 		},
-		{
-			"id": "x007",
-			"text": "La petite fille posa sa main sur le chat",
+		"La petite fille posa sa main sur le chat": {
 			"sentences": [
 				[
 					["La", "le", "DET", 3, "det", "Definite=Def|Gender=Fem|Number=Sing"],
@@ -168,9 +154,7 @@
 				]
 			]
 		},
-		{
-			"id": "x008",
-			"text": "La jeune femme posa son sac sur la table",
+		"La jeune femme posa son sac sur la table": {
 			"sentences": [
 				[
 					["La", "le", "DET", 3, "det", "Definite=Def|Gender=Fem|Number=Sing"],
@@ -192,9 +176,7 @@
 				]
 			]
 		},
-		{
-			"id": "x009",
-			"text": "Le train arrive en gare en retard",
+		"Le train arrive en gare en retard": {
 			"sentences": [
 				[
 					["Le", "le", "DET", 2, "det", "Definite=Def|Gender=Masc|Number=Sing"],
@@ -214,9 +196,7 @@
 				]
 			]
 		},
-		{
-			"id": "x010",
-			"text": "Le bateau arrive au port en avance",
+		"Le bateau arrive au port en avance": {
 			"sentences": [
 				[
 					["Le", "le", "DET", 2, "det", "Definite=Def|Gender=Masc|Number=Sing"],
@@ -236,9 +216,7 @@
 				]
 			]
 		},
-		{
-			"id": "x011",
-			"text": "Le dernier métro s'arrêta net au terminus",
+		"Le dernier métro s'arrêta net au terminus": {
 			"sentences": [
 				[
 					["Le", "le", "DET", 3, "det", "Definite=Def|Gender=Masc|Number=Sing"],
@@ -259,9 +237,7 @@
 				]
 			]
 		},
-		{
-			"id": "x012",
-			"text": "La voiture s'arrêta net devant la maison",
+		"La voiture s'arrêta net devant la maison": {
 			"sentences": [
 				[
 					["La", "le", "DET", 2, "det", "Definite=Def|Gender=Fem|Number=Sing"],
@@ -282,9 +258,7 @@
 				]
 			]
 		},
-		{
-			"id": "x013",
-			"text": "Janvier ! Janvier !",
+		"Janvier ! Janvier !": {
 			"sentences": [
 				[
 					["Janvier", "janvier", "PROPN", 0, "root", "Gender=Masc|Number=Sing"],
@@ -296,9 +270,7 @@
 				]
 			]
 		},
-		{
-			"id": "x014",
-			"text": "Février ! Février !",
+		"Février ! Février !": {
 			"sentences": [
 				[
 					["Février", "février", "PROPN", 0, "root", "Gender=Masc|Number=Sing"],
@@ -310,24 +282,20 @@
 				]
 			]
 		},
-		{
-			"id": "x015",
-			"text": "Vous ici ? Pourquoi pas ?",
+		"Vous ici ? Pourquoi pas ?": {
 			"sentences": [
 				[
 					["Vous", "vous", "PRON", 0, "root", "Number=Plur|Person=2"],
 					["ici", "ici", "ADV", 1, "advmod", ""]
 				],
 				[
-					["Pourquoi", "pourquoi", "ADV", 3, "advmod", ""],
+					["Pourquoi", "pourquoi", "ADV", 2, "advmod", ""],
 					["pas", "pas", "ADV", 0, "root", "Polarity=Neg"],
 					["?", "?", "PUNCT", 2, "punct", ""]
 				]
 			]
 		},
-		{
-			"id": "x016",
-			"text": "Toi là ? Et alors ?",
+		"Toi là ? Et alors ?": {
 			"sentences": [
 				[
 					["Toi", "toi", "PRON", 0, "root", "Number=Sing|Person=2"],
@@ -340,9 +308,7 @@
 				]
 			]
 		},
-		{
-			"id": "x017",
-			"text": "C'est encore mieux en le disant",
+		"C'est encore mieux en le disant": {
 			"sentences": [
 				[
 					["C'", "ce", "PRON", 3, "nsubj", "Gender=Masc|Number=Sing|Person=3"],
@@ -355,9 +321,7 @@
 				]
 			]
 		},
-		{
-			"id": "x018",
-			"text": "C'est bien pire en le cachant",
+		"C'est bien pire en le cachant": {
 			"sentences": [
 				[
 					["C'", "ce", "PRON", 3, "nsubj", "Gender=Masc|Number=Sing|Person=3"],
@@ -370,9 +334,7 @@
 				]
 			]
 		},
-		{
-			"id": "x019",
-			"text": "Il n'est jamais trop tôt pour un espresso",
+		"Il n'est jamais trop tôt pour un espresso": {
 			"sentences": [
 				[
 					["Il", "il", "PRON", 6, "expl:subj", "Gender=Masc|Number=Sing|Person=3"],
@@ -387,9 +349,7 @@
 				]
 			]
 		},
-		{
-			"id": "x020",
-			"text": "Il est toujours trop tard pour se souvenir",
+		"Il est toujours trop tard pour se souvenir": {
 			"sentences": [
 				[
 					["Il", "il", "PRON", 5, "expl:subj", "Gender=Masc|Number=Sing|Person=3"],
@@ -403,9 +363,7 @@
 				]
 			]
 		},
-		{
-			"id": "x021",
-			"text": "Il n'est jamais trop tard pour bien faire",
+		"Il n'est jamais trop tard pour bien faire": {
 			"sentences": [
 				[
 					["Il", "il", "PRON", 6, "expl:subj", "Gender=Masc|Number=Sing|Person=3"],
@@ -420,9 +378,7 @@
 				]
 			]
 		},
-		{
-			"id": "x022",
-			"text": "Voir, c'est croire",
+		"Voir, c'est croire": {
 			"sentences": [
 				[
 					["Voir", "voir", "VERB", 5, "parataxis", "VerbForm=Inf"],
@@ -433,9 +389,7 @@
 				]
 			]
 		},
-		{
-			"id": "x023",
-			"text": "Partir, c'est mourir un peu",
+		"Partir, c'est mourir un peu": {
 			"sentences": [
 				[
 					["Partir", "partir", "VERB", 5, "parataxis", "VerbForm=Inf"],
@@ -448,9 +402,7 @@
 				]
 			]
 		},
-		{
-			"id": "x024",
-			"text": "Le pain et le fromage",
+		"Le pain et le fromage": {
 			"sentences": [
 				[
 					["Le", "le", "DET", 2, "det", "Definite=Def|Gender=Masc|Number=Sing"],
@@ -461,9 +413,7 @@
 				]
 			]
 		},
-		{
-			"id": "x025",
-			"text": "Le sel et le poivre",
+		"Le sel et le poivre": {
 			"sentences": [
 				[
 					["Le", "le", "DET", 2, "det", "Definite=Def|Gender=Masc|Number=Sing"],
@@ -474,9 +424,7 @@
 				]
 			]
 		},
-		{
-			"id": "x026",
-			"text": "Le vieux monsieur avec un chapeau noir",
+		"Le vieux monsieur avec un chapeau noir": {
 			"sentences": [
 				[
 					["Le", "le", "DET", 3, "det", "Definite=Def|Gender=Masc|Number=Sing"],
@@ -489,9 +437,7 @@
 				]
 			]
 		},
-		{
-			"id": "x027",
-			"text": "La vieille dame avec une robe bleue",
+		"La vieille dame avec une robe bleue": {
 			"sentences": [
 				[
 					["La", "le", "DET", 3, "det", "Definite=Def|Gender=Fem|Number=Sing"],
@@ -504,9 +450,7 @@
 				]
 			]
 		},
-		{
-			"id": "x028",
-			"text": "Une voiture rouge roule vite",
+		"Une voiture rouge roule vite": {
 			"sentences": [
 				[
 					["Une", "un", "DET", 2, "det", "Definite=Ind|Gender=Fem|Number=Sing"],
@@ -524,9 +468,7 @@
 				]
 			]
 		},
-		{
-			"id": "x029",
-			"text": "Un chien noir court vite",
+		"Un chien noir court vite": {
 			"sentences": [
 				[
 					["Un", "un", "DET", 2, "det", "Definite=Ind|Gender=Masc|Number=Sing"],
@@ -544,9 +486,7 @@
 				]
 			]
 		},
-		{
-			"id": "x030",
-			"text": "Trois enfants jouent dans le parc",
+		"Trois enfants jouent dans le parc": {
 			"sentences": [
 				[
 					["Trois", "trois", "NUM", 2, "nummod", "Number=Plur|NumType=Card"],
@@ -565,9 +505,7 @@
 				]
 			]
 		},
-		{
-			"id": "x031",
-			"text": "Trois chats dorment dans le jardin",
+		"Trois chats dorment dans le jardin": {
 			"sentences": [
 				[
 					["Trois", "trois", "NUM", 2, "nummod", "Number=Plur|NumType=Card"],
@@ -586,9 +524,7 @@
 				]
 			]
 		},
-		{
-			"id": "x032",
-			"text": "Demain, nous partirons tôt",
+		"Demain, nous partirons tôt": {
 			"sentences": [
 				[
 					["Demain", "demain", "ADV", 4, "advmod", ""],
@@ -606,9 +542,7 @@
 				]
 			]
 		},
-		{
-			"id": "x033",
-			"text": "Demain, elle partira tôt",
+		"Demain, elle partira tôt": {
 			"sentences": [
 				[
 					["Demain", "demain", "ADV", 4, "advmod", ""],
@@ -626,9 +560,7 @@
 				]
 			]
 		},
-		{
-			"id": "x034",
-			"text": "Dans la forêt, un loup marche",
+		"Dans la forêt, un loup marche": {
 			"sentences": [
 				[
 					["Dans", "dans", "ADP", 3, "case", ""],
@@ -648,9 +580,7 @@
 				]
 			]
 		},
-		{
-			"id": "x035",
-			"text": "Sur la colline, un berger chante",
+		"Sur la colline, un berger chante": {
 			"sentences": [
 				[
 					["Sur", "sur", "ADP", 3, "case", ""],
@@ -670,9 +600,7 @@
 				]
 			]
 		},
-		{
-			"id": "x036",
-			"text": "Ferme la porte",
+		"Ferme la porte": {
 			"sentences": [
 				[
 					[
@@ -688,9 +616,7 @@
 				]
 			]
 		},
-		{
-			"id": "x037",
-			"text": "Ouvre la fenêtre",
+		"Ouvre la fenêtre": {
 			"sentences": [
 				[
 					[
@@ -706,9 +632,7 @@
 				]
 			]
 		},
-		{
-			"id": "x038",
-			"text": "Il veut manger une pomme",
+		"Il veut manger une pomme": {
 			"sentences": [
 				[
 					["Il", "il", "PRON", 2, "nsubj", "Gender=Masc|Number=Sing|Person=3"],
@@ -726,9 +650,7 @@
 				]
 			]
 		},
-		{
-			"id": "x039",
-			"text": "Elle veut boire un café",
+		"Elle veut boire un café": {
 			"sentences": [
 				[
 					["Elle", "elle", "PRON", 2, "nsubj", "Gender=Fem|Number=Sing|Person=3"],
@@ -746,9 +668,7 @@
 				]
 			]
 		},
-		{
-			"id": "x040",
-			"text": "Je pense qu'il pleut",
+		"Je pense qu'il pleut": {
 			"sentences": [
 				[
 					["Je", "je", "PRON", 2, "nsubj", "Number=Sing|Person=1"],
@@ -773,9 +693,7 @@
 				]
 			]
 		},
-		{
-			"id": "x041",
-			"text": "Je crois qu'elle chante",
+		"Je crois qu'elle chante": {
 			"sentences": [
 				[
 					["Je", "je", "PRON", 2, "nsubj", "Number=Sing|Person=1"],
@@ -800,9 +718,7 @@
 				]
 			]
 		},
-		{
-			"id": "x042",
-			"text": "En marchant, il chante",
+		"En marchant, il chante": {
 			"sentences": [
 				[
 					["En", "en", "ADP", 2, "mark", ""],
@@ -820,9 +736,7 @@
 				]
 			]
 		},
-		{
-			"id": "x043",
-			"text": "En courant, elle rit",
+		"En courant, elle rit": {
 			"sentences": [
 				[
 					["En", "en", "ADP", 2, "mark", ""],
@@ -840,9 +754,7 @@
 				]
 			]
 		},
-		{
-			"id": "x044",
-			"text": "La lettre a été écrite par Marie",
+		"La lettre a été écrite par Marie": {
 			"sentences": [
 				[
 					["La", "le", "DET", 2, "det", "Definite=Def|Gender=Fem|Number=Sing"],
@@ -862,9 +774,7 @@
 				]
 			]
 		},
-		{
-			"id": "x045",
-			"text": "La lettre a été lue par Paul",
+		"La lettre a été lue par Paul": {
 			"sentences": [
 				[
 					["La", "le", "DET", 2, "det", "Definite=Def|Gender=Fem|Number=Sing"],
@@ -877,9 +787,7 @@
 				]
 			]
 		},
-		{
-			"id": "x046",
-			"text": "Quelle belle journée !",
+		"Quelle belle journée !": {
 			"sentences": [
 				[
 					["Quelle", "quel", "DET", 3, "det", "Gender=Fem|Number=Sing"],
@@ -889,9 +797,7 @@
 				]
 			]
 		},
-		{
-			"id": "x047",
-			"text": "Quel beau paysage !",
+		"Quel beau paysage !": {
 			"sentences": [
 				[
 					["Quel", "quel", "DET", 3, "det", "Gender=Masc|Number=Sing"],
@@ -901,9 +807,7 @@
 				]
 			]
 		},
-		{
-			"id": "x048",
-			"text": "Le chat noir dort et le chien blanc veille",
+		"Le chat noir dort et le chien blanc veille": {
 			"sentences": [
 				[
 					["Le", "le", "DET", 3, "det", "Definite=Def|Gender=Masc|Number=Sing"],
@@ -932,9 +836,7 @@
 				]
 			]
 		},
-		{
-			"id": "x049",
-			"text": "La fille chante et le garçon danse",
+		"La fille chante et le garçon danse": {
 			"sentences": [
 				[
 					["La", "le", "DET", 2, "det", "Definite=Def|Gender=Fem|Number=Sing"],
@@ -961,9 +863,7 @@
 				]
 			]
 		},
-		{
-			"id": "x050",
-			"text": "Le garçon regarde le soleil. Le chat mange une souris.",
+		"Le garçon regarde le soleil. Le chat mange une souris.": {
 			"sentences": [
 				[
 					["Le", "le", "DET", 2, "det", "Definite=Def|Gender=Masc|Number=Sing"],
@@ -995,9 +895,7 @@
 				]
 			]
 		},
-		{
-			"id": "x051",
-			"text": "La fille admire la lune. Le chien dort.",
+		"La fille admire la lune. Le chien dort.": {
 			"sentences": [
 				[
 					["La", "le", "DET", 2, "det", "Definite=Def|Gender=Fem|Number=Sing"],
@@ -1027,9 +925,7 @@
 				]
 			]
 		},
-		{
-			"id": "x052",
-			"text": "Le petit garçon",
+		"Le petit garçon": {
 			"sentences": [
 				[
 					["Le", "le", "DET", 3, "det", "Definite=Def|Gender=Masc|Number=Sing"],
@@ -1038,9 +934,7 @@
 				]
 			]
 		},
-		{
-			"id": "x053",
-			"text": "La grande maison",
+		"La grande maison": {
 			"sentences": [
 				[
 					["La", "le", "DET", 3, "det", "Definite=Def|Gender=Fem|Number=Sing"],
@@ -1049,9 +943,7 @@
 				]
 			]
 		},
-		{
-			"id": "x054",
-			"text": "Toujours plus vite",
+		"Toujours plus vite": {
 			"sentences": [
 				[
 					["Toujours", "toujours", "ADV", 3, "advmod", ""],
@@ -1060,9 +952,7 @@
 				]
 			]
 		},
-		{
-			"id": "x055",
-			"text": "Souvent trop tard",
+		"Souvent trop tard": {
 			"sentences": [
 				[
 					["Souvent", "souvent", "ADV", 3, "advmod", ""],
@@ -1071,364 +961,357 @@
 				]
 			]
 		}
-	],
+	},
 	"rankingCases": [
 		{
 			"id": "rc01",
-			"query": "x001",
-			"positive": "x002",
-			"negative": "x003",
-			"category": "vocabulary"
-		},
-		{
-			"id": "rc02",
-			"query": "x004",
-			"positive": "x002",
-			"negative": "x003",
+			"query": "Le garçon regarde le soleil",
+			"positive": "Un chat mange une souris",
+			"negative": "Je pense qu'il pleut",
 			"category": "vocabulary"
 		},
 		{
 			"id": "rc03",
-			"query": "x005",
-			"positive": "x006",
-			"negative": "x001",
+			"query": "C'est le gentil garçon qui regardait la lune en souriant",
+			"positive": "C'est la petite fille qui admirait la lune en chantant",
+			"negative": "Le garçon regarde le soleil",
 			"category": "relative-clause"
 		},
 		{
 			"id": "rc04",
-			"query": "x007",
-			"positive": "x008",
-			"negative": "x001",
+			"query": "La petite fille posa sa main sur le chat",
+			"positive": "La jeune femme posa son sac sur la table",
+			"negative": "Le garçon regarde le soleil",
 			"category": "passe-simple"
 		},
 		{
 			"id": "rc05",
-			"query": "x009",
-			"positive": "x010",
-			"negative": "x001",
+			"query": "Le train arrive en gare en retard",
+			"positive": "Le bateau arrive au port en avance",
+			"negative": "Le garçon regarde le soleil",
 			"category": "oblique"
 		},
 		{
 			"id": "rc06",
-			"query": "x011",
-			"positive": "x012",
-			"negative": "x001",
+			"query": "Le dernier métro s'arrêta net au terminus",
+			"positive": "La voiture s'arrêta net devant la maison",
+			"negative": "Le garçon regarde le soleil",
 			"category": "reflexive"
 		},
 		{
 			"id": "rc07",
-			"query": "x013",
-			"positive": "x014",
-			"negative": "x001",
+			"query": "Janvier ! Janvier !",
+			"positive": "Février ! Février !",
+			"negative": "Le garçon regarde le soleil",
 			"category": "interjection"
 		},
 		{
 			"id": "rc08",
-			"query": "x015",
-			"positive": "x016",
-			"negative": "x001",
+			"query": "Vous ici ? Pourquoi pas ?",
+			"positive": "Toi là ? Et alors ?",
+			"negative": "Le garçon regarde le soleil",
 			"category": "interrogative-fragment"
 		},
 		{
 			"id": "rc09",
-			"query": "x017",
-			"positive": "x018",
-			"negative": "x001",
+			"query": "C'est encore mieux en le disant",
+			"positive": "C'est bien pire en le cachant",
+			"negative": "Le garçon regarde le soleil",
 			"category": "comparative"
 		},
 		{
 			"id": "rc10",
-			"query": "x019",
-			"positive": "x021",
-			"negative": "x020",
+			"query": "Il n'est jamais trop tôt pour un espresso",
+			"positive": "Il n'est jamais trop tard pour bien faire",
+			"negative": "Il est toujours trop tard pour se souvenir",
 			"category": "negation-never"
 		},
 		{
 			"id": "rc11",
-			"query": "x020",
-			"positive": "x021",
-			"negative": "x019",
+			"query": "Il est toujours trop tard pour se souvenir",
+			"positive": "Il n'est jamais trop tard pour bien faire",
+			"negative": "Il n'est jamais trop tôt pour un espresso",
 			"category": "adverb-tard-tot"
 		},
 		{
 			"id": "rc12",
-			"query": "x022",
-			"positive": "x023",
-			"negative": "x001",
+			"query": "Voir, c'est croire",
+			"positive": "Partir, c'est mourir un peu",
+			"negative": "Le garçon regarde le soleil",
 			"category": "infinitive-subject"
 		},
 		{
 			"id": "rc13",
-			"query": "x024",
-			"positive": "x025",
-			"negative": "x001",
+			"query": "Le pain et le fromage",
+			"positive": "Le sel et le poivre",
+			"negative": "Le garçon regarde le soleil",
 			"category": "coordination-nominal"
 		},
 		{
 			"id": "rc14",
-			"query": "x026",
-			"positive": "x027",
-			"negative": "x001",
+			"query": "Le vieux monsieur avec un chapeau noir",
+			"positive": "La vieille dame avec une robe bleue",
+			"negative": "Le garçon regarde le soleil",
 			"category": "nominal-pp"
 		},
 		{
 			"id": "rc15",
-			"query": "x028",
-			"positive": "x029",
-			"negative": "x001",
+			"query": "Une voiture rouge roule vite",
+			"positive": "Un chien noir court vite",
+			"negative": "Le garçon regarde le soleil",
 			"category": "adjective-adverb"
 		},
 		{
 			"id": "rc16",
-			"query": "x030",
-			"positive": "x031",
-			"negative": "x001",
+			"query": "Trois enfants jouent dans le parc",
+			"positive": "Trois chats dorment dans le jardin",
+			"negative": "Le garçon regarde le soleil",
 			"category": "numeral"
 		},
 		{
 			"id": "rc17",
-			"query": "x032",
-			"positive": "x033",
-			"negative": "x001",
+			"query": "Demain, nous partirons tôt",
+			"positive": "Demain, elle partira tôt",
+			"negative": "Le garçon regarde le soleil",
 			"category": "future"
 		},
 		{
 			"id": "rc18",
-			"query": "x034",
-			"positive": "x035",
-			"negative": "x001",
+			"query": "Dans la forêt, un loup marche",
+			"positive": "Sur la colline, un berger chante",
+			"negative": "Le garçon regarde le soleil",
 			"category": "fronted-oblique"
 		},
 		{
 			"id": "rc19",
-			"query": "x036",
-			"positive": "x037",
-			"negative": "x001",
+			"query": "Ferme la porte",
+			"positive": "Ouvre la fenêtre",
+			"negative": "Le garçon regarde le soleil",
 			"category": "imperative"
 		},
 		{
 			"id": "rc20",
-			"query": "x038",
-			"positive": "x039",
-			"negative": "x001",
+			"query": "Il veut manger une pomme",
+			"positive": "Elle veut boire un café",
+			"negative": "Le garçon regarde le soleil",
 			"category": "infinitive-complement"
 		},
 		{
 			"id": "rc21",
-			"query": "x040",
-			"positive": "x041",
-			"negative": "x001",
+			"query": "Je pense qu'il pleut",
+			"positive": "Je crois qu'elle chante",
+			"negative": "Le garçon regarde le soleil",
 			"category": "clausal-complement"
 		},
 		{
 			"id": "rc22",
-			"query": "x042",
-			"positive": "x043",
-			"negative": "x001",
+			"query": "En marchant, il chante",
+			"positive": "En courant, elle rit",
+			"negative": "Le garçon regarde le soleil",
 			"category": "gerund"
 		},
 		{
 			"id": "rc23",
-			"query": "x044",
-			"positive": "x045",
-			"negative": "x036",
+			"query": "La lettre a été écrite par Marie",
+			"positive": "La lettre a été lue par Paul",
+			"negative": "Ferme la porte",
 			"category": "passive"
 		},
 		{
 			"id": "rc24",
-			"query": "x046",
-			"positive": "x047",
-			"negative": "x001",
+			"query": "Quelle belle journée !",
+			"positive": "Quel beau paysage !",
+			"negative": "Le garçon regarde le soleil",
 			"category": "exclamative"
 		},
 		{
 			"id": "rc25",
-			"query": "x048",
-			"positive": "x049",
-			"negative": "x001",
+			"query": "Le chat noir dort et le chien blanc veille",
+			"positive": "La fille chante et le garçon danse",
+			"negative": "Le garçon regarde le soleil",
 			"category": "coordination-clausal"
 		},
 		{
 			"id": "rc26",
-			"query": "x050",
-			"positive": "x051",
-			"negative": "x001",
+			"query": "Le garçon regarde le soleil. Le chat mange une souris.",
+			"positive": "La fille admire la lune. Le chien dort.",
+			"negative": "Le garçon regarde le soleil",
 			"category": "multi-sentence"
 		},
 		{
 			"id": "rc27",
-			"query": "x052",
-			"positive": "x053",
-			"negative": "x054",
+			"query": "Le petit garçon",
+			"positive": "La grande maison",
+			"negative": "Toujours plus vite",
 			"category": "nominal-fragment"
 		},
 		{
 			"id": "rc28",
-			"query": "x054",
-			"positive": "x055",
-			"negative": "x052",
+			"query": "Toujours plus vite",
+			"positive": "Souvent trop tard",
+			"negative": "Le petit garçon",
 			"category": "adverbial-fragment"
 		},
 		{
 			"id": "rc29",
-			"query": "x005",
-			"positive": "x006",
-			"negative": "x017",
+			"query": "C'est le gentil garçon qui regardait la lune en souriant",
+			"positive": "C'est la petite fille qui admirait la lune en chantant",
+			"negative": "C'est encore mieux en le disant",
 			"category": "relative-clause"
 		},
 		{
 			"id": "rc30",
-			"query": "x015",
-			"positive": "x016",
-			"negative": "x013",
+			"query": "Vous ici ? Pourquoi pas ?",
+			"positive": "Toi là ? Et alors ?",
+			"negative": "Janvier ! Janvier !",
 			"category": "interrogative-fragment"
 		}
 	],
 	"structuralPairs": [
 		{
 			"id": "p001",
-			"a": "x001",
-			"b": "x002",
+			"a": "Le garçon regarde le soleil",
+			"b": "Un chat mange une souris",
 			"profile": "coarse",
 			"relation": "equal"
 		},
 		{
 			"id": "p002",
-			"a": "x001",
-			"b": "x002",
+			"a": "Le garçon regarde le soleil",
+			"b": "Un chat mange une souris",
 			"profile": "detailed",
 			"relation": "different"
 		},
 		{
 			"id": "p003",
-			"a": "x001",
-			"b": "x003",
+			"a": "Le garçon regarde le soleil",
+			"b": "Le soleil regarde le garçon",
 			"profile": "coarse",
-			"relation": "different"
+			"relation": "equal"
 		},
 		{
 			"id": "p004",
-			"a": "x013",
-			"b": "x014",
+			"a": "Janvier ! Janvier !",
+			"b": "Février ! Février !",
 			"profile": "coarse",
 			"relation": "equal"
 		},
 		{
 			"id": "p005",
-			"a": "x019",
-			"b": "x021",
+			"a": "Il n'est jamais trop tôt pour un espresso",
+			"b": "Il n'est jamais trop tard pour bien faire",
 			"profile": "coarse",
-			"relation": "equal"
+			"relation": "different"
 		},
 		{
 			"id": "p006",
-			"a": "x022",
-			"b": "x023",
+			"a": "Voir, c'est croire",
+			"b": "Partir, c'est mourir un peu",
 			"profile": "coarse",
-			"relation": "equal"
+			"relation": "different"
 		},
 		{
 			"id": "p007",
-			"a": "x022",
-			"b": "x023",
+			"a": "Voir, c'est croire",
+			"b": "Partir, c'est mourir un peu",
 			"profile": "detailed",
 			"relation": "different"
 		},
 		{
 			"id": "p008",
-			"a": "x024",
-			"b": "x025",
+			"a": "Le pain et le fromage",
+			"b": "Le sel et le poivre",
 			"profile": "coarse",
 			"relation": "equal"
 		},
 		{
 			"id": "p009",
-			"a": "x026",
-			"b": "x027",
+			"a": "Le vieux monsieur avec un chapeau noir",
+			"b": "La vieille dame avec une robe bleue",
 			"profile": "coarse",
 			"relation": "equal"
 		},
 		{
 			"id": "p010",
-			"a": "x030",
-			"b": "x031",
+			"a": "Trois enfants jouent dans le parc",
+			"b": "Trois chats dorment dans le jardin",
 			"profile": "coarse",
 			"relation": "equal"
 		},
 		{
 			"id": "p011",
-			"a": "x034",
-			"b": "x035",
+			"a": "Dans la forêt, un loup marche",
+			"b": "Sur la colline, un berger chante",
 			"profile": "coarse",
 			"relation": "equal"
 		},
 		{
 			"id": "p012",
-			"a": "x036",
-			"b": "x037",
+			"a": "Ferme la porte",
+			"b": "Ouvre la fenêtre",
 			"profile": "coarse",
 			"relation": "equal"
 		},
 		{
 			"id": "p013",
-			"a": "x052",
-			"b": "x053",
+			"a": "Le petit garçon",
+			"b": "La grande maison",
 			"profile": "coarse",
 			"relation": "equal"
 		},
 		{
 			"id": "p014",
-			"a": "x054",
-			"b": "x055",
+			"a": "Toujours plus vite",
+			"b": "Souvent trop tard",
 			"profile": "coarse",
 			"relation": "equal"
 		},
 		{
 			"id": "p015",
-			"a": "x050",
-			"b": "x051",
+			"a": "Le garçon regarde le soleil. Le chat mange une souris.",
+			"b": "La fille admire la lune. Le chien dort.",
 			"profile": "coarse",
-			"relation": "equal"
+			"relation": "different"
 		},
 		{
 			"id": "p016",
-			"a": "x005",
-			"b": "x006",
+			"a": "C'est le gentil garçon qui regardait la lune en souriant",
+			"b": "C'est la petite fille qui admirait la lune en chantant",
 			"profile": "coarse",
-			"relation": "equal"
+			"relation": "different"
 		},
 		{
 			"id": "p017",
-			"a": "x005",
-			"b": "x006",
+			"a": "C'est le gentil garçon qui regardait la lune en souriant",
+			"b": "C'est la petite fille qui admirait la lune en chantant",
 			"profile": "detailed",
 			"relation": "different"
 		},
 		{
 			"id": "p018",
-			"a": "x044",
-			"b": "x045",
+			"a": "La lettre a été écrite par Marie",
+			"b": "La lettre a été lue par Paul",
 			"profile": "coarse",
 			"relation": "equal"
 		},
 		{
 			"id": "p019",
-			"a": "x015",
-			"b": "x016",
+			"a": "Vous ici ? Pourquoi pas ?",
+			"b": "Toi là ? Et alors ?",
 			"profile": "coarse",
-			"relation": "equal"
+			"relation": "different"
 		},
 		{
 			"id": "p020",
-			"a": "x017",
-			"b": "x018",
+			"a": "C'est encore mieux en le disant",
+			"b": "C'est bien pire en le cachant",
 			"profile": "coarse",
-			"relation": "equal"
+			"relation": "different"
 		},
 		{
 			"id": "p021",
-			"a": "x017",
-			"b": "x018",
+			"a": "C'est encore mieux en le disant",
+			"b": "C'est bien pire en le cachant",
 			"profile": "detailed",
 			"relation": "different"
 		}
@@ -1436,7 +1319,6 @@
 	"split": {
 		"development": [
 			"rc01",
-			"rc02",
 			"rc03",
 			"rc04",
 			"rc05",
