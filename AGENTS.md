@@ -33,6 +33,28 @@ or ambiguous term.
   meaning for the project.
 - The `memos/` directory holds the memos. Every memo ends with a glossary.
 
+## Write technical prose for a twelve-year-old reader
+
+Use a twelve-year-old reader as the default audience for every technical
+document, in Simplified Technical English. This level suits a non-technical
+reader and stays precise for an expert reviewer. It is a rule of thumb, not a
+license to remove necessary detail.
+
+- Explain the idea before the mechanism. Start from what the reader already
+  knows, then add the technical term.
+- Use short sentences. One idea per sentence.
+- Prefer a concrete example to an abstract definition.
+- Name the real functions, files, and fields. Do not hide them behind a
+  metaphor.
+- Show the flow of data with the real step names, from input to output.
+- Define every specialized term in the glossary. Do not rely on the reader's
+  memory.
+- Do not use a ticket name, such as `T0004`, to describe a feature in a
+  `README.md` or an `AGENTS.md`. Ticket names belong in the `roadmap/`
+  directory. A reader does not know the ticket.
+- Do not write down to the reader. Skip baby talk, jokes, and filler. Keep the
+  tone plain and respectful.
+
 ## Read the README and AGENTS files
 
 - `README.md` files live at key directory roots. They describe the content and the rules of each directory. They are for humans and agents.

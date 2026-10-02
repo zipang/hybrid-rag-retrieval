@@ -51,15 +51,29 @@ The source dumps are published by the Wikimedia Foundation under the Creative
 Commons Attribution-ShareAlike 4.0 license and the GNU Free Documentation
 License.
 
-## Qdrant
+## Local setup
 
-- `setup-qdrant.sh` downloads and unpacks the Qdrant static Linux binary into
-  `qdrant/`. Run it with `bun run setup:qdrant`.
+- `init.sh` prepares everything the application and the tests need locally. It
+  downloads the Qdrant binary and Web UI into `qdrant/`, and the pinned French
+  parser model into `models/`. Run it with `bun run init`.
+
+Useful flags:
+
+- `--skip-qdrant` installs only the parser model.
+- `--skip-model` installs only Qdrant.
+- `--force` reinstalls a component that is already present.
+- `--model NAME`, `--model-url URL`, `--model-path PATH` override the parser
+  model source.
+
+The script is idempotent. It skips a component that is already present.
 
 ## Glossary
 
-- **BM25**: A ranking method that scores records by their matching words.
-- **Dump**: A compressed XML file that contains the pages of a Wikimedia wiki.
-- **Qdrant**: The vector database that stores the hybrid index.
-- **Wikiquote**: A free compendium of sourced quotes, published by the Wikimedia Foundation.
-- **Wikitext**: The source markup of a wiki page.
+- **BM25**: a ranking method that scores records by their matching words.
+- **dump**: a compressed XML file that contains the pages of a Wikimedia wiki.
+- **model**: a trained data file that a parser loads.
+- **Qdrant**: the vector database that stores the hybrid index.
+- **UDPipe**: a trainable pipeline for tokenization, tagging, lemmatization, and
+  dependency parsing.
+- **Wikiquote**: a free compendium of sourced quotes, published by the Wikimedia Foundation.
+- **wikitext**: the source markup of a wiki page.

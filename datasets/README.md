@@ -101,15 +101,16 @@ For example, a request for Danone slogans from 2004 uses `slogan` as content and
 uses `marque` and `annee` as filters. A request for Hamlet citations about
 ambition uses `quote` as content and `author` and `work` as filters.
 
-These roles describe the intended use of each field. T0001 decides which filter
-fields need a Qdrant payload index.
+These roles describe the intended use of each field. The project decides which
+filter fields need a Qdrant payload index. A field that users filter on gets a
+payload index, so Qdrant can filter quickly.
 
 ## Rejected records
 
 The reader reports each rejected block with its block number and a reason. The
-T0001 importer logs the corpus path, block number, and reason for each rejected
-block. It then continues with the next block. Use the reason to find and correct
-the source line.
+importer logs the corpus path, block number, and reason for each rejected block.
+It then continues with the next block. Use the reason to find and correct the
+source line.
 
 ## Version control
 
@@ -118,20 +119,20 @@ Do not commit corpus data.
 
 ## Glossary
 
-- **BM25**: A ranking method that scores records by their matching words.
-- **Content field**: The text field that carries the record's meaning and enters semantic and lexical indexing.
-- **Corpus**: The complete set of records that the project reads.
-- **Dataset configuration**: Settings that link a corpus file and schema to content and identifier fields.
-- **Dense vector**: A list of numbers that represents the meaning of text.
-- **Filter field**: A metadata field that narrows results without entering content indexing.
-- **JSON Schema**: A JSON structure that declares record fields, types, and validation rules.
-- **Lexical search**: Search that matches words instead of meaning.
-- **MediaWiki dump**: A compressed XML file that contains the pages of a Wikimedia wiki.
-- **Query agent**: An LLM that uses schema descriptions to choose content and filter fields for a search.
-- **Record**: One item in a corpus, such as one slogan or citation.
-- **Record identifier**: The source ID that lets the system identify a record.
-- **Rejection reason**: A short message that explains why a block failed to parse or validate.
-- **Schema model**: A module that exports a JSON Schema, inferred TypeScript type, and validation function.
-- **Schema title**: The JSON Schema `title` field that stores a fallback source label when it differs from the property key.
-- **Wikiquote**: A free compendium of sourced quotes, published by the Wikimedia Foundation.
-- **Wikitext**: The source markup of a wiki page.
+- **BM25**: a ranking method that scores records by their matching words.
+- **content field**: the text field that carries the meaning of a record and enters semantic and lexical indexing.
+- **corpus**: the complete set of records that the project reads.
+- **dataset configuration**: the settings that link a corpus file and its schema to the content field and the identifier field.
+- **dense vector**: a list of numbers that represents the meaning of a text.
+- **filter field**: a metadata field that narrows the results without entering the content index.
+- **JSON Schema**: a JSON structure that declares the record fields, types, and validation rules.
+- **lexical search**: a search that matches words instead of meaning.
+- **MediaWiki dump**: a compressed XML file that contains the pages of a Wikimedia wiki.
+- **query agent**: an LLM that uses the schema descriptions to choose the content field and the filter fields for a search.
+- **record**: one item in a corpus, such as one slogan or one citation.
+- **record identifier**: the source ID that identifies a record.
+- **rejection reason**: a short message that explains why a block failed to parse or validate.
+- **schema model**: a module that exports a JSON Schema, an inferred TypeScript type, and a validation function.
+- **schema title**: the JSON Schema `title` field. It stores a fallback source label when the label differs from the property key.
+- **Wikiquote**: a free compendium of sourced quotes, published by the Wikimedia Foundation.
+- **wikitext**: the source markup of a wiki page.

@@ -80,11 +80,11 @@ context.
 
 ## References
 
-The project learns from similar public work. 
+The project learns from similar public work.
 
 ### Repositories
 
-These repositories share commen efforts in indexing and querying text corpa
+These repositories share common work on indexing and querying text corpora.
 
 - <https://github.com/andrisgauracs/Star-Wars-Movie-Expert> — a Python project
   with LangChain and Qdrant. Related video: [How to Build a RAG System That
@@ -114,7 +114,7 @@ must run on our own servers. Candidate databases:
 
 ## Comparison goals
 
-A later ticket uses this POC as a bench. The bench compares:
+The POC also serves as a comparison bench. The bench compares:
 
 - the response speed of several vector databases;
 - the response speed of several LLMs;
@@ -187,8 +187,8 @@ These memos record our findings
   retrieves records from a database, then gives the records to the LLM. The LLM
   answers from the records.
 - **record**: one item in the corpus, for example one citation or one slogan.
-- **schema title**: The JSON Schema `title` field stores a fallback source label
-  when it differs from the property's canonical key.
+- **schema title**: the JSON Schema `title` field. It stores a fallback source
+  label when the label differs from the property key.
 - **semantic proximity**: a match on the meaning of a text, even with different
   words. The dense vector answers it.
 - **sparse vector**: a vector with few non-zero values. It represents keywords.
@@ -196,13 +196,14 @@ These memos record our findings
 - **syntactic proximity**: a match on the exact words of a text. The sparse
   keyword vector answers it.
 - **syntax search**: retrieval by grammatical-tree resemblance, independent of
-  vocabulary and meaning. T0004 specifies this additional search mode.
+  vocabulary and meaning. It asks whether two texts have the same shape, not the
+  same words.
 - **test data set**: the reviewed French sentences and their grammatical
-  annotations that the T0004 evaluation uses. The project keeps the term
+  annotations that the syntax evaluation uses. The project keeps the term
   "fixture" for the test runner only.
 - **test environment**: the isolated services, parser, and model that one test
   run uses. A test builds the test environment from the test data set.
 - **vector database**: a database that stores vectors and finds the nearest
   vectors to a query vector.
-- **weighted retrieval**: the T0004 retrieval contract that combines normalized
-  index scores with explicit weights and returns records meeting a minimum score.
+- **weighted retrieval**: retrieval that combines normalized index scores with
+  explicit weights and returns every record that meets a minimum score.

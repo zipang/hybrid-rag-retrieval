@@ -21,10 +21,10 @@ combines a dense (semantic) vector and a BM25 (keyword) vector.
    bun install
    ```
 
-2. Install the Qdrant binary and the Web UI.
+2. Install the Qdrant binary, the Web UI, and the parser model.
 
    ```bash
-   bash scripts/setup-qdrant.sh
+   bun run init
    ```
 
 3. Copy the environment file.
@@ -104,7 +104,6 @@ Use a model that serves the OpenAI-compatible `/v1/chat/completions` route.
 | Variable | Meaning |
 |---|---|
 | `QDRANT_URL` | Qdrant HTTP address. |
-| `QDRANT_COLLECTION` | Collection name. |
 | `EMBEDDING_MODEL` | Dense embedding model. |
 | `EMBEDDING_MAX_LENGTH` | Padding width of the dense model. |
 | `BM25_LANGUAGE` | Stemming and stopword language for BM25. |
@@ -115,11 +114,11 @@ Use a model that serves the OpenAI-compatible `/v1/chat/completions` route.
 
 ## Glossary
 
-- **BM25**: A ranking method that scores records by their matching words.
-- **Dense vector**: A list of numbers that represents the meaning of a text.
-- **Embedding**: The vector form of a text.
-- **Hybrid search**: A search that combines a dense retrieval and a keyword
+- **BM25**: a ranking method that scores records by their matching words.
+- **dense vector**: a list of numbers that represents the meaning of a text.
+- **embedding**: the vector form of a text.
+- **hybrid search**: a search that combines a dense retrieval and a keyword
   retrieval.
-- **Payload**: The record fields that Qdrant stores next to a vector.
-- **RRF (Reciprocal Rank Fusion)**: A method that merges ranked lists into one
+- **payload**: the record fields that Qdrant stores next to a vector.
+- **RRF (Reciprocal Rank Fusion)**: a method that merges ranked lists into one
   ranked list.

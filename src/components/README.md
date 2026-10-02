@@ -40,9 +40,19 @@ group, or align things.
 - **No colour literals.** Every value is `var(--token)`. A hex code in a stylesheet is a defect.
 - **No radius, no shadow.** The Design System is flat and square.
 - **One file, one component, one stylesheet.** The stylesheet import comes last.
-- **No tests in this directory yet.** T0003 excluded them; the backend keeps its coverage.
+- **No tests in this directory yet.** Front-end tests are out of scope for now. The backend keeps its coverage.
 
 ## Components are small on purpose
 
 Compose from the kit instead of building a new one. A panel is `Panel`, not a
 `div` with a border rule. A list row is `RetrievalHit`, not an `li`.
+
+## Glossary
+
+- **Atomic Design**: a folder rule. Generic components live low and product
+  components live high, so imports flow in one direction only.
+- **design token**: a named value, such as a colour or a spacing step, read
+  through `var(--token)`.
+- **layout primitive**: one of `VStack`, `HStack`, or `Grid`. They are the only
+  way to arrange content.
+- **region**: one part of the page with its own id, for example `#chat-panel`.

@@ -62,8 +62,8 @@ another one, pass props instead. Every component has one job.
 - One component per file; the file name matches the component.
 - One stylesheet per component, imported last. The import is required: a
   component whose stylesheet is not imported renders completely unstyled.
-- No colocated test files in this directory yet. T0003 excluded front-end
-  tests; a missing `Foo.test.tsx` is expected, not an oversight.
+- No colocated test files in this directory yet. Front-end tests are out of
+  scope for now. A missing `Foo.test.tsx` is expected, not an oversight.
 
 ## 7. Hooks
 
