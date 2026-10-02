@@ -2,7 +2,7 @@ import type { FC } from "react"
 
 import { VStack } from "../layout/VStack"
 import { Text } from "../base/Text"
-import type { SloganHit } from "../../lib/retrieval"
+import type { SloganHit } from "../../lib/slogan-retrieval"
 
 import "./RetrievalHit.css"
 

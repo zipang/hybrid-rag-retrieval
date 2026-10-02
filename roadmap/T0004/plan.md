@@ -33,6 +33,31 @@ Use a dedicated metadata collection or equivalent durable control record for gen
 Do not insert control records into the searchable slogan collection.
 Finalize the metadata layout in Task 5 after testing cross-process rebuild detection.
 
+### Keep the Qdrant transport independent of one dataset
+
+The transport must work for any collection with any payload fields. It must not
+know the slogan field names. The current client hard-codes the collection name
+`slogans` and the payload fields `annee` and `marque`:
+
+- `createQdrantClient` hard-codes the default collection and the vector layout.
+- `ensureCollection` creates the `annee` and `marque` payload indexes.
+- `src/lib/retrieval.ts` builds year filters with the field name `annee` and
+  reads the payload fields `annee`, `marque`, and `slogan`.
+
+This coupling prevents the client from querying another collection. The project
+separates the transport from the dataset description:
+
+- The transport receives a **schema** that names the collection, the vectors, and
+  the payload indexes.
+- The transport receives filters and field names from the caller, not from a
+  constant.
+- The dataset configuration in `src/config/datasets.ts` supplies the schema.
+- The slogan field names live in the slogan schema, not in the transport.
+
+This work is Track A. It does not change the T0004 scoring contract. It removes
+the sentence "The client queries the slogan collection" from the transport's
+responsibilities.
+
 ### Guarantee completeness before optimization
 
 Use this reference production baseline:
@@ -119,7 +144,19 @@ Select explicit legacy semantic/keyword weights and a minimum score at the scori
                                                                   17 release validation
 ```
 
-Task numbers define dependencies. Syntax and weighted-retrieval work can progress independently after their shared contracts stabilize.
+Track A removes the hard-coded dataset coupling from the transport:
+
+```text
+6 exhaustive score transport --+--> A1 schema contract --> A2 schema-driven transport
+                               |                                  |
+7 semantic + 9 keyword --------+--> A3 dataset fields in retrieval -+
+                                                                  |
+                                                                  v
+                                                          A4 second-collection proof
+```
+
+Task numbers define dependencies. Syntax, weighted-retrieval, and Track A work
+can progress independently after their shared contracts stabilize.
 
 ## Task List
 
@@ -195,14 +232,14 @@ Compare all qualifying identifiers against an exhaustive local reference.
 Measure cost on representative corpus sizes before extending the scorer.
 No fixed candidate cutoff may enter this path.
 
-- [ ] **Task 8: Deliver stable result pagination**
+- [x] **Task 8: Deliver stable result pagination**
   - Acceptance: Snapshots preserve ordered records and scores. Every qualifying identifier appears once across all pages.
   - Acceptance: Bound storage and lifetime. Detect cursor mismatch, expiration, and generation changes without silent truncation.
   - Verify: `bun test src/lib/result-pages.test.ts src/lib/retrieval.test.ts`, including ties, restarts, and capacity errors.
   - Files: `src/lib/result-pages.ts`, `src/lib/result-pages.test.ts`, `src/lib/retrieval.ts`, `src/lib/retrieval.test.ts`.
   - Depends: Tasks 5, 7. Scope: Medium.
 
-- [ ] **Task 9: Deliver keyword-weighted threshold retrieval**
+- [x] **Task 9: Deliver keyword-weighted threshold retrieval**
   - Acceptance: Keyword-only and semantic/keyword queries use fixed normalization and exact weighted scores. Nonoverlapping records score zero.
   - Acceptance: Moderate contributions can qualify outside each index's small top-K set. Scores remain stable across page and batch sizes.
   - Verify: `bun test src/lib/retrieval.test.ts src/lib/scoring.test.ts src/lib/qdrant-completeness.test.ts`.
@@ -214,6 +251,51 @@ No fixed candidate cutoff may enter this path.
 Compare full result lists against the exhaustive scorer for keyword-only and mixed weights.
 Verify threshold zero includes keyword nonmatches.
 Confirm no response-relative normalization or RRF matching scores remain in the new path.
+
+### Phase 2b: Make the Qdrant transport dataset-agnostic
+
+Track A removes the hard-coded slogan coupling from the transport. It does not
+change the scoring contract. It can run in parallel with Phase 3 because it
+touches `src/lib/qdrant.ts`, `src/lib/retrieval.ts`, and the dataset config, not
+the syntax modules.
+
+- [x] **Task A1: Define the collection schema contract**
+  - Acceptance: A typed schema names the collection, the dense vector (name, size, distance), the sparse vector (name, modifier), and the payload index fields (name, schema).
+  - Acceptance: The schema has no slogan field names and no default collection name. The slogan schema supplies those values at the call site.
+  - Acceptance: The transport validates the schema and reports a clear error for a missing or invalid field.
+  - Verify: `bun test src/lib/qdrant-schema.test.ts`.
+  - Files: `src/lib/qdrant-schema.ts`, `src/lib/qdrant-schema.test.ts`, `src/config/datasets.ts`, `src/config/datasets.test.ts`.
+  - Depends: Tasks 4, 6. Scope: Small.
+
+- [x] **Task A2: Pass the schema and field names into the transport**
+  - Acceptance: `createQdrantClient` takes a schema instead of raw environment defaults. The collection name, vector layout, and payload indexes come from the schema.
+  - Acceptance: `ensureCollection` creates the payload indexes named by the schema, not fixed `annee` and `marque`.
+  - Acceptance: The transport accepts an optional filter and fields per call. It reads no payload field by a hard-coded name.
+  - Verify: `bun test src/lib/qdrant.test.ts src/lib/qdrant-completeness.test.ts`. Add a case with a non-slogan collection and different field names.
+  - Files: `src/lib/qdrant.ts`, `src/lib/qdrant.test.ts`, `src/lib/qdrant-completeness.test.ts`.
+  - Depends: Task A1. Scope: Medium.
+
+- [x] **Task A3: Move dataset field names out of retrieval**
+  - Acceptance: `src/lib/retrieval.ts` receives the content field, the identifier field, and the filter fields from configuration, not from constants.
+  - Acceptance: The year filter builder reads a configured field name and a configured value range. The hit mapper reads configured field names.
+  - Acceptance: No slogan field name appears in `src/lib/retrieval.ts`.
+  - Verify: `bun test src/lib/retrieval.test.ts`, including a second dataset shape with different filter and content fields.
+  - Files: `src/lib/retrieval.ts`, `src/lib/retrieval.test.ts`, `src/lib/retrieval-contract.ts`.
+  - Depends: Tasks A1–A2, 7, 9. Scope: Medium.
+
+- [x] **Task A4: Add a second collection end-to-end proof**
+  - Acceptance: A second, non-slogan collection (different collection name, vector layout, and payload fields) can be created, indexed, and queried through the same client and retriever.
+  - Acceptance: The existing slogan path keeps its behavior. No slogan field name leaks into the shared transport.
+  - Verify: `bun test src/lib/qdrant-completeness.test.ts`, plus a new isolated integration test against Qdrant `1.19.1`.
+  - Files: `src/lib/qdrant.ts`, `src/lib/retrieval.ts`, `src/config/datasets.ts`, a new integration test file.
+  - Depends: Tasks A1–A3. Scope: Medium.
+
+### Checkpoint A2: Transport genericity
+
+Review that the transport has no dataset-specific field name or collection name.
+Review the schema contract and the second-collection proof.
+Confirm the slogan path is unchanged and the tests still pass.
+Status: passed. `bun test` covers a second collection with custom vector and field names.
 
 ### Phase 3: Deliver French syntax indexing
 
@@ -340,12 +422,14 @@ Plan approval is required before application implementation. A commit requires a
 | Parser mistakes alter expected trees | Medium | Separate manual-tree encoder tests from actual parser evaluations. |
 | BM25 transformation gives misleading thresholds | Medium | Tune on the development items and validate held-out threshold behavior. Publish score semantics. |
 | API migration breaks chat or retrieval panel | High | Migrate each known caller before removing the legacy internal path. |
+| Hard-coded dataset fields block other collections | High | Track A removes the slogan collection name and field names from the transport. Prove with a second collection. |
 
 ## Scheduling and Parallel Work
 
 Tasks 1 and 2 are independent research units.
 After Task 4, parser and encoder work can progress independently from pagination and semantic/keyword retrieval.
 Qdrant transport, generation state, and indexing changes share files and must proceed sequentially.
+Track A changes `qdrant.ts` and `retrieval.ts`. Schedule Track A before Phase 3 changes that add the syntax vector to the same transport.
 Caller migrations can proceed independently after the final API contract is stable.
 These are scheduling opportunities, not instructions to spawn implementation agents.
 
@@ -368,6 +452,9 @@ Every research decision must produce an artifact. Stop for review when a decisio
 - **IDF:** A keyword weight based on how frequently a term occurs across the corpus.
 - **Query snapshot:** The complete ordered results and metadata retained for stable page delivery.
 - **Sparse nonmatch:** A record without overlapping keyword-vector entries. Its keyword score is zero.
+- **Collection schema:** The typed description of one Qdrant collection: its name, its vectors, and its payload index fields.
+- **Dataset coupling:** A transport that knows the field names of one dataset. The project removes it in Track A.
 - **Threshold:** The inclusive minimum combined score required for a record to qualify.
+- **Track A:** The task group that makes the Qdrant transport dataset-agnostic.
 - **Vertical slice:** A small working retrieval path from query input through scoring to results.
 - **Weighted score:** The sum of component scores multiplied by their selected contribution weights.

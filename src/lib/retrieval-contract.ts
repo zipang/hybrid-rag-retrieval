@@ -57,14 +57,13 @@ export type WeightedHit = {
 	score: number
 	/** Selected per-index component scores. */
 	scores: IndexScores
-	/** Publication year. */
-	annee: number
-	/** Brand or issuing organization. */
-	marque: string
-	/** Campaign name, or an empty string. */
-	campagne: string
-	/** Slogan text. */
-	slogan: string
+	/**
+	 * Record payload fields, exactly as stored in the collection.
+	 *
+	 * The transport does not know the field names of one dataset. A caller maps
+	 * the payload to a typed response with its own field configuration.
+	 */
+	payload: Record<string, unknown>
 }
 
 /** Metadata that describes how one result page was scored. */

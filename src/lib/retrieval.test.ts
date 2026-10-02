@@ -1,114 +1,10 @@
 import { describe, expect, test } from "bun:test"
-import type { ExactDenseQuery, HybridQuery, QueryHit } from "./qdrant"
-import { createRetriever, createWeightedRetriever } from "./retrieval"
+import type { ExactDenseQuery, ExactSparseQuery } from "./qdrant"
+import { createWeightedRetriever } from "./retrieval"
+import { normalizeBm25 } from "./scoring"
 
+/** BM25 options shared by the weighted fakes. */
 const BM25 = { language: "french", ascii_folding: true, avg_len: 7 }
-
-/** Create a retriever whose dependencies record calls and return fixed hits. */
-const createFakes = (hits: QueryHit[] = []) => {
-	const queries: HybridQuery[] = []
-	const denseQueries: string[] = []
-	const dependencies = {
-		embedder: {
-			embedDenseQuery: async (text: string) => {
-				denseQueries.push(text)
-
-				return [0.1, 0.2]
-			},
-		},
-		client: {
-			queryHybrid: async (query: HybridQuery) => {
-				queries.push(query)
-
-				return hits
-			},
-		},
-		bm25: BM25,
-	}
-
-	return { dependencies, queries, denseQueries }
-}
-
-describe("retrieveHybrid", () => {
-	test("builds a hybrid query with shared BM25 options and a year filter", async () => {
-		const { dependencies, queries, denseQueries } = createFakes()
-		const retriever = createRetriever(dependencies)
-
-		await retriever.retrieveHybrid("sucre", { topK: 3, yearFrom: 2004, yearTo: 2005 })
-
-		expect(denseQueries).toEqual(["sucre"])
-		expect(queries).toEqual([
-			{
-				dense: [0.1, 0.2],
-				text: "sucre",
-				bm25Options: BM25,
-				limit: 3,
-				prefetchLimit: 12,
-				filter: { must: [{ key: "annee", range: { gte: 2004, lte: 2005 } }] },
-			},
-		])
-	})
-
-	test("defaults topK and omits the filter when no year bound is set", async () => {
-		const { dependencies, queries } = createFakes()
-		const retriever = createRetriever(dependencies)
-
-		await retriever.retrieveHybrid("sucre")
-
-		expect(queries[0]?.limit).toBe(5)
-		expect(queries[0]?.prefetchLimit).toBe(20)
-		expect(queries[0]?.filter).toBeUndefined()
-	})
-
-	test("builds a one-sided year filter", async () => {
-		const { dependencies, queries } = createFakes()
-		const retriever = createRetriever(dependencies)
-
-		await retriever.retrieveHybrid("sucre", { yearFrom: 2004 })
-		await retriever.retrieveHybrid("sucre", { yearTo: 2005 })
-
-		expect(queries[0]?.filter).toEqual({ must: [{ key: "annee", range: { gte: 2004 } }] })
-		expect(queries[1]?.filter).toEqual({ must: [{ key: "annee", range: { lte: 2005 } }] })
-	})
-
-	test("returns an empty list for a blank query without calling the model", async () => {
-		const { dependencies, queries, denseQueries } = createFakes()
-		const retriever = createRetriever(dependencies)
-
-		expect(await retriever.retrieveHybrid("   ")).toEqual([])
-		expect(denseQueries).toEqual([])
-		expect(queries).toEqual([])
-	})
-
-	test("returns an empty list when Qdrant has no hits", async () => {
-		const { dependencies } = createFakes([])
-		const retriever = createRetriever(dependencies)
-
-		expect(await retriever.retrieveHybrid("sucre")).toEqual([])
-	})
-
-	test("maps payload fields to typed hits", async () => {
-		const { dependencies } = createFakes([
-			{
-				id: 2,
-				score: 0.5,
-				payload: { id: 2, annee: 2004, marque: "Danone", campagne: "", slogan: "Un peu de sucre" },
-			},
-		])
-		const retriever = createRetriever(dependencies)
-
-		expect(await retriever.retrieveHybrid("sucre")).toEqual([
-			{
-				score: 0.5,
-				id: 2,
-				annee: 2004,
-				marque: "Danone",
-				campagne: "",
-				slogan: "Un peu de sucre",
-			},
-		])
-	})
-})
 
 /** Create a weighted retriever over fixed identifiers and cosine scores. */
 const createWeightedFakes = (
@@ -144,8 +40,11 @@ const createWeightedFakes = (
 				}
 			},
 			querySparseExact: async () => ({ scores: [], missing: [] }),
+			fetchPayloads: async (requested: Array<number | string>) =>
+				new Map(requested.map((id) => [id, { annee: 2005, marque: "Brand", slogan: "Texte" }])),
 		},
 		bm25: BM25,
+		filterField: "annee",
 		idBatchSize: options.batchSize,
 	}
 
@@ -187,13 +86,15 @@ describe("retrieveWeighted (semantic-only)", () => {
 			{
 				id: 1,
 				score: 0.8,
-				scores: { semantic: 0.8 },
-				annee: 0,
-				marque: "",
-				campagne: "",
-				slogan: "",
+				scores: { semantic: 0.8, keyword: 0 },
+				payload: { annee: 2005, marque: "Brand", slogan: "Texte" },
 			},
-			{ id: 2, score: 0, scores: { semantic: 0 }, annee: 0, marque: "", campagne: "", slogan: "" },
+			{
+				id: 2,
+				score: 0,
+				scores: { semantic: 0, keyword: 0 },
+				payload: { annee: 2005, marque: "Brand", slogan: "Texte" },
+			},
 		])
 	})
 
@@ -264,6 +165,35 @@ describe("retrieveWeighted (semantic-only)", () => {
 		})
 	})
 
+	test("uses a custom configured filter field name", async () => {
+		const { dependencies, scrollCalls } = createWeightedFakes([1], { 1: 0.5 })
+		const retriever = createWeightedRetriever({ ...dependencies, filterField: "published" })
+
+		await retriever.retrieveWeighted({
+			text: "vers",
+			weights: { semantic: 1 },
+			minScore: 0,
+			filters: { yearFrom: 1900 },
+		})
+
+		expect(scrollCalls[0]).toEqual({
+			filter: { must: [{ key: "published", range: { gte: 1900 } }] },
+		})
+	})
+
+	test("attaches the record payload to each hit", async () => {
+		const { dependencies } = createWeightedFakes([1], { 1: 0.5 })
+		const retriever = createWeightedRetriever(dependencies)
+
+		const page = await retriever.retrieveWeighted({
+			text: "sucre",
+			weights: { semantic: 1 },
+			minScore: 0,
+		})
+
+		expect(page.results[0]?.payload).toEqual({ annee: 2005, marque: "Brand", slogan: "Texte" })
+	})
+
 	test("returns an empty page for a blank query without embedding", async () => {
 		const { dependencies, denseQueries, scrollCalls } = createWeightedFakes([1], { 1: 1 })
 		const retriever = createWeightedRetriever(dependencies)
@@ -293,7 +223,7 @@ describe("retrieveWeighted (semantic-only)", () => {
 		expect(denseQueries).toEqual([])
 	})
 
-	test("sets nextCursor when more qualifying records remain", async () => {
+	test("sets an opaque nextCursor when more qualifying records remain", async () => {
 		const ids = [1, 2, 3]
 		const { dependencies } = createWeightedFakes(ids, { 1: 0.9, 2: 0.8, 3: 0.7 })
 		const retriever = createWeightedRetriever(dependencies)
@@ -306,7 +236,62 @@ describe("retrieveWeighted (semantic-only)", () => {
 		})
 
 		expect(page.results.map((hit) => hit.id)).toEqual([1, 2])
-		expect(page.nextCursor).toBe("2")
+		expect(typeof page.nextCursor).toBe("string")
+		expect(page.nextCursor).not.toBe("2")
+	})
+
+	test("follows a cursor to the next page without rescoring", async () => {
+		const ids = [1, 2, 3, 4]
+		const { dependencies, denseQueries, batches } = createWeightedFakes(ids, {
+			1: 0.9,
+			2: 0.8,
+			3: 0.7,
+			4: 0.6,
+		})
+		const retriever = createWeightedRetriever(dependencies)
+
+		const first = await retriever.retrieveWeighted({
+			text: "sucre",
+			weights: { semantic: 1 },
+			minScore: 0,
+			pageSize: 2,
+		})
+		const second = await retriever.retrieveWeighted({
+			text: "sucre",
+			weights: { semantic: 1 },
+			minScore: 0,
+			pageSize: 2,
+			cursor: first.nextCursor ?? "",
+		})
+
+		expect(first.results.map((hit) => hit.id)).toEqual([1, 2])
+		expect(second.results.map((hit) => hit.id)).toEqual([3, 4])
+		expect(second.nextCursor).toBeUndefined()
+		expect(denseQueries).toEqual(["sucre"])
+		expect(batches).toEqual([[1, 2, 3, 4]])
+	})
+
+	test("rejects a cursor from a different query", async () => {
+		const ids = [1, 2, 3]
+		const { dependencies } = createWeightedFakes(ids, { 1: 0.9, 2: 0.8, 3: 0.7 })
+		const retriever = createWeightedRetriever(dependencies)
+
+		const first = await retriever.retrieveWeighted({
+			text: "sucre",
+			weights: { semantic: 1 },
+			minScore: 0,
+			pageSize: 2,
+		})
+
+		await expect(
+			retriever.retrieveWeighted({
+				text: "autre",
+				weights: { semantic: 1 },
+				minScore: 0,
+				pageSize: 2,
+				cursor: first.nextCursor ?? "",
+			}),
+		).rejects.toThrow(/cursor does not match/)
 	})
 
 	test("orders ties by identifier ascending", async () => {
@@ -359,12 +344,154 @@ describe("retrieveWeighted (semantic-only)", () => {
 		).rejects.toThrow(/minScore/)
 	})
 
-	test("rejects an unsupported index in this slice", async () => {
+	test("rejects the syntax index until it is available", async () => {
 		const { dependencies } = createWeightedFakes([1], { 1: 0.5 })
 		const retriever = createWeightedRetriever(dependencies)
 
 		await expect(
-			retriever.retrieveWeighted({ text: "sucre", weights: { keyword: 1 }, minScore: 0 }),
-		).rejects.toThrow(/semantic index only/)
+			retriever.retrieveWeighted({ text: "sucre", weights: { syntax: 1 }, minScore: 0 }),
+		).rejects.toThrow(/syntax index is not available/)
+	})
+})
+
+/** Create a weighted retriever over fixed dense and sparse scores. */
+const createCombinedFakes = (options: {
+	ids: Array<number | string>
+	semantic?: Record<string | number, number>
+	keyword?: Record<string | number, number>
+}) => {
+	const denseQueries: string[] = []
+	const sparseQueries: string[] = []
+	const dependencies = {
+		embedder: {
+			embedDenseQuery: async (text: string) => {
+				denseQueries.push(text)
+
+				return [0.1, 0.2]
+			},
+		},
+		client: {
+			scrollIds: async () => options.ids,
+			queryDenseExact: async (query: ExactDenseQuery) => ({
+				scores: query.ids
+					.filter((id) => options.semantic?.[id] !== undefined)
+					.map((id) => ({ id, score: options.semantic?.[id] ?? 0 })),
+				missing: [],
+			}),
+			querySparseExact: async (query: ExactSparseQuery) => {
+				sparseQueries.push(query.text)
+
+				return {
+					scores: query.ids
+						.filter((id) => options.keyword?.[id] !== undefined)
+						.map((id) => ({ id, score: options.keyword?.[id] ?? 0 })),
+					missing: query.ids.filter((id) => options.keyword?.[id] === undefined),
+				}
+			},
+			fetchPayloads: async (requested: Array<number | string>) =>
+				new Map(requested.map((id) => [id, { annee: 2005 }])),
+		},
+		bm25: BM25,
+		filterField: "annee",
+	}
+
+	return { dependencies, denseQueries, sparseQueries }
+}
+
+describe("retrieveWeighted (keyword and combined)", () => {
+	test("scores a keyword-only query and gives nonmatches zero", async () => {
+		const { dependencies, denseQueries } = createCombinedFakes({
+			ids: [1, 2, 3],
+			keyword: { 1: 3, 2: 1 },
+		})
+		const retriever = createWeightedRetriever(dependencies)
+
+		const page = await retriever.retrieveWeighted({
+			text: "sucre",
+			weights: { keyword: 1 },
+			minScore: 0,
+		})
+
+		expect(denseQueries).toEqual([])
+		expect(page.results.map((hit) => hit.id)).toEqual([1, 2, 3])
+		expect(page.results[0]?.scores.keyword).toBeCloseTo(0.5, 12)
+		expect(page.results[1]?.scores.keyword).toBeCloseTo(0.25, 12)
+		expect(page.results[2]?.scores.keyword).toBe(0)
+	})
+
+	test("combines semantic and keyword with explicit weights", async () => {
+		const { dependencies } = createCombinedFakes({
+			ids: [1, 2],
+			semantic: { 1: 1, 2: 0 },
+			keyword: { 1: 0, 2: 3 },
+		})
+		const retriever = createWeightedRetriever(dependencies)
+
+		const page = await retriever.retrieveWeighted({
+			text: "sucre",
+			weights: { semantic: 0.5, keyword: 0.5 },
+			minScore: 0,
+		})
+
+		expect(page.results[0]).toMatchObject({ id: 1, score: 0.5 })
+		expect(page.results[1]).toMatchObject({ id: 2, score: 0.25 })
+	})
+
+	test("a moderate keyword contribution qualifies a zero-semantic record", async () => {
+		const { dependencies } = createCombinedFakes({
+			ids: [1],
+			semantic: { 1: 0 },
+			keyword: { 1: 9 },
+		})
+		const retriever = createWeightedRetriever(dependencies)
+
+		const page = await retriever.retrieveWeighted({
+			text: "sucre",
+			weights: { semantic: 0.5, keyword: 0.5 },
+			minScore: 0.3,
+		})
+
+		expect(page.results.map((hit) => hit.id)).toEqual([1])
+		expect(page.results[0]?.score).toBeGreaterThan(0.3)
+	})
+
+	test("a zero threshold includes keyword nonmatches", async () => {
+		const { dependencies } = createCombinedFakes({ ids: [1, 2], keyword: { 1: 3 } })
+		const retriever = createWeightedRetriever(dependencies)
+
+		const page = await retriever.retrieveWeighted({
+			text: "sucre",
+			weights: { keyword: 1 },
+			minScore: 0,
+		})
+
+		expect(page.results.map((hit) => hit.id)).toEqual([1, 2])
+		expect(page.results[1]?.score).toBe(0)
+	})
+
+	test("keeps component scores when a cursor continues a keyword page", async () => {
+		const { dependencies, sparseQueries } = createCombinedFakes({
+			ids: [1, 2, 3],
+			keyword: { 1: 9, 2: 4, 3: 1 },
+		})
+		const retriever = createWeightedRetriever(dependencies)
+
+		const first = await retriever.retrieveWeighted({
+			text: "sucre",
+			weights: { keyword: 1 },
+			minScore: 0,
+			pageSize: 2,
+		})
+		const second = await retriever.retrieveWeighted({
+			text: "sucre",
+			weights: { keyword: 1 },
+			minScore: 0,
+			pageSize: 2,
+			cursor: first.nextCursor ?? "",
+		})
+
+		expect(second.results.map((hit) => hit.id)).toEqual([3])
+		expect(second.results[0]?.scores.keyword).toBeCloseTo(normalizeBm25(1), 12)
+		expect(sparseQueries).toEqual(["sucre"])
 	})
 })

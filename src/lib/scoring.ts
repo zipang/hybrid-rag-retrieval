@@ -268,6 +268,8 @@ export type ScoredRecord = {
 	id: number | string
 	/** Combined matching score. */
 	score: number
+	/** Component scores that produced the combined score. */
+	scores?: IndexScores
 }
 
 /**
@@ -308,6 +310,7 @@ export const scoreAndOrder = (weights: FullIndexWeights, records: ScoreInput[]):
 	const scored = records.map((record) => ({
 		id: record.id,
 		score: combineScores(weights, record.scores),
+		scores: record.scores,
 	}))
 
 	scored.sort((left, right) => {

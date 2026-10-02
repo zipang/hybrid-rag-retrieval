@@ -7,7 +7,7 @@ import {
 	tool,
 	type UIMessage,
 } from "ai"
-import type { RetrievalOptions, Retriever } from "../lib/retrieval"
+import type { RetrievalOptions, Retriever } from "../lib/slogan-retrieval"
 import { sloganJsonSchema } from "../models/slogan"
 import { ApiError, CORS_HEADERS, jsonResponse } from "./api"
 

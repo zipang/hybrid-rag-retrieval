@@ -4,7 +4,7 @@ import { VStack } from "../layout/VStack"
 import { Heading } from "../base/Heading"
 import { Text } from "../base/Text"
 import { Panel } from "../ui/Panel"
-import type { SloganHit } from "../../lib/retrieval"
+import type { SloganHit } from "../../lib/slogan-retrieval"
 import { RetrievalHit } from "./RetrievalHit"
 
 /** How many slogans the panel shows. */

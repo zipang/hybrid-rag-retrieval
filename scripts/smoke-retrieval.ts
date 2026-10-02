@@ -1,7 +1,8 @@
+import { datasetConfigurations } from "../src/config/datasets"
 import { bm25Options } from "../src/lib/bm25"
 import { createEmbedder } from "../src/lib/embedder"
 import { createQdrantClient } from "../src/lib/qdrant"
-import { createRetriever } from "../src/lib/retrieval"
+import { createRetriever } from "../src/lib/slogan-retrieval"
 
 /** The example queries from the T0001 spec. */
 const QUERIES = [
@@ -20,8 +21,13 @@ const TOP_K = 5
 const main = async (): Promise<void> => {
 	const env = process.env
 	const embedder = await createEmbedder(env)
-	const client = createQdrantClient(env)
-	const retriever = createRetriever({ embedder, client, bm25: bm25Options(env) })
+	const client = createQdrantClient(datasetConfigurations.slogans.collectionSchema, env)
+	const retriever = createRetriever({
+		embedder,
+		client,
+		bm25: bm25Options(env),
+		fields: { year: "annee", brand: "marque", campaign: "campagne", content: "slogan" },
+	})
 	let emptyCount = 0
 
 	for (const query of QUERIES) {

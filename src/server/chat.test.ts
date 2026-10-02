@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import type { RetrievalOptions, SloganHit } from "../lib/retrieval"
+import type { RetrievalOptions, SloganHit } from "../lib/slogan-retrieval"
 import { buildSystemPrompt, createChatHandler, searchSlogans } from "./chat"
 
 const HIT: SloganHit = {

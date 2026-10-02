@@ -1,4 +1,4 @@
-import type { RetrievalOptions, Retriever } from "../lib/retrieval"
+import type { RetrievalOptions, Retriever } from "../lib/slogan-retrieval"
 
 /** Dependencies of the JSON API. Tests inject a fake retriever. */
 export type ApiDependencies = {

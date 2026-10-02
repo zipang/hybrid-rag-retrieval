@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test"
 import { createQdrantClient } from "./qdrant"
+import type { CollectionSchema } from "./qdrant-schema"
 
 /**
  * T0004 retrieval feasibility experiment.
@@ -19,6 +20,16 @@ const COLLECTION = "t0004_completeness"
 
 /** Dense vector size of the small experiment collection. */
 const DIMS = 4
+
+/** Schema of the isolated experiment collection. */
+const SCHEMA: CollectionSchema = {
+	collection: COLLECTION,
+	dense: { name: "dense", size: DIMS, distance: "Cosine" },
+	sparse: { name: "bm25", modifier: "idf" },
+}
+
+/** Create a client bound to the isolated experiment collection. */
+const createClient = () => createQdrantClient(SCHEMA, { QDRANT_URL })
 
 /** Dense query vector. Each point has a known cosine score against it. */
 const DENSE_QUERY = [1, 0, 0, 0]
@@ -307,17 +318,14 @@ suite("[T0004] exhaustive Qdrant score enumeration", () => {
 	})
 
 	test("the client scroll returns the same complete identifier set", async () => {
-		const client = createQdrantClient({
-			QDRANT_URL,
-			QDRANT_COLLECTION: COLLECTION,
-		})
+		const client = createClient()
 		const ids = await client.scrollIds({ pageSize: 2 })
 
 		expect(new Set(ids)).toEqual(new Set(TEST_POINTS.map((point) => point.id)))
 	})
 
 	test("the client dense exact scores match the raw probes", async () => {
-		const client = createQdrantClient({ QDRANT_URL, QDRANT_COLLECTION: COLLECTION })
+		const client = createClient()
 		const ids = TEST_POINTS.map((point) => point.id)
 		const global = await denseScores()
 		const result = await client.queryDenseExact({ vector: DENSE_QUERY, ids })
@@ -330,7 +338,7 @@ suite("[T0004] exhaustive Qdrant score enumeration", () => {
 	})
 
 	test("the client sparse exact scores match the raw probes and report nonmatches", async () => {
-		const client = createQdrantClient({ QDRANT_URL, QDRANT_COLLECTION: COLLECTION })
+		const client = createClient()
 		const ids = TEST_POINTS.map((point) => point.id)
 		const global = await sparseScores()
 		const result = await client.querySparseExact({ text: SPARSE_QUERY, ids })
@@ -344,7 +352,7 @@ suite("[T0004] exhaustive Qdrant score enumeration", () => {
 	})
 
 	test("the client raises on a missing dense vector", async () => {
-		const client = createQdrantClient({ QDRANT_URL, QDRANT_COLLECTION: COLLECTION })
+		const client = createClient()
 
 		await expect(client.queryDenseExact({ vector: DENSE_QUERY, ids: [999] })).rejects.toThrow(
 			/no dense vector/s,

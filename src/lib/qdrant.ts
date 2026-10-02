@@ -1,21 +1,13 @@
+import type { CollectionSchema } from "./qdrant-schema"
+import { validateSchema, vectorConfig } from "./qdrant-schema"
+
 /** Environment variables that configure the Qdrant connection. */
 export type QdrantEnv = {
 	/** Base URL of the Qdrant HTTP API. Defaults to the local instance. */
 	QDRANT_URL?: string
-	/** Collection that stores the points. Defaults to `slogans`. */
-	QDRANT_COLLECTION?: string
 	/** Extra environment values, so `process.env` is assignable. */
 	[key: string]: string | undefined
 }
-
-/** Name of the dense named vector. */
-export const DENSE_VECTOR_NAME = "dense"
-
-/** Name of the sparse BM25 named vector. */
-export const BM25_VECTOR_NAME = "bm25"
-
-/** Dense vector size of `intfloat/multilingual-e5-large`. */
-export const DENSE_VECTOR_SIZE = 1024
 
 /** Qdrant BM25 inference object stored in the sparse vector. */
 export type Bm25Inference = {
@@ -140,6 +132,8 @@ export type QdrantClient = {
 	readonly url: string
 	/** Configured collection name. */
 	readonly collection: string
+	/** Collection schema that this client was created from. */
+	readonly schema: CollectionSchema
 	/** Create the collection and its payload indexes when absent. */
 	ensureCollection: () => Promise<boolean>
 	/** Delete the collection when it exists. */
@@ -153,6 +147,10 @@ export type QdrantClient = {
 		filter?: PayloadFilter
 		pageSize?: number
 	}) => Promise<Array<number | string>>
+	/** Read the payloads for a list of identifiers. */
+	fetchPayloads: (
+		ids: Array<number | string>,
+	) => Promise<Map<number | string, Record<string, unknown>>>
 	/** Score one identifier batch with an exact dense search. */
 	queryDenseExact: (query: ExactDenseQuery) => Promise<ExactScoreResult>
 	/** Score one identifier batch with a sparse BM25 search. */
@@ -178,9 +176,6 @@ export class MissingVectorError extends Error {
 /** Default base URL of a locally started Qdrant instance. */
 const DEFAULT_URL = "http://127.0.0.1:6333"
 
-/** Default collection name. */
-const DEFAULT_COLLECTION = "slogans"
-
 /** Read the error message from a Qdrant error body. */
 const extractErrorMessage = (body: unknown): string => {
 	if (typeof body !== "object" || body === null || !("status" in body)) {
@@ -201,18 +196,27 @@ const extractErrorMessage = (body: unknown): string => {
 /**
  * Create a thin `fetch` client for one Qdrant collection.
  *
- * The client creates the collection with a `dense` (Cosine, size 1024) named
- * vector and a `bm25` sparse vector with the IDF modifier, then creates the
- * `annee` and `marque` payload indexes. Qdrant recommends creating payload
+ * The client takes a {@link CollectionSchema}. The schema supplies the
+ * collection name, the vector names, the vector layout, and the payload index
+ * fields. The client creates the collection from that schema, then creates the
+ * payload indexes named by the schema. Qdrant recommends creating payload
  * indexes before ingesting data so the filterable HNSW graph can use them.
+ *
+ * The client carries no dataset-specific field name. A caller passes filters
+ * and field names per call.
  */
 export const createQdrantClient = (
+	schema: CollectionSchema,
 	env: QdrantEnv = {},
 	fetchImpl: typeof fetch = fetch,
 ): QdrantClient => {
+	validateSchema(schema)
+
 	const url = (env.QDRANT_URL ?? DEFAULT_URL).replace(/\/+$/, "")
-	const collection = env.QDRANT_COLLECTION ?? DEFAULT_COLLECTION
+	const collection = schema.collection
 	const base = `/collections/${encodeURIComponent(collection)}`
+	const denseName = schema.dense.name
+	const sparseName = schema.sparse.name
 
 	const request = async <T>(method: string, path: string, body?: unknown): Promise<T> => {
 		const response = await fetchImpl(`${url}${path}`, {
@@ -243,12 +247,14 @@ export const createQdrantClient = (
 			return false
 		}
 
-		await request("PUT", base, {
-			vectors: { [DENSE_VECTOR_NAME]: { size: DENSE_VECTOR_SIZE, distance: "Cosine" } },
-			sparse_vectors: { [BM25_VECTOR_NAME]: { modifier: "idf" } },
-		})
-		await request("PUT", `${base}/index`, { field_name: "annee", field_schema: "integer" })
-		await request("PUT", `${base}/index`, { field_name: "marque", field_schema: "keyword" })
+		await request("PUT", base, vectorConfig(schema))
+
+		for (const field of schema.payloadIndexes ?? []) {
+			await request("PUT", `${base}/index`, {
+				field_name: field.name,
+				field_schema: field.schema,
+			})
+		}
 
 		return true
 	}
@@ -263,8 +269,16 @@ export const createQdrantClient = (
 
 	const upsert = async (points: Point[], options: { wait?: boolean } = {}): Promise<void> => {
 		const wait = options.wait ?? true
+		const mapped = points.map((point) => ({
+			id: point.id,
+			vector: {
+				[denseName]: point.vector.dense,
+				[sparseName]: point.vector.bm25,
+			},
+			payload: point.payload,
+		}))
 
-		await request("PUT", `${base}/points?wait=${wait}`, { points })
+		await request("PUT", `${base}/points?wait=${wait}`, { points: mapped })
 	}
 
 	const queryHybrid = async (query: HybridQuery): Promise<QueryHit[]> => {
@@ -276,8 +290,8 @@ export const createQdrantClient = (
 		}
 
 		const prefetch: Record<string, unknown>[] = [
-			{ query: query.dense, using: DENSE_VECTOR_NAME, limit: prefetchLimit },
-			{ query: bm25, using: BM25_VECTOR_NAME, limit: prefetchLimit },
+			{ query: query.dense, using: denseName, limit: prefetchLimit },
+			{ query: bm25, using: sparseName, limit: prefetchLimit },
 		]
 
 		if (query.filter !== undefined) {
@@ -351,6 +365,28 @@ export const createQdrantClient = (
 		return ids
 	}
 
+	const fetchPayloads = async (
+		ids: Array<number | string>,
+	): Promise<Map<number | string, Record<string, unknown>>> => {
+		const payloads = new Map<number | string, Record<string, unknown>>()
+
+		if (ids.length === 0) {
+			return payloads
+		}
+
+		const points = await request<Array<{ id: number | string; payload?: Record<string, unknown> }>>(
+			"POST",
+			`${base}/points`,
+			{ ids, with_payload: true, with_vector: false },
+		)
+
+		for (const point of points) {
+			payloads.set(point.id, point.payload ?? {})
+		}
+
+		return payloads
+	}
+
 	const queryDenseExact = async (query: ExactDenseQuery): Promise<ExactScoreResult> => {
 		if (query.ids.length === 0) {
 			return { scores: [], missing: [] }
@@ -358,7 +394,7 @@ export const createQdrantClient = (
 
 		const result = await request<{ points: QueryHit[] }>("POST", `${base}/points/query`, {
 			query: query.vector,
-			using: DENSE_VECTOR_NAME,
+			using: denseName,
 			filter: withIds(query.filter, query.ids),
 			params: { exact: true },
 			limit: query.ids.length,
@@ -392,7 +428,7 @@ export const createQdrantClient = (
 
 		const result = await request<{ points: QueryHit[] }>("POST", `${base}/points/query`, {
 			query: bm25,
-			using: BM25_VECTOR_NAME,
+			using: sparseName,
 			filter: withIds(query.filter, query.ids),
 			limit: query.ids.length,
 			with_payload: false,
@@ -411,11 +447,13 @@ export const createQdrantClient = (
 	return {
 		url,
 		collection,
+		schema,
 		ensureCollection,
 		deleteCollection,
 		upsert,
 		queryHybrid,
 		scrollIds,
+		fetchPayloads,
 		queryDenseExact,
 		querySparseExact,
 	}

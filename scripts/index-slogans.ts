@@ -168,7 +168,7 @@ if (import.meta.main) {
 
 	try {
 		const limit = parseLimit(process.argv.slice(2))
-		const client = createQdrantClient(process.env)
+		const client = createQdrantClient(datasetConfigurations.slogans.collectionSchema, process.env)
 		const embedder = await createEmbedder(process.env)
 		const state = createIndexStateStore(process.env.INDEX_STATE_PATH ?? DEFAULT_INDEX_STATE_PATH)
 		const summary = await indexSlogans(

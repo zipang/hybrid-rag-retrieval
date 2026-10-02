@@ -1,5 +1,17 @@
 import { describe, expect, test } from "bun:test"
 import { createQdrantClient, type Point } from "./qdrant"
+import type { CollectionSchema } from "./qdrant-schema"
+
+/** Test collection schema with no dataset-specific constant. */
+const SCHEMA: CollectionSchema = {
+	collection: "slogans",
+	dense: { name: "dense", size: 1024, distance: "Cosine" },
+	sparse: { name: "bm25", modifier: "idf" },
+	payloadIndexes: [
+		{ name: "annee", schema: "integer" },
+		{ name: "marque", schema: "keyword" },
+	],
+}
 
 type StubCall = {
 	method: string
@@ -41,10 +53,7 @@ const createTestClient = (handler: (call: StubCall) => Response) => {
 		return handler(call)
 	}) as unknown as typeof fetch
 
-	const client = createQdrantClient(
-		{ QDRANT_URL: "http://qdrant.test:6333", QDRANT_COLLECTION: "slogans" },
-		fetchImpl,
-	)
+	const client = createQdrantClient(SCHEMA, { QDRANT_URL: "http://qdrant.test:6333" }, fetchImpl)
 
 	return { client, calls }
 }
@@ -73,6 +82,40 @@ describe("ensureCollection", () => {
 
 		expect(await client.ensureCollection()).toBe(false)
 		expect(calls).toHaveLength(1)
+	})
+
+	test("creates the collection from a custom schema with no slogan field names", async () => {
+		const custom: CollectionSchema = {
+			collection: "poems",
+			dense: { name: "embedding", size: 768, distance: "Dot" },
+			sparse: { name: "terms" },
+			payloadIndexes: [
+				{ name: "poet", schema: "keyword" },
+				{ name: "published", schema: "datetime" },
+			],
+		}
+		const calls: StubCall[] = []
+		const fetchImpl = (async (input: string | URL | Request, init?: RequestInit) => {
+			const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url
+			calls.push({
+				method: init?.method ?? "GET",
+				url,
+				body: init?.body === undefined ? undefined : JSON.parse(String(init.body)),
+			})
+
+			return url.endsWith("/exists") ? jsonResponse({ result: { exists: false } }) : jsonResponse()
+		}) as unknown as typeof fetch
+		const client = createQdrantClient(custom, { QDRANT_URL: "http://qdrant.test:6333" }, fetchImpl)
+
+		await client.ensureCollection()
+
+		expect(calls[1]?.url).toBe("http://qdrant.test:6333/collections/poems")
+		expect(calls[1]?.body).toEqual({
+			vectors: { embedding: { size: 768, distance: "Dot" } },
+			sparse_vectors: { terms: {} },
+		})
+		expect(calls[2]?.body).toEqual({ field_name: "poet", field_schema: "keyword" })
+		expect(calls[3]?.body).toEqual({ field_name: "published", field_schema: "datetime" })
 	})
 })
 
@@ -104,14 +147,60 @@ describe("upsert", () => {
 		payload: { id: "1", annee: 2005, marque: "Danone", slogan: "Un peu de sucre" },
 	}
 
-	test("sends points and waits by default", async () => {
+	test("sends points with the schema vector names and waits by default", async () => {
 		const { client, calls } = createTestClient(() => jsonResponse())
 
 		await client.upsert([point])
 
 		expect(calls[0]?.method).toBe("PUT")
 		expect(calls[0]?.url).toBe(`${BASE}/points?wait=true`)
-		expect(calls[0]?.body).toEqual({ points: [point] })
+		expect(calls[0]?.body).toEqual({
+			points: [
+				{
+					id: point.id,
+					vector: {
+						dense: point.vector.dense,
+						bm25: point.vector.bm25,
+					},
+					payload: point.payload,
+				},
+			],
+		})
+	})
+
+	test("maps the vector kinds to custom schema vector names", async () => {
+		const custom: CollectionSchema = {
+			collection: "poems",
+			dense: { name: "embedding", size: 4, distance: "Dot" },
+			sparse: { name: "terms" },
+		}
+		const calls: StubCall[] = []
+		const fetchImpl = (async (input: string | URL | Request, init?: RequestInit) => {
+			const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url
+			calls.push({
+				method: init?.method ?? "GET",
+				url,
+				body: init?.body === undefined ? undefined : JSON.parse(String(init.body)),
+			})
+
+			return jsonResponse()
+		}) as unknown as typeof fetch
+		const client = createQdrantClient(custom, { QDRANT_URL: "http://qdrant.test:6333" }, fetchImpl)
+
+		await client.upsert([point])
+
+		expect(calls[0]?.body).toEqual({
+			points: [
+				{
+					id: point.id,
+					vector: {
+						embedding: point.vector.dense,
+						terms: point.vector.bm25,
+					},
+					payload: point.payload,
+				},
+			],
+		})
 	})
 
 	test("honors wait:false", async () => {

@@ -81,11 +81,25 @@ const createFakes = () => {
 			},
 			bm25: { language: "french", ascii_folding: true, avg_len: 7 },
 			state: {
-				beginRebuild: async () => ({ generation: "gen-1", writer: "writer-1" }),
+				beginRebuild: async () => ({
+					generation: "gen-1",
+					writer: "writer-1",
+					status: "rebuilding" as const,
+					startedAt: "2026-01-01T00:00:00.000Z",
+					updatedAt: "2026-01-01T00:00:00.000Z",
+				}),
 				publish: async (options: { recordCount: number }) => {
 					published.push({ recordCount: options.recordCount })
 
-					return { generation: "gen-1", status: "ready" as const }
+					return {
+						generation: "gen-1",
+						writer: "writer-1",
+						status: "ready" as const,
+						startedAt: "2026-01-01T00:00:00.000Z",
+						updatedAt: "2026-01-01T00:00:01.000Z",
+						readyAt: "2026-01-01T00:00:01.000Z",
+						recordCount: options.recordCount,
+					}
 				},
 			},
 			log: (message: string) => {

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import type { IndexWeights } from "./retrieval-contract"
+import type { FullIndexWeights, IndexWeights } from "./retrieval-contract"
 import {
 	BM25_SCALE,
 	clamp01,
@@ -286,7 +286,7 @@ describe("scoreAndOrder", () => {
 	})
 
 	test("keeps tied scores for identical component vectors", () => {
-		const weights = { semantic: 0.5, keyword: 0.5 }
+		const weights: FullIndexWeights = { syntax: 0, semantic: 0.5, keyword: 0.5 }
 		const ordered = scoreAndOrder(weights, [
 			{ id: 1, scores: { semantic: 1, keyword: 0.78 } },
 			{ id: 2, scores: { semantic: 1, keyword: 0.78 } },
@@ -309,7 +309,7 @@ describe("scoreAndOrder", () => {
 	})
 
 	test("produces the same order for the same input", () => {
-		const weights = { syntax: 0.5, semantic: 0.5 }
+		const weights: FullIndexWeights = { syntax: 0.5, semantic: 0.5, keyword: 0 }
 		const input = [
 			{ id: "b", scores: { syntax: 0.5, semantic: 0.5 } },
 			{ id: "a", scores: { syntax: 0.5, semantic: 0.5 } },
