@@ -177,6 +177,200 @@ describe("queryHybrid", () => {
 	})
 })
 
+describe("scrollIds", () => {
+	test("follows pages until the next offset is absent", async () => {
+		const { client, calls } = createTestClient((call) => {
+			const offset = (call.body as { offset?: number } | undefined)?.offset
+
+			if (offset === undefined) {
+				return jsonResponse({ result: { points: [{ id: 1 }, { id: 2 }], next_page_offset: 2 } })
+			}
+
+			return jsonResponse({ result: { points: [{ id: 3 }] } })
+		})
+
+		const ids = await client.scrollIds()
+
+		expect(ids).toEqual([1, 2, 3])
+		expect(calls).toHaveLength(2)
+		expect(calls[0]?.body).toEqual({ limit: 256, with_payload: false, with_vector: false })
+		expect(calls[1]?.body).toEqual({
+			limit: 256,
+			with_payload: false,
+			with_vector: false,
+			offset: 2,
+		})
+	})
+
+	test("applies the filter and the requested page size", async () => {
+		const { client, calls } = createTestClient(() => jsonResponse({ result: { points: [] } }))
+		const filter = { must: [{ key: "annee", range: { gte: 2004 } }] }
+
+		await client.scrollIds({ filter, pageSize: 10 })
+
+		expect(calls[0]?.body).toEqual({
+			limit: 10,
+			with_payload: false,
+			with_vector: false,
+			filter,
+		})
+	})
+
+	test("stops on a null next offset", async () => {
+		const { client } = createTestClient(() =>
+			jsonResponse({ result: { points: [{ id: 7 }], next_page_offset: null } }),
+		)
+
+		expect(await client.scrollIds()).toEqual([7])
+	})
+})
+
+describe("queryDenseExact", () => {
+	test("sends an exact query restricted to the identifiers", async () => {
+		const { client, calls } = createTestClient(() =>
+			jsonResponse({
+				result: {
+					points: [
+						{ id: 1, score: 1, payload: {} },
+						{ id: 5, score: 1, payload: {} },
+					],
+				},
+			}),
+		)
+
+		const result = await client.queryDenseExact({
+			vector: [1, 0],
+			ids: [1, 5, 9],
+			onMissing: "skip",
+		})
+
+		expect(result.scores).toEqual([
+			{ id: 1, score: 1 },
+			{ id: 5, score: 1 },
+		])
+		expect(result.missing).toEqual([9])
+		expect(calls[0]?.body).toEqual({
+			query: [1, 0],
+			using: "dense",
+			filter: { must: [{ has_id: [1, 5, 9] }] },
+			params: { exact: true },
+			limit: 3,
+			with_payload: false,
+		})
+	})
+
+	test("throws on a missing dense vector by default", async () => {
+		const { client } = createTestClient(() =>
+			jsonResponse({ result: { points: [{ id: 1, score: 1, payload: {} }] } }),
+		)
+
+		await expect(client.queryDenseExact({ vector: [1, 0], ids: [1, 9] })).rejects.toThrow(
+			/no dense vector/s,
+		)
+	})
+
+	test("reports a missing dense vector when the policy is skip", async () => {
+		const { client } = createTestClient(() =>
+			jsonResponse({ result: { points: [{ id: 1, score: 1, payload: {} }] } }),
+		)
+
+		const result = await client.queryDenseExact({
+			vector: [1, 0],
+			ids: [1, 9],
+			onMissing: "skip",
+		})
+
+		expect(result.missing).toEqual([9])
+	})
+
+	test("returns an empty result for an empty identifier batch", async () => {
+		const { client, calls } = createTestClient(() => jsonResponse({ result: { points: [] } }))
+
+		expect(await client.queryDenseExact({ vector: [1], ids: [] })).toEqual({
+			scores: [],
+			missing: [],
+		})
+		expect(calls).toHaveLength(0)
+	})
+
+	test("combines a payload filter with the identifier set", async () => {
+		const { client, calls } = createTestClient(() => jsonResponse({ result: { points: [] } }))
+		const filter = { must: [{ key: "annee", range: { gte: 2004 } }] }
+
+		await client.queryDenseExact({ vector: [1], ids: [1, 2], filter, onMissing: "skip" })
+
+		expect(calls[0]?.body).toMatchObject({
+			filter: {
+				must: [{ key: "annee", range: { gte: 2004 } }, { has_id: [1, 2] }],
+			},
+		})
+	})
+})
+
+describe("querySparseExact", () => {
+	test("sends a BM25 query restricted to the identifiers", async () => {
+		const { client, calls } = createTestClient(() =>
+			jsonResponse({
+				result: {
+					points: [
+						{ id: 2, score: 1.9, payload: {} },
+						{ id: 4, score: 0.7, payload: {} },
+					],
+				},
+			}),
+		)
+
+		const result = await client.querySparseExact({
+			text: "alpha beta",
+			bm25Options: { language: "french" },
+			ids: [1, 2, 3, 4],
+		})
+
+		expect(result.scores).toEqual([
+			{ id: 2, score: 1.9 },
+			{ id: 4, score: 0.7 },
+		])
+		expect(result.missing).toEqual([1, 3])
+		expect(calls[0]?.body).toEqual({
+			query: { text: "alpha beta", model: "qdrant/bm25", options: { language: "french" } },
+			using: "bm25",
+			filter: { must: [{ has_id: [1, 2, 3, 4] }] },
+			limit: 4,
+			with_payload: false,
+		})
+	})
+
+	test("reports sparse nonmatches without throwing", async () => {
+		const { client } = createTestClient(() =>
+			jsonResponse({ result: { points: [{ id: 2, score: 1.9, payload: {} }] } }),
+		)
+
+		const result = await client.querySparseExact({ text: "alpha", ids: [1, 2] })
+
+		expect(result.missing).toEqual([1])
+	})
+
+	test("preserves the raw score exactly", async () => {
+		const { client } = createTestClient(() =>
+			jsonResponse({ result: { points: [{ id: 1, score: 1.905278, payload: {} }] } }),
+		)
+
+		const result = await client.querySparseExact({ text: "alpha", ids: [1] })
+
+		expect(result.scores[0]?.score).toBe(1.905278)
+	})
+
+	test("returns an empty result for an empty identifier batch", async () => {
+		const { client, calls } = createTestClient(() => jsonResponse({ result: { points: [] } }))
+
+		expect(await client.querySparseExact({ text: "alpha", ids: [] })).toEqual({
+			scores: [],
+			missing: [],
+		})
+		expect(calls).toHaveLength(0)
+	})
+})
+
 describe("errors", () => {
 	test("reports the Qdrant error message and status", async () => {
 		const { client } = createTestClient(() => jsonResponse({ status: 500, error: "boom" }))
