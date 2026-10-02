@@ -11,6 +11,7 @@
         "react": "^19.3.0",
         "react-dom": "^19.3.0",
         "tjs": "7.0.0",
+        "udpipe-wasm": "^0.1.0",
       },
       "devDependencies": {
         "@biomejs/biome": "^2.5.15",
@@ -171,6 +172,8 @@
     "tjs": ["tjs@7.0.0", "", {}, "sha512-2VkC+MxEMqkPCCDQewXJPJpDDGLWMZCzeOxn0UoEeyujA8lQNsIySxcXDjWr2IsTxS7O2JjvylkjvKZsIreShw=="],
 
     "type-fest": ["type-fest@0.13.1", "", {}, "sha512-34R7HTnG0XIJcBSn5XhDd7nNFPRcXYRZrBB2O2jdKqYODldSzBAqzsWoZYYvduky73toYS/ESqxPvkDf/F0XMg=="],
+
+    "udpipe-wasm": ["udpipe-wasm@0.1.0", "", {}, "sha512-en9Ex7j8eBvtEVawoyUVJDAQlGPSIJoiGyEzlfAP7yQq4N/cbdxzyrijOzjhTS8gHxJNW4ligCmH1/gbptFmrw=="],
 
     "undici": ["undici@7.30.0", "", {}, "sha512-dkrQXeHSaoamnItlYbmzG0wFYrM0ZwDxCIg0A7aKjTyyhh9svRzCNFEzV+Vm05/yehjCzjDZ31KXfGEjYSztDQ=="],
 

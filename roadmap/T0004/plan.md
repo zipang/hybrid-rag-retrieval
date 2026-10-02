@@ -299,11 +299,12 @@ Status: passed. `bun test` covers a second collection with custom vector and fie
 
 ### Phase 3: Deliver French syntax indexing
 
-- [ ] **Task 10: Implement the selected parser adapter**
+- [x] **Task 10: Implement the selected parser adapter**
   - Acceptance: Validate heads, roots, connectivity, cycles, sentence boundaries, and grammatical annotations behind an injectable adapter.
   - Acceptance: Return explicit parse and availability errors. Reuse the loaded local model rather than initialize it per query.
   - Verify: `bun test src/lib/syntax/parser.test.ts`. Run real French parser integration tests with the pinned local model.
-  - Files: `src/lib/syntax/parser.ts`, `src/lib/syntax/parser.test.ts`, selected parser bridge file, dependency manifests if approved.
+  - Files: `src/lib/syntax/parser.ts`, `src/lib/syntax/parser.test.ts`, `src/lib/syntax/udpipe-engine.ts`, `src/lib/syntax/config.ts`, `src/lib/syntax/config.test.ts`, `package.json`, `scripts/init.sh`.
+  - Notes: Added the `udpipe-wasm` runtime dependency. Merged the Qdrant setup into one `scripts/init.sh` that also downloads the pinned model with a checksum check. Integration tests skip when the model is absent.
   - Depends: Tasks 1, 3–4. Scope: Medium, at most five files after adapter selection.
 
 - [ ] **Task 11: Implement profile abstraction and tree encoding**
