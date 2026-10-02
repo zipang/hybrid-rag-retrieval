@@ -7,6 +7,10 @@ structural pairs. The author annotated every tree by hand. A reviewer must
 confirm the trees and the expected relations before the project tunes any
 encoder weight.
 
+Scope note: this ticket evaluates the `coarse` profile first. The test data set
+still carries the feature allowlist and the detailed expectations, so the
+deferred `detailed` evaluation needs no new data.
+
 ## Purpose
 
 Task 1 of the plan requires a reviewed French evaluation set. The set judges the

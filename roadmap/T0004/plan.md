@@ -307,20 +307,21 @@ Status: passed. `bun test` covers a second collection with custom vector and fie
   - Notes: Added the `udpipe-wasm` runtime dependency. Merged the Qdrant setup into one `scripts/init.sh` that also downloads the pinned model with a checksum check. Integration tests skip when the model is absent.
   - Depends: Tasks 1, 3–4. Scope: Medium, at most five files after adapter selection.
 
-- [ ] **Task 11: Implement profile abstraction and tree encoding**
-  - Acceptance: Coarse and detailed profiles implement the approved feature rules without lexical data. Identical canonical trees yield identical vectors.
+- [ ] **Task 11: Implement coarse profile abstraction and tree encoding**
+  - Acceptance: The `coarse` profile implements the approved feature rules without lexical data. Identical canonical trees yield identical vectors.
+  - Acceptance: The abstraction and the encoder take a profile parameter, so the `detailed` profile slots in later without a rewrite. Only `coarse` is implemented and validated in this ticket.
   - Acceptance: Evaluate connected features, choose dimensions and weights, and freeze encoder identity against the held-out items.
   - Acceptance: Weight features by grammatical role, not uniformly. Core-role edges (`root`, `nsubj`, `obj`) weigh more than modifier edges (`advmod`, `det`, `expl`). Checkpoint B measured that uniform weights over-weight a single missing node. See `memos/syntax-trees.md`, section 9. The exact weights and the risk of gap compression stay open for this task.
   - Acceptance: Move the reference scorer into the repository as a reproducible evaluation tool, and drive the frozen weights from it.
-  - Verify: `bun test src/lib/syntax/abstraction.test.ts src/lib/syntax/encoder.test.ts`, plus `scripts/evaluate-syntax.ts` on the held-out split. Meet specification targets before database backfill.
+  - Verify: `bun test src/lib/syntax/abstraction.test.ts src/lib/syntax/encoder.test.ts`, plus `scripts/evaluate-syntax.ts --profile coarse` on the held-out split. Meet specification targets before database backfill.
   - Files: `src/lib/syntax/abstraction.ts`, `src/lib/syntax/abstraction.test.ts`, `src/lib/syntax/encoder.ts`, `src/lib/syntax/encoder.test.ts`, `scripts/evaluate-syntax.ts`, `roadmap/T0004/evaluation.md`.
   - Depends: Tasks 1, 4, 10. Scope: Medium.
 
 ### Checkpoint E: Syntax quality
 
-Review the two supplied French examples under both profiles.
-Require identical coarse representations and detailed definiteness sensitivity.
-Verify lexical metadata never enters the encoder and review held-out triplet results.
+Review the two supplied French examples with the `coarse` profile.
+Require identical coarse representations.
+Verify lexical metadata never enters the encoder and review held-out ranking-case results.
 Review the frozen role weights against the role-weighting finding from Checkpoint B (`memos/syntax-trees.md`, section 9).
 
 - [ ] **Task 12: Add syntax schema and vector updates**
@@ -332,9 +333,9 @@ Review the frozen role weights against the role-weighting finding from Checkpoin
   - Depends: Tasks 5–6, 11. Scope: Medium.
 
 - [ ] **Task 13: Deliver syntax backfill**
-  - Acceptance: Implement `index-syntax.ts --profile coarse|detailed` over existing records with complete coverage and exclusion accounting.
+  - Acceptance: Implement `index-syntax.ts --profile coarse` over existing records with complete coverage and exclusion accounting. The flag accepts the profile name, so the deferred `detailed` profile needs no interface change.
   - Acceptance: Clear stale syntax values on failed or excluded records. Prevent mixed profiles and publish readiness only after validation.
-  - Verify: `bun test scripts/index-syntax.test.ts`. Run both profiles on an isolated test collection and compare other vectors before and after.
+  - Verify: `bun test scripts/index-syntax.test.ts`. Run the `coarse` profile on an isolated test collection and compare other vectors before and after.
   - Files: `scripts/index-syntax.ts`, `scripts/index-syntax.test.ts`, `src/lib/syntax/config.ts`, `src/lib/syntax/config.test.ts`.
   - Depends: Tasks 10–12. Scope: Medium.
 
@@ -390,9 +391,9 @@ Run the API, chat, retrieval panel, and smoke flows before final evaluation.
 ### Phase 5: Measure and document release readiness
 
 - [ ] **Task 17a: Deliver reproducible evaluation commands**
-  - Acceptance: Implement both profile evaluation commands and report grammar quality, ranking, full-result equality, and runtime measurements.
+  - Acceptance: Implement the `coarse` profile evaluation command and report grammar quality, ranking, full-result equality, and runtime measurements.
   - Acceptance: Include corpus size, vector dimensions, normalization parameters, memory, page cost, and component timings in reports.
-  - Verify: Run both `evaluate-syntax.ts` commands from the specification against isolated collections. Compare all results with the exhaustive reference.
+  - Verify: Run `evaluate-syntax.ts --profile coarse` against an isolated collection. Compare all results with the exhaustive reference.
   - Files: `scripts/evaluate-syntax.ts`, `scripts/evaluate-syntax.test.ts`, `roadmap/T0004/evaluation.md`.
   - Depends: Tasks 11, 14, 16c. Scope: Medium.
 
@@ -434,11 +435,38 @@ Track A changes `qdrant.ts` and `retrieval.ts`. Schedule Track A before Phase 3 
 Caller migrations can proceed independently after the final API contract is stable.
 These are scheduling opportunities, not instructions to spawn implementation agents.
 
+## Deferred Work
+
+The project defers these items to a future ticket. Each item is out of scope for
+this ticket, but the code keeps a seam for it, so the future work does not force
+a rewrite.
+
+### Detailed syntax profile
+
+The `coarse` profile is enough to prove the end-to-end system. The `detailed`
+profile adds the grammatical features to the syntax vector.
+
+- The `detailed` profile retains an allowlist of features: `Definite`, `Gender`,
+  `Mood`, `Number`, `Person`, `Tense`, `VerbForm`, and `Voice`.
+- The `coarse` profile removes all features.
+- The abstraction and the encoder take a profile parameter. A future ticket adds
+  the `detailed` branch. The interfaces do not change.
+- The syntax index stores one active profile per generation. The deferred work
+  adds the second profile and its reindex run.
+- The specification records the full profile table in `spec.md`, section 1.
+
+The future ticket must:
+- implement the `detailed` branch in `abstraction.ts`.
+- add the detailed feature weights and dimensions.
+- evaluate the detailed profile on the reviewed test data set.
+- run a `detailed` backfill.
+- revalidate the syntax success targets for the detailed profile.
+
 ## Decisions to Resolve at Checkpoints
 
 - Checkpoint B: parser/model versions, dependency approval, normalization parameters, and caller thresholds.
 - Checkpoint C: corpus-size measurements and generation publication guarantees.
-- Checkpoint E: encoder dimensions, features, weights, and quality targets.
+- Checkpoint E: coarse encoder dimensions, features, weights, and quality targets.
 - Checkpoint H: snapshot storage, lifetime, page bounds, and measured release latency targets.
 
 Every research decision must produce an artifact. Stop for review when a decision changes an approved requirement.
@@ -446,15 +474,16 @@ Every research decision must produce an artifact. Stop for review when a decisio
 ## Glossary
 
 - **Backfill:** Addition of syntax vectors to existing indexed records.
+- **Collection schema:** The typed description of one Qdrant collection: its name, its vectors, and its payload index fields.
 - **Component score:** A normalized matching score from one selected index.
+- **Dataset coupling:** A transport that knows the field names of one dataset. The project removes it in Track A.
 - **Exact search:** A vector search that does not use approximate nearest-neighbor candidate selection.
 - **Generation:** A fixed version of indexed data and scoring configuration.
 - **Held-out item:** A test data set entry reserved from parameter tuning.
 - **IDF:** A keyword weight based on how frequently a term occurs across the corpus.
+- **Profile:** The indexing setting that chooses which grammatical details the syntax vector keeps. The `coarse` profile keeps the structure only. The `detailed` profile also keeps an allowlist of features.
 - **Query snapshot:** The complete ordered results and metadata retained for stable page delivery.
 - **Sparse nonmatch:** A record without overlapping keyword-vector entries. Its keyword score is zero.
-- **Collection schema:** The typed description of one Qdrant collection: its name, its vectors, and its payload index fields.
-- **Dataset coupling:** A transport that knows the field names of one dataset. The project removes it in Track A.
 - **Threshold:** The inclusive minimum combined score required for a record to qualify.
 - **Track A:** The task group that makes the Qdrant transport dataset-agnostic.
 - **Vertical slice:** A small working retrieval path from query input through scoring to results.

@@ -3,6 +3,19 @@
 Ticket: `T0004`  
 Status: Approved by the user. Implementation planning follows this specification.
 
+## Scope note
+
+This ticket first delivers a working end-to-end system with the `coarse`
+profile. The project defers the `detailed` profile to a future ticket. The
+`coarse` profile keeps the grammatical structure only. The `detailed` profile
+also keeps an allowlist of grammatical features, such as `Definite`, `Gender`,
+and `Tense`.
+
+The code keeps a profile seam, so the future ticket adds the `detailed` branch
+without an interface change. The plan records the deferred items in its
+"Deferred Work" section. The `coarse` profile is enough to prove the full
+pipeline: parse, abstract, encode, store, and query.
+
 ## Objective
 
 Add a syntax vector to indexed Qdrant records. Let developers combine syntax, semantic, and keyword scores through a weighted retrieval API.
@@ -25,7 +38,7 @@ The proposed code-representation workflow becomes: parse French grammar, abstrac
 ## Confirmed Intent
 
 - Support French in this ticket.
-- Offer two grammatical specificity profiles: `coarse` and `detailed`.
+- Offer two grammatical specificity profiles: `coarse` and `detailed`. This ticket implements and validates `coarse` first. It defers `detailed` to a future ticket, keeping the profile seam in the code.
 - Select one profile per indexing run. Changing the profile requires syntax reindexing.
 - Replace retrieval modes with weighted index selection through the API.
 - Give each selected index a documented score between zero and one.
