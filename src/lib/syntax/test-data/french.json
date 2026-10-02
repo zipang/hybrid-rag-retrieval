@@ -1,0 +1,1493 @@
+{
+	"version": 3,
+	"language": "fr",
+	"tokenFields": ["form", "lemma", "upos", "head", "deprel", "feats"],
+	"profileFeatures": [
+		"Definite",
+		"Gender",
+		"Mood",
+		"Number",
+		"Person",
+		"Tense",
+		"VerbForm",
+		"Voice"
+	],
+	"texts": [
+		{
+			"id": "x001",
+			"text": "Le garçon regarde le soleil",
+			"sentences": [
+				[
+					["Le", "le", "DET", 2, "det", "Definite=Def|Gender=Masc|Number=Sing"],
+					["garçon", "garçon", "NOUN", 3, "nsubj", "Gender=Masc|Number=Sing"],
+					[
+						"regarde",
+						"regarder",
+						"VERB",
+						0,
+						"root",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
+					],
+					["le", "le", "DET", 5, "det", "Definite=Def|Gender=Masc|Number=Sing"],
+					["soleil", "soleil", "NOUN", 3, "obj", "Gender=Masc|Number=Sing"]
+				]
+			]
+		},
+		{
+			"id": "x002",
+			"text": "Un chat mange une souris",
+			"sentences": [
+				[
+					["Un", "un", "DET", 2, "det", "Definite=Ind|Gender=Masc|Number=Sing"],
+					["chat", "chat", "NOUN", 3, "nsubj", "Gender=Masc|Number=Sing"],
+					[
+						"mange",
+						"manger",
+						"VERB",
+						0,
+						"root",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
+					],
+					["une", "un", "DET", 5, "det", "Definite=Ind|Gender=Fem|Number=Sing"],
+					["souris", "souris", "NOUN", 3, "obj", "Gender=Fem|Number=Sing"]
+				]
+			]
+		},
+		{
+			"id": "x003",
+			"text": "Le soleil regarde le garçon",
+			"sentences": [
+				[
+					["Le", "le", "DET", 2, "det", "Definite=Def|Gender=Masc|Number=Sing"],
+					["soleil", "soleil", "NOUN", 3, "nsubj", "Gender=Masc|Number=Sing"],
+					[
+						"regarde",
+						"regarder",
+						"VERB",
+						0,
+						"root",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
+					],
+					["le", "le", "DET", 5, "det", "Definite=Def|Gender=Masc|Number=Sing"],
+					["garçon", "garçon", "NOUN", 3, "obj", "Gender=Masc|Number=Sing"]
+				]
+			]
+		},
+		{
+			"id": "x004",
+			"text": "La fille admire la lune",
+			"sentences": [
+				[
+					["La", "le", "DET", 2, "det", "Definite=Def|Gender=Fem|Number=Sing"],
+					["fille", "fille", "NOUN", 3, "nsubj", "Gender=Fem|Number=Sing"],
+					[
+						"admire",
+						"admirer",
+						"VERB",
+						0,
+						"root",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
+					],
+					["la", "le", "DET", 5, "det", "Definite=Def|Gender=Fem|Number=Sing"],
+					["lune", "lune", "NOUN", 3, "obj", "Gender=Fem|Number=Sing"]
+				]
+			]
+		},
+		{
+			"id": "x005",
+			"text": "C'est le gentil garçon qui regardait la lune en souriant",
+			"sentences": [
+				[
+					["C'", "ce", "PRON", 5, "expl", "Gender=Masc|Number=Sing|Person=3"],
+					["est", "être", "AUX", 5, "cop", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"],
+					["le", "le", "DET", 5, "det", "Definite=Def|Gender=Masc|Number=Sing"],
+					["gentil", "gentil", "ADJ", 5, "amod", "Gender=Masc|Number=Sing"],
+					["garçon", "garçon", "NOUN", 0, "root", "Gender=Masc|Number=Sing"],
+					["qui", "qui", "PRON", 7, "nsubj", "Gender=Masc|Number=Sing|Person=3"],
+					[
+						"regardait",
+						"regarder",
+						"VERB",
+						5,
+						"advcl:cleft",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Imp|VerbForm=Fin"
+					],
+					["la", "le", "DET", 9, "det", "Definite=Def|Gender=Fem|Number=Sing"],
+					["lune", "lune", "NOUN", 7, "obj", "Gender=Fem|Number=Sing"],
+					["en", "en", "ADP", 11, "mark", ""],
+					["souriant", "sourire", "VERB", 7, "advcl", "Tense=Pres|VerbForm=Part"]
+				]
+			]
+		},
+		{
+			"id": "x006",
+			"text": "C'est la petite fille qui admirait la lune en chantant",
+			"sentences": [
+				[
+					["C'", "ce", "PRON", 4, "expl", "Gender=Fem|Number=Sing|Person=3"],
+					["est", "être", "AUX", 4, "cop", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"],
+					["la", "le", "DET", 4, "det", "Definite=Def|Gender=Fem|Number=Sing"],
+					["fille", "fille", "NOUN", 0, "root", "Gender=Fem|Number=Sing"],
+					["qui", "qui", "PRON", 6, "nsubj", "Gender=Fem|Number=Sing|Person=3"],
+					[
+						"admirait",
+						"admirer",
+						"VERB",
+						4,
+						"advcl:cleft",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Imp|VerbForm=Fin"
+					],
+					["la", "le", "DET", 8, "det", "Definite=Def|Gender=Fem|Number=Sing"],
+					["lune", "lune", "NOUN", 6, "obj", "Gender=Fem|Number=Sing"],
+					["en", "en", "ADP", 10, "mark", ""],
+					["chantant", "chanter", "VERB", 6, "advcl", "Tense=Pres|VerbForm=Part"]
+				]
+			]
+		},
+		{
+			"id": "x007",
+			"text": "La petite fille posa sa main sur le chat",
+			"sentences": [
+				[
+					["La", "le", "DET", 3, "det", "Definite=Def|Gender=Fem|Number=Sing"],
+					["petite", "petit", "ADJ", 3, "amod", "Gender=Fem|Number=Sing"],
+					["fille", "fille", "NOUN", 4, "nsubj", "Gender=Fem|Number=Sing"],
+					[
+						"posa",
+						"poser",
+						"VERB",
+						0,
+						"root",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Past|VerbForm=Fin"
+					],
+					["sa", "son", "DET", 6, "det", "Gender=Fem|Number=Sing|Person=3|Poss=Yes"],
+					["main", "main", "NOUN", 4, "obj", "Gender=Fem|Number=Sing"],
+					["sur", "sur", "ADP", 9, "case", ""],
+					["le", "le", "DET", 9, "det", "Definite=Def|Gender=Masc|Number=Sing"],
+					["chat", "chat", "NOUN", 4, "obl", "Gender=Masc|Number=Sing"]
+				]
+			]
+		},
+		{
+			"id": "x008",
+			"text": "La jeune femme posa son sac sur la table",
+			"sentences": [
+				[
+					["La", "le", "DET", 3, "det", "Definite=Def|Gender=Fem|Number=Sing"],
+					["jeune", "jeune", "ADJ", 3, "amod", "Gender=Fem|Number=Sing"],
+					["femme", "femme", "NOUN", 4, "nsubj", "Gender=Fem|Number=Sing"],
+					[
+						"posa",
+						"poser",
+						"VERB",
+						0,
+						"root",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Past|VerbForm=Fin"
+					],
+					["son", "son", "DET", 6, "det", "Gender=Masc|Number=Sing|Person=3|Poss=Yes"],
+					["sac", "sac", "NOUN", 4, "obj", "Gender=Masc|Number=Sing"],
+					["sur", "sur", "ADP", 9, "case", ""],
+					["la", "le", "DET", 9, "det", "Definite=Def|Gender=Fem|Number=Sing"],
+					["table", "table", "NOUN", 4, "obl", "Gender=Fem|Number=Sing"]
+				]
+			]
+		},
+		{
+			"id": "x009",
+			"text": "Le train arrive en gare en retard",
+			"sentences": [
+				[
+					["Le", "le", "DET", 2, "det", "Definite=Def|Gender=Masc|Number=Sing"],
+					["train", "train", "NOUN", 3, "nsubj", "Gender=Masc|Number=Sing"],
+					[
+						"arrive",
+						"arriver",
+						"VERB",
+						0,
+						"root",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
+					],
+					["en", "en", "ADP", 5, "case", ""],
+					["gare", "gare", "NOUN", 3, "obl", "Gender=Fem|Number=Sing"],
+					["en", "en", "ADP", 7, "case", ""],
+					["retard", "retard", "NOUN", 3, "obl", "Gender=Masc|Number=Sing"]
+				]
+			]
+		},
+		{
+			"id": "x010",
+			"text": "Le bateau arrive au port en avance",
+			"sentences": [
+				[
+					["Le", "le", "DET", 2, "det", "Definite=Def|Gender=Masc|Number=Sing"],
+					["bateau", "bateau", "NOUN", 3, "nsubj", "Gender=Masc|Number=Sing"],
+					[
+						"arrive",
+						"arriver",
+						"VERB",
+						0,
+						"root",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
+					],
+					["au", "à", "ADP", 5, "case", ""],
+					["port", "port", "NOUN", 3, "obl", "Gender=Masc|Number=Sing"],
+					["en", "en", "ADP", 7, "case", ""],
+					["avance", "avance", "NOUN", 3, "obl", "Gender=Fem|Number=Sing"]
+				]
+			]
+		},
+		{
+			"id": "x011",
+			"text": "Le dernier métro s'arrêta net au terminus",
+			"sentences": [
+				[
+					["Le", "le", "DET", 3, "det", "Definite=Def|Gender=Masc|Number=Sing"],
+					["dernier", "dernier", "ADJ", 3, "amod", "Gender=Masc|Number=Sing"],
+					["métro", "métro", "NOUN", 5, "nsubj", "Gender=Masc|Number=Sing"],
+					["s'", "se", "PRON", 5, "expl", "Number=Sing|Person=3"],
+					[
+						"arrêta",
+						"arrêter",
+						"VERB",
+						0,
+						"root",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Past|VerbForm=Fin"
+					],
+					["net", "net", "ADV", 5, "advmod", ""],
+					["au", "à", "ADP", 8, "case", ""],
+					["terminus", "terminus", "NOUN", 5, "obl", "Gender=Masc|Number=Sing"]
+				]
+			]
+		},
+		{
+			"id": "x012",
+			"text": "La voiture s'arrêta net devant la maison",
+			"sentences": [
+				[
+					["La", "le", "DET", 2, "det", "Definite=Def|Gender=Fem|Number=Sing"],
+					["voiture", "voiture", "NOUN", 4, "nsubj", "Gender=Fem|Number=Sing"],
+					["s'", "se", "PRON", 4, "expl", "Number=Sing|Person=3"],
+					[
+						"arrêta",
+						"arrêter",
+						"VERB",
+						0,
+						"root",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Past|VerbForm=Fin"
+					],
+					["net", "net", "ADV", 4, "advmod", ""],
+					["devant", "devant", "ADP", 8, "case", ""],
+					["la", "le", "DET", 8, "det", "Definite=Def|Gender=Fem|Number=Sing"],
+					["maison", "maison", "NOUN", 4, "obl", "Gender=Fem|Number=Sing"]
+				]
+			]
+		},
+		{
+			"id": "x013",
+			"text": "Janvier ! Janvier !",
+			"sentences": [
+				[
+					["Janvier", "janvier", "PROPN", 0, "root", "Gender=Masc|Number=Sing"],
+					["!", "!", "PUNCT", 1, "punct", ""]
+				],
+				[
+					["Janvier", "janvier", "PROPN", 0, "root", "Gender=Masc|Number=Sing"],
+					["!", "!", "PUNCT", 1, "punct", ""]
+				]
+			]
+		},
+		{
+			"id": "x014",
+			"text": "Février ! Février !",
+			"sentences": [
+				[
+					["Février", "février", "PROPN", 0, "root", "Gender=Masc|Number=Sing"],
+					["!", "!", "PUNCT", 1, "punct", ""]
+				],
+				[
+					["Février", "février", "PROPN", 0, "root", "Gender=Masc|Number=Sing"],
+					["!", "!", "PUNCT", 1, "punct", ""]
+				]
+			]
+		},
+		{
+			"id": "x015",
+			"text": "Vous ici ? Pourquoi pas ?",
+			"sentences": [
+				[
+					["Vous", "vous", "PRON", 0, "root", "Number=Plur|Person=2"],
+					["ici", "ici", "ADV", 1, "advmod", ""]
+				],
+				[
+					["Pourquoi", "pourquoi", "ADV", 3, "advmod", ""],
+					["pas", "pas", "ADV", 0, "root", "Polarity=Neg"],
+					["?", "?", "PUNCT", 2, "punct", ""]
+				]
+			]
+		},
+		{
+			"id": "x016",
+			"text": "Toi là ? Et alors ?",
+			"sentences": [
+				[
+					["Toi", "toi", "PRON", 0, "root", "Number=Sing|Person=2"],
+					["là", "là", "ADV", 1, "advmod", ""]
+				],
+				[
+					["Et", "et", "CCONJ", 2, "cc", ""],
+					["alors", "alors", "ADV", 0, "root", ""],
+					["?", "?", "PUNCT", 2, "punct", ""]
+				]
+			]
+		},
+		{
+			"id": "x017",
+			"text": "C'est encore mieux en le disant",
+			"sentences": [
+				[
+					["C'", "ce", "PRON", 3, "nsubj", "Gender=Masc|Number=Sing|Person=3"],
+					["est", "être", "AUX", 3, "cop", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"],
+					["encore", "encore", "ADV", 4, "advmod", ""],
+					["mieux", "mieux", "ADV", 0, "root", ""],
+					["en", "en", "ADP", 6, "mark", ""],
+					["le", "il", "PRON", 7, "obj", "Gender=Masc|Number=Sing|Person=3"],
+					["disant", "dire", "VERB", 4, "advcl", "Tense=Pres|VerbForm=Part"]
+				]
+			]
+		},
+		{
+			"id": "x018",
+			"text": "C'est bien pire en le cachant",
+			"sentences": [
+				[
+					["C'", "ce", "PRON", 3, "nsubj", "Gender=Masc|Number=Sing|Person=3"],
+					["est", "être", "AUX", 3, "cop", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"],
+					["bien", "bien", "ADV", 4, "advmod", ""],
+					["pire", "pire", "ADJ", 0, "root", "Number=Sing"],
+					["en", "en", "ADP", 6, "mark", ""],
+					["le", "il", "PRON", 7, "obj", "Gender=Masc|Number=Sing|Person=3"],
+					["cachant", "cacher", "VERB", 4, "advcl", "Tense=Pres|VerbForm=Part"]
+				]
+			]
+		},
+		{
+			"id": "x019",
+			"text": "Il n'est jamais trop tôt pour un espresso",
+			"sentences": [
+				[
+					["Il", "il", "PRON", 6, "expl:subj", "Gender=Masc|Number=Sing|Person=3"],
+					["n'", "ne", "ADV", 6, "advmod", "Polarity=Neg"],
+					["est", "être", "AUX", 6, "cop", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"],
+					["jamais", "jamais", "ADV", 6, "advmod", "Polarity=Neg"],
+					["trop", "trop", "ADV", 6, "advmod", ""],
+					["tôt", "tôt", "ADV", 0, "root", ""],
+					["pour", "pour", "ADP", 9, "mark", ""],
+					["un", "un", "DET", 9, "det", "Definite=Ind|Gender=Masc|Number=Sing"],
+					["espresso", "espresso", "NOUN", 6, "advcl", "Gender=Masc|Number=Sing"]
+				]
+			]
+		},
+		{
+			"id": "x020",
+			"text": "Il est toujours trop tard pour se souvenir",
+			"sentences": [
+				[
+					["Il", "il", "PRON", 5, "expl:subj", "Gender=Masc|Number=Sing|Person=3"],
+					["est", "être", "AUX", 5, "cop", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"],
+					["toujours", "toujours", "ADV", 5, "advmod", ""],
+					["trop", "trop", "ADV", 5, "advmod", ""],
+					["tard", "tard", "ADV", 0, "root", ""],
+					["pour", "pour", "ADP", 8, "mark", ""],
+					["se", "se", "PRON", 8, "expl", "Number=Sing|Person=3"],
+					["souvenir", "souvenir", "VERB", 5, "advcl", "VerbForm=Inf"]
+				]
+			]
+		},
+		{
+			"id": "x021",
+			"text": "Il n'est jamais trop tard pour bien faire",
+			"sentences": [
+				[
+					["Il", "il", "PRON", 6, "expl:subj", "Gender=Masc|Number=Sing|Person=3"],
+					["n'", "ne", "ADV", 6, "advmod", "Polarity=Neg"],
+					["est", "être", "AUX", 6, "cop", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"],
+					["jamais", "jamais", "ADV", 6, "advmod", "Polarity=Neg"],
+					["trop", "trop", "ADV", 6, "advmod", ""],
+					["tard", "tard", "ADV", 0, "root", ""],
+					["pour", "pour", "ADP", 9, "mark", ""],
+					["bien", "bien", "ADV", 9, "advmod", ""],
+					["faire", "faire", "VERB", 6, "advcl", "VerbForm=Inf"]
+				]
+			]
+		},
+		{
+			"id": "x022",
+			"text": "Voir, c'est croire",
+			"sentences": [
+				[
+					["Voir", "voir", "VERB", 5, "parataxis", "VerbForm=Inf"],
+					[",", ",", "PUNCT", 5, "punct", ""],
+					["c'", "ce", "PRON", 5, "nsubj", "Gender=Masc|Number=Sing|Person=3"],
+					["est", "être", "AUX", 5, "cop", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"],
+					["croire", "croire", "VERB", 0, "root", "VerbForm=Inf"]
+				]
+			]
+		},
+		{
+			"id": "x023",
+			"text": "Partir, c'est mourir un peu",
+			"sentences": [
+				[
+					["Partir", "partir", "VERB", 5, "parataxis", "VerbForm=Inf"],
+					[",", ",", "PUNCT", 5, "punct", ""],
+					["c'", "ce", "PRON", 5, "nsubj", "Gender=Masc|Number=Sing|Person=3"],
+					["est", "être", "AUX", 5, "cop", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"],
+					["mourir", "mourir", "VERB", 0, "root", "VerbForm=Inf"],
+					["un", "un", "DET", 7, "det", "Definite=Ind|Gender=Masc|Number=Sing"],
+					["peu", "peu", "ADV", 5, "advmod", ""]
+				]
+			]
+		},
+		{
+			"id": "x024",
+			"text": "Le pain et le fromage",
+			"sentences": [
+				[
+					["Le", "le", "DET", 2, "det", "Definite=Def|Gender=Masc|Number=Sing"],
+					["pain", "pain", "NOUN", 0, "root", "Gender=Masc|Number=Sing"],
+					["et", "et", "CCONJ", 5, "cc", ""],
+					["le", "le", "DET", 5, "det", "Definite=Def|Gender=Masc|Number=Sing"],
+					["fromage", "fromage", "NOUN", 2, "conj", "Gender=Masc|Number=Sing"]
+				]
+			]
+		},
+		{
+			"id": "x025",
+			"text": "Le sel et le poivre",
+			"sentences": [
+				[
+					["Le", "le", "DET", 2, "det", "Definite=Def|Gender=Masc|Number=Sing"],
+					["sel", "sel", "NOUN", 0, "root", "Gender=Masc|Number=Sing"],
+					["et", "et", "CCONJ", 5, "cc", ""],
+					["le", "le", "DET", 5, "det", "Definite=Def|Gender=Masc|Number=Sing"],
+					["poivre", "poivre", "NOUN", 2, "conj", "Gender=Masc|Number=Sing"]
+				]
+			]
+		},
+		{
+			"id": "x026",
+			"text": "Le vieux monsieur avec un chapeau noir",
+			"sentences": [
+				[
+					["Le", "le", "DET", 3, "det", "Definite=Def|Gender=Masc|Number=Sing"],
+					["vieux", "vieux", "ADJ", 3, "amod", "Gender=Masc|Number=Sing"],
+					["monsieur", "monsieur", "NOUN", 0, "root", "Gender=Masc|Number=Sing"],
+					["avec", "avec", "ADP", 6, "case", ""],
+					["un", "un", "DET", 6, "det", "Definite=Ind|Gender=Masc|Number=Sing"],
+					["chapeau", "chapeau", "NOUN", 3, "nmod", "Gender=Masc|Number=Sing"],
+					["noir", "noir", "ADJ", 6, "amod", "Gender=Masc|Number=Sing"]
+				]
+			]
+		},
+		{
+			"id": "x027",
+			"text": "La vieille dame avec une robe bleue",
+			"sentences": [
+				[
+					["La", "le", "DET", 3, "det", "Definite=Def|Gender=Fem|Number=Sing"],
+					["vieille", "vieux", "ADJ", 3, "amod", "Gender=Fem|Number=Sing"],
+					["dame", "dame", "NOUN", 0, "root", "Gender=Fem|Number=Sing"],
+					["avec", "avec", "ADP", 6, "case", ""],
+					["une", "un", "DET", 6, "det", "Definite=Ind|Gender=Fem|Number=Sing"],
+					["robe", "robe", "NOUN", 3, "nmod", "Gender=Fem|Number=Sing"],
+					["bleue", "bleu", "ADJ", 6, "amod", "Gender=Fem|Number=Sing"]
+				]
+			]
+		},
+		{
+			"id": "x028",
+			"text": "Une voiture rouge roule vite",
+			"sentences": [
+				[
+					["Une", "un", "DET", 2, "det", "Definite=Ind|Gender=Fem|Number=Sing"],
+					["voiture", "voiture", "NOUN", 4, "nsubj", "Gender=Fem|Number=Sing"],
+					["rouge", "rouge", "ADJ", 2, "amod", ""],
+					[
+						"roule",
+						"rouler",
+						"VERB",
+						0,
+						"root",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
+					],
+					["vite", "vite", "ADV", 4, "advmod", ""]
+				]
+			]
+		},
+		{
+			"id": "x029",
+			"text": "Un chien noir court vite",
+			"sentences": [
+				[
+					["Un", "un", "DET", 2, "det", "Definite=Ind|Gender=Masc|Number=Sing"],
+					["chien", "chien", "NOUN", 4, "nsubj", "Gender=Masc|Number=Sing"],
+					["noir", "noir", "ADJ", 2, "amod", "Gender=Masc|Number=Sing"],
+					[
+						"court",
+						"courir",
+						"VERB",
+						0,
+						"root",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
+					],
+					["vite", "vite", "ADV", 4, "advmod", ""]
+				]
+			]
+		},
+		{
+			"id": "x030",
+			"text": "Trois enfants jouent dans le parc",
+			"sentences": [
+				[
+					["Trois", "trois", "NUM", 2, "nummod", "Number=Plur|NumType=Card"],
+					["enfants", "enfant", "NOUN", 3, "nsubj", "Gender=Masc|Number=Plur"],
+					[
+						"jouent",
+						"jouer",
+						"VERB",
+						0,
+						"root",
+						"Mood=Ind|Number=Plur|Person=3|Tense=Pres|VerbForm=Fin"
+					],
+					["dans", "dans", "ADP", 6, "case", ""],
+					["le", "le", "DET", 6, "det", "Definite=Def|Gender=Masc|Number=Sing"],
+					["parc", "parc", "NOUN", 3, "obl", "Gender=Masc|Number=Sing"]
+				]
+			]
+		},
+		{
+			"id": "x031",
+			"text": "Trois chats dorment dans le jardin",
+			"sentences": [
+				[
+					["Trois", "trois", "NUM", 2, "nummod", "Number=Plur|NumType=Card"],
+					["chats", "chat", "NOUN", 3, "nsubj", "Gender=Masc|Number=Plur"],
+					[
+						"dorment",
+						"dormir",
+						"VERB",
+						0,
+						"root",
+						"Mood=Ind|Number=Plur|Person=3|Tense=Pres|VerbForm=Fin"
+					],
+					["dans", "dans", "ADP", 6, "case", ""],
+					["le", "le", "DET", 6, "det", "Definite=Def|Gender=Masc|Number=Sing"],
+					["jardin", "jardin", "NOUN", 3, "obl", "Gender=Masc|Number=Sing"]
+				]
+			]
+		},
+		{
+			"id": "x032",
+			"text": "Demain, nous partirons tôt",
+			"sentences": [
+				[
+					["Demain", "demain", "ADV", 4, "advmod", ""],
+					[",", ",", "PUNCT", 4, "punct", ""],
+					["nous", "nous", "PRON", 4, "nsubj", "Number=Plur|Person=1"],
+					[
+						"partirons",
+						"partir",
+						"VERB",
+						0,
+						"root",
+						"Mood=Ind|Number=Plur|Person=1|Tense=Fut|VerbForm=Fin"
+					],
+					["tôt", "tôt", "ADV", 4, "advmod", ""]
+				]
+			]
+		},
+		{
+			"id": "x033",
+			"text": "Demain, elle partira tôt",
+			"sentences": [
+				[
+					["Demain", "demain", "ADV", 4, "advmod", ""],
+					[",", ",", "PUNCT", 4, "punct", ""],
+					["elle", "elle", "PRON", 4, "nsubj", "Gender=Fem|Number=Sing|Person=3"],
+					[
+						"partira",
+						"partir",
+						"VERB",
+						0,
+						"root",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Fut|VerbForm=Fin"
+					],
+					["tôt", "tôt", "ADV", 4, "advmod", ""]
+				]
+			]
+		},
+		{
+			"id": "x034",
+			"text": "Dans la forêt, un loup marche",
+			"sentences": [
+				[
+					["Dans", "dans", "ADP", 3, "case", ""],
+					["la", "le", "DET", 3, "det", "Definite=Def|Gender=Fem|Number=Sing"],
+					["forêt", "forêt", "NOUN", 7, "obl", "Gender=Fem|Number=Sing"],
+					[",", ",", "PUNCT", 7, "punct", ""],
+					["un", "un", "DET", 6, "det", "Definite=Ind|Gender=Masc|Number=Sing"],
+					["loup", "loup", "NOUN", 7, "nsubj", "Gender=Masc|Number=Sing"],
+					[
+						"marche",
+						"marcher",
+						"VERB",
+						0,
+						"root",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
+					]
+				]
+			]
+		},
+		{
+			"id": "x035",
+			"text": "Sur la colline, un berger chante",
+			"sentences": [
+				[
+					["Sur", "sur", "ADP", 3, "case", ""],
+					["la", "le", "DET", 3, "det", "Definite=Def|Gender=Fem|Number=Sing"],
+					["colline", "colline", "NOUN", 7, "obl", "Gender=Fem|Number=Sing"],
+					[",", ",", "PUNCT", 7, "punct", ""],
+					["un", "un", "DET", 6, "det", "Definite=Ind|Gender=Masc|Number=Sing"],
+					["berger", "berger", "NOUN", 7, "nsubj", "Gender=Masc|Number=Sing"],
+					[
+						"chante",
+						"chanter",
+						"VERB",
+						0,
+						"root",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
+					]
+				]
+			]
+		},
+		{
+			"id": "x036",
+			"text": "Ferme la porte",
+			"sentences": [
+				[
+					[
+						"Ferme",
+						"fermer",
+						"VERB",
+						0,
+						"root",
+						"Mood=Imp|Number=Sing|Person=2|Tense=Pres|VerbForm=Fin"
+					],
+					["la", "le", "DET", 3, "det", "Definite=Def|Gender=Fem|Number=Sing"],
+					["porte", "porte", "NOUN", 1, "obj", "Gender=Fem|Number=Sing"]
+				]
+			]
+		},
+		{
+			"id": "x037",
+			"text": "Ouvre la fenêtre",
+			"sentences": [
+				[
+					[
+						"Ouvre",
+						"ouvrir",
+						"VERB",
+						0,
+						"root",
+						"Mood=Imp|Number=Sing|Person=2|Tense=Pres|VerbForm=Fin"
+					],
+					["la", "le", "DET", 3, "det", "Definite=Def|Gender=Fem|Number=Sing"],
+					["fenêtre", "fenêtre", "NOUN", 1, "obj", "Gender=Fem|Number=Sing"]
+				]
+			]
+		},
+		{
+			"id": "x038",
+			"text": "Il veut manger une pomme",
+			"sentences": [
+				[
+					["Il", "il", "PRON", 2, "nsubj", "Gender=Masc|Number=Sing|Person=3"],
+					[
+						"veut",
+						"vouloir",
+						"VERB",
+						0,
+						"root",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
+					],
+					["manger", "manger", "VERB", 2, "xcomp", "VerbForm=Inf"],
+					["une", "un", "DET", 5, "det", "Definite=Ind|Gender=Fem|Number=Sing"],
+					["pomme", "pomme", "NOUN", 3, "obj", "Gender=Fem|Number=Sing"]
+				]
+			]
+		},
+		{
+			"id": "x039",
+			"text": "Elle veut boire un café",
+			"sentences": [
+				[
+					["Elle", "elle", "PRON", 2, "nsubj", "Gender=Fem|Number=Sing|Person=3"],
+					[
+						"veut",
+						"vouloir",
+						"VERB",
+						0,
+						"root",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
+					],
+					["boire", "boire", "VERB", 2, "xcomp", "VerbForm=Inf"],
+					["un", "un", "DET", 5, "det", "Definite=Ind|Gender=Masc|Number=Sing"],
+					["café", "café", "NOUN", 3, "obj", "Gender=Masc|Number=Sing"]
+				]
+			]
+		},
+		{
+			"id": "x040",
+			"text": "Je pense qu'il pleut",
+			"sentences": [
+				[
+					["Je", "je", "PRON", 2, "nsubj", "Number=Sing|Person=1"],
+					[
+						"pense",
+						"penser",
+						"VERB",
+						0,
+						"root",
+						"Mood=Ind|Number=Sing|Person=1|Tense=Pres|VerbForm=Fin"
+					],
+					["qu'", "que", "SCONJ", 5, "mark", ""],
+					["il", "il", "PRON", 5, "expl:subj", "Gender=Masc|Number=Sing|Person=3"],
+					[
+						"pleut",
+						"pleuvoir",
+						"VERB",
+						2,
+						"ccomp",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
+					]
+				]
+			]
+		},
+		{
+			"id": "x041",
+			"text": "Je crois qu'elle chante",
+			"sentences": [
+				[
+					["Je", "je", "PRON", 2, "nsubj", "Number=Sing|Person=1"],
+					[
+						"crois",
+						"croire",
+						"VERB",
+						0,
+						"root",
+						"Mood=Ind|Number=Sing|Person=1|Tense=Pres|VerbForm=Fin"
+					],
+					["qu'", "que", "SCONJ", 5, "mark", ""],
+					["elle", "elle", "PRON", 5, "nsubj", "Gender=Fem|Number=Sing|Person=3"],
+					[
+						"chante",
+						"chanter",
+						"VERB",
+						2,
+						"ccomp",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
+					]
+				]
+			]
+		},
+		{
+			"id": "x042",
+			"text": "En marchant, il chante",
+			"sentences": [
+				[
+					["En", "en", "ADP", 2, "mark", ""],
+					["marchant", "marcher", "VERB", 5, "advcl", "Tense=Pres|VerbForm=Part"],
+					[",", ",", "PUNCT", 5, "punct", ""],
+					["il", "il", "PRON", 5, "nsubj", "Gender=Masc|Number=Sing|Person=3"],
+					[
+						"chante",
+						"chanter",
+						"VERB",
+						0,
+						"root",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
+					]
+				]
+			]
+		},
+		{
+			"id": "x043",
+			"text": "En courant, elle rit",
+			"sentences": [
+				[
+					["En", "en", "ADP", 2, "mark", ""],
+					["courant", "courir", "VERB", 5, "advcl", "Tense=Pres|VerbForm=Part"],
+					[",", ",", "PUNCT", 5, "punct", ""],
+					["elle", "elle", "PRON", 5, "nsubj", "Gender=Fem|Number=Sing|Person=3"],
+					[
+						"rit",
+						"rire",
+						"VERB",
+						0,
+						"root",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
+					]
+				]
+			]
+		},
+		{
+			"id": "x044",
+			"text": "La lettre a été écrite par Marie",
+			"sentences": [
+				[
+					["La", "le", "DET", 2, "det", "Definite=Def|Gender=Fem|Number=Sing"],
+					["lettre", "lettre", "NOUN", 5, "nsubj:pass", "Gender=Fem|Number=Sing"],
+					["a", "avoir", "AUX", 5, "aux", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"],
+					["été", "être", "AUX", 5, "aux:pass", "Tense=Past|VerbForm=Part"],
+					[
+						"écrite",
+						"écrire",
+						"VERB",
+						0,
+						"root",
+						"Gender=Fem|Number=Sing|Tense=Past|VerbForm=Part"
+					],
+					["par", "par", "ADP", 7, "case", ""],
+					["Marie", "Marie", "PROPN", 5, "obl", "Gender=Fem|Number=Sing"]
+				]
+			]
+		},
+		{
+			"id": "x045",
+			"text": "La lettre a été lue par Paul",
+			"sentences": [
+				[
+					["La", "le", "DET", 2, "det", "Definite=Def|Gender=Fem|Number=Sing"],
+					["lettre", "lettre", "NOUN", 5, "nsubj:pass", "Gender=Fem|Number=Sing"],
+					["a", "avoir", "AUX", 5, "aux", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"],
+					["été", "être", "AUX", 5, "aux:pass", "Tense=Past|VerbForm=Part"],
+					["lue", "lire", "VERB", 0, "root", "Gender=Fem|Number=Sing|Tense=Past|VerbForm=Part"],
+					["par", "par", "ADP", 7, "case", ""],
+					["Paul", "Paul", "PROPN", 5, "obl", "Gender=Masc|Number=Sing"]
+				]
+			]
+		},
+		{
+			"id": "x046",
+			"text": "Quelle belle journée !",
+			"sentences": [
+				[
+					["Quelle", "quel", "DET", 3, "det", "Gender=Fem|Number=Sing"],
+					["belle", "beau", "ADJ", 3, "amod", "Gender=Fem|Number=Sing"],
+					["journée", "journée", "NOUN", 0, "root", "Gender=Fem|Number=Sing"],
+					["!", "!", "PUNCT", 3, "punct", ""]
+				]
+			]
+		},
+		{
+			"id": "x047",
+			"text": "Quel beau paysage !",
+			"sentences": [
+				[
+					["Quel", "quel", "DET", 3, "det", "Gender=Masc|Number=Sing"],
+					["beau", "beau", "ADJ", 3, "amod", "Gender=Masc|Number=Sing"],
+					["paysage", "paysage", "NOUN", 0, "root", "Gender=Masc|Number=Sing"],
+					["!", "!", "PUNCT", 3, "punct", ""]
+				]
+			]
+		},
+		{
+			"id": "x048",
+			"text": "Le chat noir dort et le chien blanc veille",
+			"sentences": [
+				[
+					["Le", "le", "DET", 3, "det", "Definite=Def|Gender=Masc|Number=Sing"],
+					["chat", "chat", "NOUN", 4, "nsubj", "Gender=Masc|Number=Sing"],
+					["noir", "noir", "ADJ", 2, "amod", "Gender=Masc|Number=Sing"],
+					[
+						"dort",
+						"dormir",
+						"VERB",
+						0,
+						"root",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
+					],
+					["et", "et", "CCONJ", 2, "cc", ""],
+					["le", "le", "DET", 8, "det", "Definite=Def|Gender=Masc|Number=Sing"],
+					["chien", "chien", "NOUN", 2, "nsubj", "Gender=Masc|Number=Sing"],
+					["blanc", "blanc", "ADJ", 7, "amod", "Gender=Masc|Number=Sing"],
+					[
+						"veille",
+						"veiller",
+						"VERB",
+						2,
+						"conj",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
+					]
+				]
+			]
+		},
+		{
+			"id": "x049",
+			"text": "La fille chante et le garçon danse",
+			"sentences": [
+				[
+					["La", "le", "DET", 2, "det", "Definite=Def|Gender=Fem|Number=Sing"],
+					["fille", "fille", "NOUN", 3, "nsubj", "Gender=Fem|Number=Sing"],
+					[
+						"chante",
+						"chanter",
+						"VERB",
+						0,
+						"root",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
+					],
+					["et", "et", "CCONJ", 7, "cc", ""],
+					["le", "le", "DET", 6, "det", "Definite=Def|Gender=Masc|Number=Sing"],
+					["garçon", "garçon", "NOUN", 7, "nsubj", "Gender=Masc|Number=Sing"],
+					[
+						"danse",
+						"danser",
+						"VERB",
+						3,
+						"conj",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
+					]
+				]
+			]
+		},
+		{
+			"id": "x050",
+			"text": "Le garçon regarde le soleil. Le chat mange une souris.",
+			"sentences": [
+				[
+					["Le", "le", "DET", 2, "det", "Definite=Def|Gender=Masc|Number=Sing"],
+					["garçon", "garçon", "NOUN", 3, "nsubj", "Gender=Masc|Number=Sing"],
+					[
+						"regarde",
+						"regarder",
+						"VERB",
+						0,
+						"root",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
+					],
+					["le", "le", "DET", 5, "det", "Definite=Def|Gender=Masc|Number=Sing"],
+					["soleil", "soleil", "NOUN", 3, "obj", "Gender=Masc|Number=Sing"]
+				],
+				[
+					["Le", "le", "DET", 2, "det", "Definite=Def|Gender=Masc|Number=Sing"],
+					["chat", "chat", "NOUN", 3, "nsubj", "Gender=Masc|Number=Sing"],
+					[
+						"mange",
+						"manger",
+						"VERB",
+						0,
+						"root",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
+					],
+					["une", "un", "DET", 5, "det", "Definite=Ind|Gender=Fem|Number=Sing"],
+					["souris", "souris", "NOUN", 3, "obj", "Gender=Fem|Number=Sing"]
+				]
+			]
+		},
+		{
+			"id": "x051",
+			"text": "La fille admire la lune. Le chien dort.",
+			"sentences": [
+				[
+					["La", "le", "DET", 2, "det", "Definite=Def|Gender=Fem|Number=Sing"],
+					["fille", "fille", "NOUN", 3, "nsubj", "Gender=Fem|Number=Sing"],
+					[
+						"admire",
+						"admirer",
+						"VERB",
+						0,
+						"root",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
+					],
+					["la", "le", "DET", 5, "det", "Definite=Def|Gender=Fem|Number=Sing"],
+					["lune", "lune", "NOUN", 3, "obj", "Gender=Fem|Number=Sing"]
+				],
+				[
+					["Le", "le", "DET", 2, "det", "Definite=Def|Gender=Masc|Number=Sing"],
+					["chien", "chien", "NOUN", 3, "nsubj", "Gender=Masc|Number=Sing"],
+					[
+						"dort",
+						"dormir",
+						"VERB",
+						0,
+						"root",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
+					]
+				]
+			]
+		},
+		{
+			"id": "x052",
+			"text": "Le petit garçon",
+			"sentences": [
+				[
+					["Le", "le", "DET", 3, "det", "Definite=Def|Gender=Masc|Number=Sing"],
+					["petit", "petit", "ADJ", 3, "amod", "Gender=Masc|Number=Sing"],
+					["garçon", "garçon", "NOUN", 0, "root", "Gender=Masc|Number=Sing"]
+				]
+			]
+		},
+		{
+			"id": "x053",
+			"text": "La grande maison",
+			"sentences": [
+				[
+					["La", "le", "DET", 3, "det", "Definite=Def|Gender=Fem|Number=Sing"],
+					["grande", "grand", "ADJ", 3, "amod", "Gender=Fem|Number=Sing"],
+					["maison", "maison", "NOUN", 0, "root", "Gender=Fem|Number=Sing"]
+				]
+			]
+		},
+		{
+			"id": "x054",
+			"text": "Toujours plus vite",
+			"sentences": [
+				[
+					["Toujours", "toujours", "ADV", 3, "advmod", ""],
+					["plus", "plus", "ADV", 3, "advmod", ""],
+					["vite", "vite", "ADV", 0, "root", ""]
+				]
+			]
+		},
+		{
+			"id": "x055",
+			"text": "Souvent trop tard",
+			"sentences": [
+				[
+					["Souvent", "souvent", "ADV", 3, "advmod", ""],
+					["trop", "trop", "ADV", 3, "advmod", ""],
+					["tard", "tard", "ADV", 0, "root", ""]
+				]
+			]
+		}
+	],
+	"rankingCases": [
+		{
+			"id": "rc01",
+			"query": "x001",
+			"positive": "x002",
+			"negative": "x003",
+			"category": "vocabulary"
+		},
+		{
+			"id": "rc02",
+			"query": "x004",
+			"positive": "x002",
+			"negative": "x003",
+			"category": "vocabulary"
+		},
+		{
+			"id": "rc03",
+			"query": "x005",
+			"positive": "x006",
+			"negative": "x001",
+			"category": "relative-clause"
+		},
+		{
+			"id": "rc04",
+			"query": "x007",
+			"positive": "x008",
+			"negative": "x001",
+			"category": "passe-simple"
+		},
+		{
+			"id": "rc05",
+			"query": "x009",
+			"positive": "x010",
+			"negative": "x001",
+			"category": "oblique"
+		},
+		{
+			"id": "rc06",
+			"query": "x011",
+			"positive": "x012",
+			"negative": "x001",
+			"category": "reflexive"
+		},
+		{
+			"id": "rc07",
+			"query": "x013",
+			"positive": "x014",
+			"negative": "x001",
+			"category": "interjection"
+		},
+		{
+			"id": "rc08",
+			"query": "x015",
+			"positive": "x016",
+			"negative": "x001",
+			"category": "interrogative-fragment"
+		},
+		{
+			"id": "rc09",
+			"query": "x017",
+			"positive": "x018",
+			"negative": "x001",
+			"category": "comparative"
+		},
+		{
+			"id": "rc10",
+			"query": "x019",
+			"positive": "x021",
+			"negative": "x020",
+			"category": "negation-never"
+		},
+		{
+			"id": "rc11",
+			"query": "x020",
+			"positive": "x021",
+			"negative": "x019",
+			"category": "adverb-tard-tot"
+		},
+		{
+			"id": "rc12",
+			"query": "x022",
+			"positive": "x023",
+			"negative": "x001",
+			"category": "infinitive-subject"
+		},
+		{
+			"id": "rc13",
+			"query": "x024",
+			"positive": "x025",
+			"negative": "x001",
+			"category": "coordination-nominal"
+		},
+		{
+			"id": "rc14",
+			"query": "x026",
+			"positive": "x027",
+			"negative": "x001",
+			"category": "nominal-pp"
+		},
+		{
+			"id": "rc15",
+			"query": "x028",
+			"positive": "x029",
+			"negative": "x001",
+			"category": "adjective-adverb"
+		},
+		{
+			"id": "rc16",
+			"query": "x030",
+			"positive": "x031",
+			"negative": "x001",
+			"category": "numeral"
+		},
+		{
+			"id": "rc17",
+			"query": "x032",
+			"positive": "x033",
+			"negative": "x001",
+			"category": "future"
+		},
+		{
+			"id": "rc18",
+			"query": "x034",
+			"positive": "x035",
+			"negative": "x001",
+			"category": "fronted-oblique"
+		},
+		{
+			"id": "rc19",
+			"query": "x036",
+			"positive": "x037",
+			"negative": "x001",
+			"category": "imperative"
+		},
+		{
+			"id": "rc20",
+			"query": "x038",
+			"positive": "x039",
+			"negative": "x001",
+			"category": "infinitive-complement"
+		},
+		{
+			"id": "rc21",
+			"query": "x040",
+			"positive": "x041",
+			"negative": "x001",
+			"category": "clausal-complement"
+		},
+		{
+			"id": "rc22",
+			"query": "x042",
+			"positive": "x043",
+			"negative": "x001",
+			"category": "gerund"
+		},
+		{
+			"id": "rc23",
+			"query": "x044",
+			"positive": "x045",
+			"negative": "x036",
+			"category": "passive"
+		},
+		{
+			"id": "rc24",
+			"query": "x046",
+			"positive": "x047",
+			"negative": "x001",
+			"category": "exclamative"
+		},
+		{
+			"id": "rc25",
+			"query": "x048",
+			"positive": "x049",
+			"negative": "x001",
+			"category": "coordination-clausal"
+		},
+		{
+			"id": "rc26",
+			"query": "x050",
+			"positive": "x051",
+			"negative": "x001",
+			"category": "multi-sentence"
+		},
+		{
+			"id": "rc27",
+			"query": "x052",
+			"positive": "x053",
+			"negative": "x054",
+			"category": "nominal-fragment"
+		},
+		{
+			"id": "rc28",
+			"query": "x054",
+			"positive": "x055",
+			"negative": "x052",
+			"category": "adverbial-fragment"
+		},
+		{
+			"id": "rc29",
+			"query": "x005",
+			"positive": "x006",
+			"negative": "x017",
+			"category": "relative-clause"
+		},
+		{
+			"id": "rc30",
+			"query": "x015",
+			"positive": "x016",
+			"negative": "x013",
+			"category": "interrogative-fragment"
+		}
+	],
+	"structuralPairs": [
+		{
+			"id": "p001",
+			"a": "x001",
+			"b": "x002",
+			"profile": "coarse",
+			"relation": "equal"
+		},
+		{
+			"id": "p002",
+			"a": "x001",
+			"b": "x002",
+			"profile": "detailed",
+			"relation": "different"
+		},
+		{
+			"id": "p003",
+			"a": "x001",
+			"b": "x003",
+			"profile": "coarse",
+			"relation": "different"
+		},
+		{
+			"id": "p004",
+			"a": "x013",
+			"b": "x014",
+			"profile": "coarse",
+			"relation": "equal"
+		},
+		{
+			"id": "p005",
+			"a": "x019",
+			"b": "x021",
+			"profile": "coarse",
+			"relation": "equal"
+		},
+		{
+			"id": "p006",
+			"a": "x022",
+			"b": "x023",
+			"profile": "coarse",
+			"relation": "equal"
+		},
+		{
+			"id": "p007",
+			"a": "x022",
+			"b": "x023",
+			"profile": "detailed",
+			"relation": "different"
+		},
+		{
+			"id": "p008",
+			"a": "x024",
+			"b": "x025",
+			"profile": "coarse",
+			"relation": "equal"
+		},
+		{
+			"id": "p009",
+			"a": "x026",
+			"b": "x027",
+			"profile": "coarse",
+			"relation": "equal"
+		},
+		{
+			"id": "p010",
+			"a": "x030",
+			"b": "x031",
+			"profile": "coarse",
+			"relation": "equal"
+		},
+		{
+			"id": "p011",
+			"a": "x034",
+			"b": "x035",
+			"profile": "coarse",
+			"relation": "equal"
+		},
+		{
+			"id": "p012",
+			"a": "x036",
+			"b": "x037",
+			"profile": "coarse",
+			"relation": "equal"
+		},
+		{
+			"id": "p013",
+			"a": "x052",
+			"b": "x053",
+			"profile": "coarse",
+			"relation": "equal"
+		},
+		{
+			"id": "p014",
+			"a": "x054",
+			"b": "x055",
+			"profile": "coarse",
+			"relation": "equal"
+		},
+		{
+			"id": "p015",
+			"a": "x050",
+			"b": "x051",
+			"profile": "coarse",
+			"relation": "equal"
+		},
+		{
+			"id": "p016",
+			"a": "x005",
+			"b": "x006",
+			"profile": "coarse",
+			"relation": "equal"
+		},
+		{
+			"id": "p017",
+			"a": "x005",
+			"b": "x006",
+			"profile": "detailed",
+			"relation": "different"
+		},
+		{
+			"id": "p018",
+			"a": "x044",
+			"b": "x045",
+			"profile": "coarse",
+			"relation": "equal"
+		},
+		{
+			"id": "p019",
+			"a": "x015",
+			"b": "x016",
+			"profile": "coarse",
+			"relation": "equal"
+		},
+		{
+			"id": "p020",
+			"a": "x017",
+			"b": "x018",
+			"profile": "coarse",
+			"relation": "equal"
+		},
+		{
+			"id": "p021",
+			"a": "x017",
+			"b": "x018",
+			"profile": "detailed",
+			"relation": "different"
+		}
+	],
+	"split": {
+		"development": [
+			"rc01",
+			"rc02",
+			"rc03",
+			"rc04",
+			"rc05",
+			"rc06",
+			"rc07",
+			"rc08",
+			"rc09",
+			"rc10",
+			"rc11",
+			"rc12",
+			"rc13",
+			"rc14",
+			"rc15",
+			"rc16",
+			"rc17",
+			"rc18",
+			"rc19",
+			"rc20",
+			"rc21",
+			"rc22",
+			"rc23",
+			"rc24",
+			"p001",
+			"p002",
+			"p003",
+			"p004",
+			"p005",
+			"p006",
+			"p007",
+			"p008",
+			"p009",
+			"p010",
+			"p011",
+			"p012",
+			"p013",
+			"p014",
+			"p015",
+			"p016"
+		],
+		"heldOut": [
+			"rc25",
+			"rc26",
+			"rc27",
+			"rc28",
+			"rc29",
+			"rc30",
+			"p017",
+			"p018",
+			"p019",
+			"p020",
+			"p021"
+		]
+	}
+}
