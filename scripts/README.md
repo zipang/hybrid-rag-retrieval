@@ -16,6 +16,10 @@ does not commit the data these scripts produce.
 - `show-syntax-tree.ts` parses one sentence with the configured UDPipe model and
   prints its syntax tree as a flat table and as an indented tree. Run it with
   `bun run show-syntax-tree "Le garçon regarde le soleil"`.
+- `compare-syntax.ts` parses two sentences and prints their syntax similarity
+  score. A score of one means the two trees have the same shape. Run it with
+  `bun run compare-syntax "Le garçon regarde le soleil" "Un chat mange une souris"`.
+  It accepts `--mode coarse`, the only mode implemented in this ticket.
 
 ## Citations
 
