@@ -1,0 +1,135 @@
+{
+	// Reviewed French syntax comparison set.
+	//
+	// This is the readable, growing test set for the coarse syntax encoder. The
+	// test `dataset.test.ts` judges it. It never loads the parser model: the
+	// trees under `references` are the frozen input.
+	//
+	// When you add a sentence, add its expected tree to `references` before you
+	// run the tests. The skill `maintain-test-dataset` explains the workflow.
+	"tests": [
+		// One comparison: one query, the sentences that share its grammatical
+		// shape (`equal`), and the sentences that do not (`different`). The
+		// strings are the exact keys of `references`.
+		{
+			"query": "Le petit chat est mort",
+			"equal": [
+				"La petite souris est vivante",
+				"Le vilain garçon est content",
+				"Les étranges oies sont noires"
+			],
+			"different": ["Le gentil chat mord", "Le petit chat s'est tu", "Le petit chat a mangé"]
+		}
+	],
+	// The expected Universal Dependencies tree of every sentence, keyed by the
+	// sentence string itself. One entry is one text: `sentences` holds one tree
+	// per sentence, in reading order. Each token is
+	// `[FORM, LEMMA, UPOS, HEAD, DEPREL, FEATS]`.
+	"references": {
+		"Le petit chat est mort": {
+			"sentences": [
+				[
+					["Le", "le", "DET", 3, "det", "Definite=Def|Gender=Masc|Number=Sing"],
+					["petit", "petit", "ADJ", 3, "amod", "Gender=Masc|Number=Sing"],
+					["chat", "chat", "NOUN", 5, "nsubj", "Gender=Masc|Number=Sing"],
+					["est", "être", "AUX", 5, "cop", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"],
+					["mort", "mort", "ADJ", 0, "root", "Gender=Masc|Number=Sing"]
+				]
+			]
+		},
+		"La petite souris est vivante": {
+			"sentences": [
+				[
+					["La", "le", "DET", 3, "det", "Definite=Def|Gender=Fem|Number=Sing"],
+					["petite", "petit", "ADJ", 3, "amod", "Gender=Fem|Number=Sing"],
+					["souris", "souris", "NOUN", 5, "nsubj", "Gender=Fem|Number=Sing"],
+					["est", "être", "AUX", 5, "cop", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"],
+					["vivante", "vivant", "ADJ", 0, "root", "Gender=Fem|Number=Sing"]
+				]
+			]
+		},
+		"Le vilain garçon est content": {
+			"sentences": [
+				[
+					["Le", "le", "DET", 3, "det", "Definite=Def|Gender=Masc|Number=Sing"],
+					["vilain", "vilain", "ADJ", 3, "amod", "Gender=Masc|Number=Sing"],
+					["garçon", "garçon", "NOUN", 5, "nsubj", "Gender=Masc|Number=Sing"],
+					["est", "être", "AUX", 5, "cop", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"],
+					["content", "content", "ADJ", 0, "root", "Gender=Masc|Number=Sing"]
+				]
+			]
+		},
+		"Les étranges oies sont noires": {
+			"sentences": [
+				[
+					["Les", "le", "DET", 3, "det", "Definite=Def|Number=Plur"],
+					["étranges", "étrange", "ADJ", 3, "amod", "Number=Plur"],
+					["oies", "oie", "NOUN", 5, "nsubj", "Gender=Fem|Number=Plur"],
+					[
+						"sont",
+						"être",
+						"AUX",
+						5,
+						"cop",
+						"Mood=Ind|Number=Plur|Person=3|Tense=Pres|VerbForm=Fin"
+					],
+					["noires", "noir", "ADJ", 0, "root", "Gender=Fem|Number=Plur"]
+				]
+			]
+		},
+		"Le gentil chat mord": {
+			"sentences": [
+				[
+					["Le", "le", "DET", 3, "det", "Definite=Def|Gender=Masc|Number=Sing"],
+					["gentil", "gentil", "ADJ", 3, "amod", "Gender=Masc|Number=Sing"],
+					["chat", "chat", "NOUN", 4, "nsubj", "Gender=Masc|Number=Sing"],
+					[
+						"mord",
+						"mordre",
+						"VERB",
+						0,
+						"root",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
+					]
+				]
+			]
+		},
+		"Le petit chat s'est tu": {
+			"sentences": [
+				[
+					["Le", "le", "DET", 3, "det", "Definite=Def|Gender=Masc|Number=Sing"],
+					["petit", "petit", "ADJ", 3, "amod", "Gender=Masc|Number=Sing"],
+					["chat", "chat", "NOUN", 6, "nsubj", "Gender=Masc|Number=Sing"],
+					["s'", "se", "PRON", 6, "expl:pv", "Person=3|Reflex=Yes"],
+					[
+						"est",
+						"être",
+						"AUX",
+						6,
+						"aux:tense",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
+					],
+					["tu", "taire", "VERB", 0, "root", "Gender=Masc|Number=Sing|Tense=Past|VerbForm=Part"]
+				]
+			]
+		},
+		"Le petit chat a mangé": {
+			"sentences": [
+				[
+					["Le", "le", "DET", 3, "det", "Definite=Def|Gender=Masc|Number=Sing"],
+					["petit", "petit", "ADJ", 3, "amod", "Gender=Masc|Number=Sing"],
+					["chat", "chat", "NOUN", 5, "nsubj", "Gender=Masc|Number=Sing"],
+					[
+						"a",
+						"avoir",
+						"AUX",
+						5,
+						"aux:tense",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
+					],
+					["mangé", "manger", "VERB", 0, "root", "Gender=Masc|Number=Sing|Tense=Past|VerbForm=Part"]
+				]
+			]
+		}
+	}
+}

@@ -113,6 +113,21 @@ Qdrant stores each vector and compares two of them with its `max_sim` function.
 The result is a **syntax score** between 0 and 1. A high score means the two
 sentences have a similar shape.
 
+## The comparison set
+
+The file `test-data/french-dataset.jsonc` holds the readable test set. Each entry
+under `tests` names one **query**, the sentences that share its grammatical shape
+(**equal**), and the sentences that do not (**different**). Every sentence has a
+stored tree under `references`, keyed by the sentence string itself.
+
+A comparison is judged with the frozen coarse encoder: an `equal` sentence must
+score the identical structure, and a `different` sentence must score below it.
+The test `dataset.test.ts` checks the trees and the judgments.
+
+When you add a sentence, you must add its expected tree to `references` before
+the tests run. The skill `.agents/skills/maintain-test-dataset` explains the
+token format, the tree rules, and the workflow.
+
 ## What is in this folder
 
 | File | Plain description |
@@ -121,8 +136,10 @@ sentences have a similar shape.
 | `udpipe-engine.ts` | Loads the real grammar model. |
 | `config.ts` | Builds the parser from the environment. |
 | `normalize-fr.ts` | Canonicalizes French punctuation and strips non-Latin characters before parsing. |
-| `test-data/french.json` | 55 French texts with their hand-made trees, used to judge the parser and the encoder. Each text is keyed by its own sentence, so a reader sees what a comparison means. |
-| `test-data.test.ts` | Checks the test data set is complete and well formed. |
+| `test-data/french.jsonc` | 55 French texts with their hand-made trees, used to judge the parser and the encoder. Each text is keyed by its own sentence, so a reader sees what a comparison means. |
+| `test-data/french-dataset.jsonc` | The readable, growing comparison set. Each entry names a query, its `equal` sentences, and its `different` sentences. Every sentence has a stored tree under `references`. |
+| `test-data.test.ts` | Checks `french.jsonc` is complete and well formed. |
+| `dataset.test.ts` | Checks `french-dataset.jsonc` is complete, well formed, and judged the expected way. |
 
 ## The grammar model
 
@@ -145,11 +162,16 @@ index slogans and to answer syntax queries.
 
 - **CoNLL-U**: the plain-text table format that Universal Dependencies uses to
   describe one sentence, one line per word.
+- **Comparison**: one entry of the comparison set. It names a query, its
+  `equal` sentences, and its `different` sentences.
 - **Dependency tree**: a tree where each word points to the word it depends on,
   and each link has a grammatical name such as `nsubj` for a subject.
 - **DEPREL**: the CoNLL-U column that names the link between a word and its
   head, for example `nsubj` or `obj`.
+- **Different**: a sentence that must not share the grammatical shape of the
+  query.
 - **Encoder**: the part that turns a shape into a list of numbers.
+- **Equal**: a sentence that must share the grammatical shape of the query.
 - **FEATS**: the CoNLL-U column that holds small grammar details, such as
   gender or tense.
 - **FORM**: the CoNLL-U column that holds the word as it appears in the text.
@@ -159,6 +181,8 @@ index slogans and to answer syntax queries.
   example "manger" for "mange".
 - **Model**: a trained data file that the parser loads to guess grammar.
 - **Parser**: the part that finds the words and their grammar links.
+- **Query**: the reference sentence of one comparison.
+- **Reference**: the stored expected tree of one sentence of the comparison set.
 - **Root**: the main word of a sentence. It depends on nothing.
 - **Token**: one word together with its grammar information.
 - **UDPipe**: the grammar engine that this project uses.

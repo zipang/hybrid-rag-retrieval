@@ -4,8 +4,6 @@
  * The script measures the coarse syntax pipeline against the reviewed French
  * test data set. It reports:
  *
- * - ranking accuracy: the share of ranking cases that score the structural
- *   positive above the structural negative;
  * - structural accuracy: the share of structural pairs whose expected relation
  *   holds;
  * - parser accuracy: the share of tokens whose `UPOS`, `HEAD`, and `DEPREL`
@@ -40,15 +38,6 @@ type Token = [string, string, string, number, string, string]
 /** One text entry of the test data set: the expected sentence trees. */
 type TextEntry = { sentences: Token[][] }
 
-/** One ranking case. */
-type RankingCase = {
-	id: string
-	query: string
-	positive: string
-	negative: string
-	category: string
-}
-
 /** One structural pair. */
 type StructuralPair = { id: string; a: string; b: string; mode: string; relation: string }
 
@@ -56,7 +45,6 @@ type StructuralPair = { id: string; a: string; b: string; mode: string; relation
 type TestData = {
 	language: string
 	texts: Record<string, TextEntry>
-	rankingCases: RankingCase[]
 	structuralPairs: StructuralPair[]
 	split: { development: string[]; heldOut: string[] }
 }
@@ -64,11 +52,14 @@ type TestData = {
 /** One encoded text: one vector per sentence. */
 type EncodedText = number[][]
 
+/** The score at or above which two trees count as identical. */
+const IDENTICAL_SCORE = 0.999999
+
 /** Read and parse the reviewed test data set. */
 const loadTestData = (): TestData => {
-	const path = join(import.meta.dir, "..", "src", "lib", "syntax", "test-data", "french.json")
+	const path = join(import.meta.dir, "..", "src", "lib", "syntax", "test-data", "french.jsonc")
 
-	return JSON.parse(readFileSync(path, "utf8")) as TestData
+	return Bun.JSONC.parse(readFileSync(path, "utf8")) as TestData
 }
 
 /**
@@ -227,7 +218,6 @@ export type SyntaxReport = {
 	mode: SyntaxMode
 	encoderVersion: string
 	source: "expected" | "parser"
-	ranking: { total: number; correct: number; accuracy: number }
 	structural: { total: number; correct: number; accuracy: number }
 	failures: string[]
 	latencyMs: { encode: number; parse: number }
@@ -249,9 +239,9 @@ export type EvaluateOptions = {
 /**
  * Evaluate the encoder against the reviewed test data set.
  *
- * The function scores every ranking case and every structural pair. It splits
- * the results into the development set and the held-out set, but it reports the
- * combined accuracy, because the frozen judgments already separate the sets.
+ * The function scores every structural pair. It splits the results into the
+ * development set and the held-out set, but it reports the combined accuracy,
+ * because the frozen judgments already separate the sets.
  */
 export const evaluateSyntax = (data: TestData, options: EvaluateOptions): SyntaxReport => {
 	const config = options.config ?? DEFAULT_ENCODER_CONFIG
@@ -286,25 +276,6 @@ export const evaluateSyntax = (data: TestData, options: EvaluateOptions): Syntax
 		}
 	}
 
-	let rankingTotal = 0
-	let rankingCorrect = 0
-
-	for (const testCase of data.rankingCases) {
-		const query = encodedOf(testCase.query)
-		const positive = encodedOf(testCase.positive)
-		const negative = encodedOf(testCase.negative)
-
-		if (query === undefined || positive === undefined || negative === undefined) {
-			continue
-		}
-
-		rankingTotal += 1
-
-		if (syntaxSimilarity(query, positive) > syntaxSimilarity(query, negative)) {
-			rankingCorrect += 1
-		}
-	}
-
 	let structuralTotal = 0
 	let structuralCorrect = 0
 
@@ -323,7 +294,7 @@ export const evaluateSyntax = (data: TestData, options: EvaluateOptions): Syntax
 		structuralTotal += 1
 
 		const score = syntaxSimilarity(left, right)
-		const holds = pair.relation === "equal" ? score >= 0.999999 : score < 0.999999
+		const holds = pair.relation === "equal" ? score >= IDENTICAL_SCORE : score < IDENTICAL_SCORE
 
 		if (holds) {
 			structuralCorrect += 1
@@ -334,11 +305,6 @@ export const evaluateSyntax = (data: TestData, options: EvaluateOptions): Syntax
 		mode: options.mode,
 		encoderVersion: config.version,
 		source: options.source,
-		ranking: {
-			total: rankingTotal,
-			correct: rankingCorrect,
-			accuracy: rankingTotal === 0 ? 0 : rankingCorrect / rankingTotal,
-		},
 		structural: {
 			total: structuralTotal,
 			correct: structuralCorrect,
@@ -428,7 +394,6 @@ export const formatReport = (report: SyntaxReport): string => {
 	const percent = (value: number): string => `${(value * 100).toFixed(1)}%`
 	const lines = [
 		`Syntax evaluation (${report.mode}, ${report.source}, encoder ${report.encoderVersion})`,
-		`  ranking accuracy:    ${percent(report.ranking.accuracy)} (${report.ranking.correct}/${report.ranking.total})`,
 		`  structural accuracy: ${percent(report.structural.accuracy)} (${report.structural.correct}/${report.structural.total})`,
 		`  failures:            ${report.failures.length}`,
 	]

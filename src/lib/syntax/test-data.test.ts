@@ -21,15 +21,6 @@ type TextEntry = {
 	sentences: Token[][]
 }
 
-/** One ranking case: a query, a positive, and a negative. */
-type RankingCase = {
-	id: string
-	query: string
-	positive: string
-	negative: string
-	category: string
-}
-
 /** One structural pair: two texts and the expected relation per mode. */
 type StructuralPair = {
 	id: string
@@ -46,17 +37,16 @@ type TestData = {
 	tokenFields: string[]
 	modeFeatures: string[]
 	texts: Record<string, TextEntry>
-	rankingCases: RankingCase[]
 	structuralPairs: StructuralPair[]
 	split: { development: string[]; heldOut: string[] }
 }
 
 /** Read and parse the reviewed test data set. */
 const loadTestData = (): TestData => {
-	const path = join(import.meta.dir, "test-data", "french.json")
+	const path = join(import.meta.dir, "test-data", "french.jsonc")
 	const raw = readFileSync(path, "utf8")
 
-	return JSON.parse(raw) as TestData
+	return Bun.JSONC.parse(raw) as TestData
 }
 
 /** Read the value of one CoNLL-U field of a token. */
@@ -170,31 +160,26 @@ describe("french test data set", () => {
 		}
 	})
 
-	test("resolves every ranking-case text reference", () => {
-		const keys = new Set(Object.keys(data.texts))
-
-		for (const testCase of data.rankingCases) {
-			for (const reference of [testCase.query, testCase.positive, testCase.negative]) {
-				expect(keys.has(reference)).toBe(true)
-			}
-		}
-	})
-
 	test("resolves every structural-pair text reference", () => {
 		const keys = new Set(Object.keys(data.texts))
 
 		for (const pair of data.structuralPairs) {
-			for (const reference of [pair.a, pair.b]) {
-				expect(keys.has(reference)).toBe(true)
+			for (const [role, reference] of [
+				["a", pair.a],
+				["b", pair.b],
+			] as const) {
+				const present = keys.has(reference)
+
+				expect(
+					present,
+					`${role} Test string ${JSON.stringify(reference)} is not present in the indexed texts keys (pair ${pair.id})`,
+				).toBe(true)
 			}
 		}
 	})
 
 	test("partitions every evaluation case into the split exactly once", () => {
-		const caseIds = [
-			...data.rankingCases.map((testCase) => testCase.id),
-			...data.structuralPairs.map((pair) => pair.id),
-		]
+		const caseIds = data.structuralPairs.map((pair) => pair.id)
 		const splitIds = [...data.split.development, ...data.split.heldOut]
 
 		expect(new Set(splitIds).size).toBe(splitIds.length)

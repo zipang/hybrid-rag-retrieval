@@ -13,8 +13,8 @@ type TextEntry = { sentences: Token[][] }
 
 /** Read the reviewed test data set, keyed by the text itself. */
 const loadTexts = (): Map<string, TextEntry> => {
-	const raw = readFileSync(join(import.meta.dir, "test-data", "french.json"), "utf8")
-	const data = JSON.parse(raw) as { texts: Record<string, TextEntry> }
+	const raw = readFileSync(join(import.meta.dir, "test-data", "french.jsonc"), "utf8")
+	const data = Bun.JSONC.parse(raw) as { texts: Record<string, TextEntry> }
 
 	return new Map(Object.entries(data.texts))
 }
