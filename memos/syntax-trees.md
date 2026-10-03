@@ -30,48 +30,62 @@ must keep the connections between words.
 
 | Representation | Shape | Status |
 | --- | --- | --- |
-| Dependency tree, CoNLL-U | Tree over words, typed relations | Selected |
+| Universal Dependencies (UD) tree, CoNLL-U | Tree over words, typed relations | Selected |
 | Constituency tree | Tree over phrases and words | Rejected |
 | Word-class sequence | Flat list of word classes | Insufficient |
 | Enhanced dependencies | Graph, not a tree | Out of scope |
 | AMR (graph) | Graph of meaning | Out of scope |
 | Source-code AST | Tree for code, not language | Rejected by the spec |
 
-## 3. The dependency representation
+## 3. The UD representation
 
-Universal Dependencies (UD) defines the annotation. The CoNLL-U file format
-carries it ([UD format specification](https://universaldependencies.org/format.html)).
-A word line has ten fields:
+The [Universal Dependencies (UD) format](https://universaldependencies.org/format.html) defines the nodes annotation. 
+The `CoNLL-U` file format carries it.
+In the `CoNLL-U` file format, each word/token is represented with values in 10 fields:
 
 ```
 ID  FORM  LEMMA  UPOS  XPOS  FEATS  HEAD  DEPREL  DEPS  MISC
 ```
+1. `ID`: Word index, integer starting at 1 for each new sentence; may be a range for multiword tokens; may be a decimal number for empty nodes (decimal numbers can be lower than 1 but must be greater than 0).
+2. `FORM`: Word form or punctuation symbol.
+3. `LEMMA`: Lemma or stem of word form.
+4. `UPOS`: Universal part-of-speech tag.
+5. `XPOS`: Optional language-specific (or treebank-specific) part-of-speech / morphological tag; underscore if not available.
+6. `FEATS`: List of morphological features from the universal feature inventory or from a defined language-specific extension; underscore if not available.
+7. `HEAD`: Head of the current word, which is either a value of an existing `ID` or zero (0) for the sentence root.
+8. `DEPREL`: Dependency relation to the `HEAD` (root iff `HEAD` = 0) or a defined language-specific subtype of one.
+9. `DEPS`: Enhanced dependency graph in the form of a list of head-deprel pairs.
+10. `MISC`: Any other annotation.
 
 The `HEAD` field is the identifier of the governor. The `DEPREL` field is the
 label of the relation to that governor. The UD syntax page states the central
-fact: "The *basic* dependency representation forms a tree, where exactly one
-word is the head of the sentence, dependent on a notional ROOT and all other
+fact: "The *basic* dependency representation forms a tree, where exactly only one
+word is the head of the sentence, dependent on a notional ROOT, and all other
 words are dependent on another word"
 ([UD syntax principles](https://universaldependencies.org/u/overview/syntax.html)).
 `HEAD = 0` marks the root.
 
-UD makes content words the heads. Function words and punctuation attach as
-leaves. The tree is therefore a list of word nodes. Each node stores the index
-of its parent. This is an adjacency list. It carries the full tree, but it does
+Each node stores the index of its parent. This is an adjacency list. It carries the full tree, but it does
 not show the hierarchy as visual nesting.
 
-The first example sentence:
+The parser emits the full ten-field CoNLL-U record. The project keeps seven of
+these values: the token `ID` and the six token fields `FORM`, `LEMMA`, `UPOS`,
+`HEAD`, `DEPREL`, and `FEATS`. It drops `XPOS`, `DEPS`, and `MISC`. The parser
+fills `XPOS` and `DEPS` with `_`, and the project does not use `MISC`.
+
+The first example sentence, in the flat table that `show-syntax-tree` prints:
 
 ```
-ID  FORM     UPOS  HEAD  DEPREL   FEATS
-1   Le       DET   2     det      Definite=Def|Gender=Masc|Number=Sing
-2   garçon   NOUN  3     nsubj    Gender=Masc|Number=Sing
-3   regarde  VERB  0     root     Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin
-4   le       DET   5     det      Definite=Def|Gender=Masc|Number=Sing
-5   soleil   NOUN  3     obj      Gender=Masc|Number=Sing
+| ID | FORM    | LEMMA    | UPOS | HEAD | DEPREL | FEATS                                                 |
+| -- | ------- | -------- | ---- | ---- | ------ | ----------------------------------------------------- |
+| 1  | Le      | le       | DET  | 2    | det    | Definite=Def|Gender=Masc|Number=Sing|PronType=Art     |
+| 2  | garçon  | garçon   | NOUN | 3    | nsubj  | Gender=Masc|Number=Sing                               |
+| 3  | regarde | regarder | VERB | 0    | root   | Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin |
+| 4  | le      | le       | DET  | 5    | det    | Definite=Def|Gender=Masc|Number=Sing|PronType=Art     |
+| 5  | soleil  | soleil   | NOUN | 3    | obj    | Gender=Masc|Number=Sing                               |
 ```
 
-The same tree as a nested structure:
+The same sentence, in the indented tree that `show-syntax-tree` prints:
 
 ```
 regarde (VERB, root)
@@ -100,54 +114,6 @@ S
 
 The phrase node `NP` is explicit. The project considered this formalism because
 the explicit phrase nodes are easy to read.
-
-## 5. The grouping question
-
-The reviewer asked how each formalism expresses the pair `Le garçon` and
-`Le petit garçon`. Both are noun phrases. Adding the adjective is a small
-change.
-
-The second sentence `Le petit garçon regarde le soleil jaune` in CoNLL-U:
-
-```
-ID  FORM     UPOS  HEAD  DEPREL   FEATS
-1   Le       DET   3     det      Definite=Def|Gender=Masc|Number=Sing
-2   petit    ADJ   3     amod     Gender=Masc|Number=Sing
-3   garçon   NOUN  4     nsubj    Gender=Masc|Number=Sing
-4   regarde  VERB  0     root     Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin
-5   le       DET   6     det      Definite=Def|Gender=Masc|Number=Sing
-6   soleil   NOUN  4     obj      Gender=Masc|Number=Sing
-7   jaune    ADJ   6     amod     Gender=Masc|Number=Sing
-```
-
-As a nested structure:
-
-```
-regarde (VERB, root)
-├── garçon (NOUN, nsubj)
-│   ├── Le (DET, det)
-│   └── petit (ADJ, amod)
-└── soleil (NOUN, obj)
-    ├── le (DET, det)
-    └── jaune (ADJ, amod)
-```
-
-A dependency tree has no phrase node. It has one node per word. The phrase
-`Le garçon` becomes the **subtree rooted at the noun** `garçon`. The subtree
-holds the `det` and `amod` dependents. Sentence 1 has one dependent under the
-noun. Sentence 2 has two dependents under the noun. The adjective adds one edge
-and one node.
-
-A constituency tree keeps the `NP` node in both sentences. It adds an `ADJP`
-inside the `NP` in sentence 2, under a grammar with explicit adjective phrases.
-Under a flat nominal group, the adjective attaches directly to the `NP`.
-The Penn Treebank convention uses this flat form (Marcus, Santorini, and
-Marcinkiewicz, 1993).
-
-The two formalisms differ in naming, not in substance. A dependency tree groups
-the nominal phrase as a noun-rooted subtree. A constituency tree groups it as a
-phrase node. The encoder can use the noun-rooted subtree, so the missing `NP`
-node is not a loss.
 
 ## 6. Tree edit distance comparison
 
@@ -180,26 +146,29 @@ similarity. T.E.D. serves here as a review tool only.
 
 ## 7. Decision
 
-The project selects dependency trees in the CoNLL-U format. The reasons are:
+We choose the **Universal Dependencies (UD) trees** syntax in the `CoNLL-U` format. 
+The reasons are:
 
-1. The specification names dependency trees.
-2. The parser candidates in the specification, UDPipe and Stanza, emit UD
-   dependency trees. French constituency parsing is not available in the
-   Bun and TypeScript path.
-3. The required parser output in the specification maps to the CoNLL-U fields.
-   The specification asks for "token positions, dependency heads, dependency
-   labels, word classes, and available grammatical features."
-4. Tree validation is simple. The code checks connectivity, roots, and cycles
+1  Mainly availability and performances: french constituency parsing is not available in the
+   Bun and TypeScript tooling ecosystem.
+2. The UD syntax tree output conforms to the specification needs for "token positions, 
+   dependency heads, dependency labels, word classes, and available grammatical features."
+3. Tree validation is simple. The code checks connectivity, roots, and cycles
    with the `HEAD` field.
-5. The nominal group is recoverable as a noun-rooted subtree.
 
 ## 8. How the encoder will use the tree
 
-The specification fixes the profile rules. The encoder will apply them to the
-dependency tree:
-
-- Remove `FORM` and `LEMMA`. Vocabulary must not enter the vector.
+- Remove `FORM` and `LEMMA`. Vocabulary must not enter the vector (it is semantic only).
 - Remove punctuation-only nodes.
+
+**Open question.** The blanket removal also removes the statement, question, and
+exclamation distinction. `Il vient` and `Il vient ?` become the same tree. The
+user re-opened this rule. Task 11a of the plan measures the loss on the test
+data set. Task 11b adds a sentence-type feature if the evaluation requires it.
+
+The specification defined two modes : `coarse` and `detailed`. 
+The encoder will apply them to the dependency tree:
+
 - `coarse`: keep the edges, the `UPOS` classes, the relative order, and the
   base `DEPREL` labels. Remove `FEATS`.
 - `detailed`: keep the same data. Also keep the allowlisted `FEATS`
@@ -275,7 +244,7 @@ result.
 The user found the naive rule's defect. The raw sum reuses the best record row
 for every query row, so a one-sentence record matched a two-sentence query at
 `2.0 / 2 = 1.0`. That is wrong: a query sentence with no partner must score
-zero. The project measured the corrected rule on the gold trees:
+zero. The project measured the corrected rule on the expected trees:
 
 | Case | Reading | Score |
 | --- | --- | --- |
@@ -334,7 +303,7 @@ The user approved the direction at Checkpoint B. The exact weights stay open for
 Task 11. The project must freeze them in a versioned encoder configuration
 before it indexes the corpus.
 
-### The coarse profile maps PROPN onto NOUN
+### The coarse mode maps PROPN onto NOUN
 
 The parser evaluation found a class of error that is not structural. It tagged
 the same interjection as `NOUN` in one sentence and `PROPN` in another:
@@ -345,15 +314,15 @@ the same interjection as `NOUN` in one sentence and `PROPN` in another:
 The two sentences have the same shape. They differ only in the word class that
 the parser chose. The `NOUN` and `PROPN` classes are both nominal. The choice
 between a common noun and a proper noun is a lexical property of the word. The
-coarse profile exists to ignore lexical properties.
+coarse mode exists to ignore lexical properties.
 
-The coarse profile therefore maps `PROPN` onto `NOUN`. Two nominal words always
-compare as one class. The detailed profile keeps the raw class.
+The coarse mode therefore maps `PROPN` onto `NOUN`. Two nominal words always
+compare as one class. The detailed mode keeps the raw class.
 
 The user approved the map at a Checkpoint E review. The function `canonicalUpos`
 in `src/lib/syntax/abstraction.ts` applies it. The map raised the parser
-structural accuracy from `76.5%` to `82.4%` and kept the gold accuracy at
-`100%`.
+structural accuracy from `82.4%` to `88.2%` and kept the accuracy on the
+expected trees at `100%`.
 
 The map is narrow. The project keeps the other classes as they are, because the
 other parser disagreements are genuine tree errors. A fuller list is in
@@ -474,21 +443,22 @@ result. The project recorded the failure cases and their cause.
 ### Accuracy
 
 The parser run reports two kinds of number. The token accuracy measures the
-parse against the gold trees. The task accuracy measures the encoder over the
+parse against the expected trees. The task accuracy measures the encoder over the
 parser trees.
 
-| Measure | Gold trees | Parser trees |
+| Measure | Expected trees | Parser trees |
 | --- | --- | --- |
 | Ranking accuracy | 100.0% | 79.3% |
-| Structural accuracy | 100.0% | 82.4% |
-| Token `UPOS` | — | 95.1% |
-| Token `HEAD` | — | 82.2% |
+| Structural accuracy | 100.0% | 88.2% |
+| Token `UPOS` | — | 95.3% |
+| Token `HEAD` | — | 82.8% |
 | Token `DEPREL` | — | 80.8% |
 | Failures | 0 | 0 |
 
-The gold run measures the encoder alone. It reaches 100%. The parser run
-measures the whole pipeline. It drops to about 80%. The difference is parser
-quality, not encoder quality. The head accuracy of `82.2%` is the main cause.
+The run on the expected trees measures the encoder alone. It reaches 100%. The
+parser run measures the whole pipeline. It drops to about 80%. The difference is
+parser quality, not encoder quality. The head accuracy of `82.8%` is the main
+cause.
 
 ### Failure classes
 
@@ -529,41 +499,93 @@ shape, but the parser gave them slightly different features:
 - "Toujours plus vite" and "Souvent trop tard" score `0.893`, not `1.0`.
 
 The trees are the same shape. The small drop comes from a feature that the
-coarse profile keeps.
+coarse mode keeps.
 
-**5. A cleft pair scored one where gold says different.** The parser gave two
-cleft sentences the same tree:
+### The corrected expected tree for the cleft pair
 
-- "C'est le gentil garçon qui regardait la lune en souriant".
-- "C'est la petite fille qui admirait la lune en chantant".
+An earlier review recorded a fifth failure class for a cleft pair. The cause was
+in the expected data, not in the parser. The expected tree of "C'est la petite
+fille qui admirait la lune en chantant" was missing the token `petite`. The
+partner sentence "C'est le gentil garçon qui regardait la lune en souriant" kept
+its adjective. The two expected trees had 11 and 10 tokens, so they could never
+be isomorphic.
 
-Both parse as `NOUN/root` with one `ADJ/amod` and one relative `acl:relcl`. The
-two adjectives make the trees equal. The gold pair says `different`, because the
-gold trees use `advcl:cleft` and differ in depth. The parser is more consistent
-than the gold pair here. This case is a gold judgment to review, not a parser
-error.
+The project added the token `petite` (`ADJ`, `amod` on `fille`) and shifted the
+governor indices. The two expected trees are now isomorphic. The project changed
+the relation of the pairs `p016` and `p017` from `different` to `equal`. Both
+modes now score the pair at `1.0`, and the parser output already agreed with
+the corrected tree. The failure class was a data defect, not a parser error.
 
 ### Label mapping
 
-The parser uses the UD 2.5 label set. The gold trees use the current French
+The parser uses the UD 2.5 label set. The expected trees use the current French
 guidelines. The known label differences are:
 
-- `acl:relcl` (parser) against `advcl:cleft` (gold) for clefts.
+- `acl:relcl` (parser) against `advcl:cleft` (expected) for clefts.
 - `nsubj` and `expl:subj` for the impersonal subject.
-- `obl:mod`, `obl` (parser) against `obl` (gold) for a modifier.
+- `obl:mod`, `obl` (parser) against `obl` (expected) for a modifier.
 
-The coarse profile keeps the base label, so most of these differences vanish.
+The coarse mode keeps the base label, so most of these differences vanish.
 `acl:relcl` becomes `acl` and `advcl:cleft` becomes `advcl`, which still differ.
 
 ### Effect on the project
 
-The encoder is validated on the gold trees at 100%. The parser adds noise. The
+The encoder is validated on the expected trees at 100%. The parser adds noise. The
 noise is acceptable for a proof of concept. The project records the parser error
 rate. A future ticket can compare another parser or a better model.
 
 The failed cases do not block the pipeline. They show which structures the
 parser misses: numerals, fronted adverbs, coordinated verbs, and a few tag
 choices.
+
+## 13. Inspect a syntax tree from the command line
+
+The tool `show-syntax-tree` prints the parse of one sentence. The source file is
+`scripts/show-syntax-tree.ts`. The package script `show-syntax-tree` runs it.
+
+```sh
+bun run show-syntax-tree "Le garçon regarde le soleil"
+```
+
+The tool reads the model path from `UDPIPE_MODEL_PATH`. It falls back to
+`models/french-gsd-ud-2.5-191206.udpipe`. The command `bun run init` downloads
+that model. The tool loads the model once and parses one text.
+
+The tool prints two views of each sentence:
+
+- a **flat table**, one row per token, with the CoNLL-U fields `ID`, `FORM`,
+  `LEMMA`, `UPOS`, `HEAD`, `DEPREL`, and `FEATS`;
+- a **tree**, one line per token, with the governor above its dependents.
+
+The flat table for the first example sentence:
+
+```text
+| ID | FORM    | LEMMA    | UPOS | HEAD | DEPREL | FEATS                                                 |
+| -- | ------- | -------- | ---- | ---- | ------ | ----------------------------------------------------- |
+| 1  | Le      | le       | DET  | 2    | det    | Definite=Def|Gender=Masc|Number=Sing|PronType=Art     |
+| 2  | garçon  | garçon   | NOUN | 3    | nsubj  | Gender=Masc|Number=Sing                               |
+| 3  | regarde | regarder | VERB | 0    | root   | Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin |
+| 4  | le      | le       | DET  | 5    | det    | Definite=Def|Gender=Masc|Number=Sing|PronType=Art     |
+| 5  | soleil  | soleil   | NOUN | 3    | obj    | Gender=Masc|Number=Sing                               |
+```
+
+The same sentence as a tree:
+
+```text
+regarde (VERB, root)
+├── garçon (NOUN, nsubj)
+│   └── Le (DET, det)
+└── soleil (NOUN, obj)
+    └── le (DET, det)
+```
+
+A node label has the form `FORM (UPOS, DEPREL)`. A root takes the `root` label
+from the parser. The tree prints every sentence of a multi-sentence input in
+reading order.
+
+The tool uses the parser adapter from `src/lib/syntax/parser.ts`. The adapter
+validates the parse, so the tool fails on a broken tree with
+`ParseValidationError`, and on a missing model with `ParserUnavailableError`.
 
 ## References
 
@@ -604,6 +626,8 @@ choices.
   record sentence. One record sentence cannot match two query sentences.
 - **Edge**: the link between a word and its governor. The dependency label names
   the link.
+- **Expected tree**: the hand-made syntax tree of one reviewed sentence. The
+  parser must reproduce it, and the encoder uses it to check its output.
 - **Feature weight**: the multiplier that one feature contributes to the vector.
   A higher weight gives the feature more influence on the cosine score.
 - **Governor**: the head word that another word depends on.
@@ -615,6 +639,9 @@ choices.
   work.
 - **MaxSim**: a comparator for multivectors. It sums, for each query row, the
   best match against the record rows. The raw value is not bounded by one.
+- **Mode**: the syntax setting that chooses the grammatical detail in the syntax
+  vector. The `coarse` mode keeps the structure only, and the `detailed` mode
+  also keeps an allowlist of features.
 - **Model**: the trained data file that a parser loads. The parser code and the
   model have separate licenses.
 - **Modifier**: a dependent word that adds detail to its governor, for example an
@@ -634,7 +661,7 @@ choices.
 - **Phrase node**: a node in a constituency tree that groups words, for example
   `NP`.
 - **Proper noun**: a word class for a named entity, for example a person or a
-  month. In UD its tag is `PROPN`. The coarse profile maps it onto `NOUN`.
+  month. In UD its tag is `PROPN`. The coarse mode maps it onto `NOUN`.
 - **Relation accuracy**: the share of words whose dependency label the parser
   identifies correctly.
 - **Role**: the grammatical function of an edge, taken from its dependency
@@ -656,7 +683,7 @@ choices.
 - **Universal Dependencies (UD)**: a cross-language standard for dependency
   annotation and word classes.
 - **UPOS equivalence**: a rule that treats two word classes as one for a
-  profile. The coarse profile treats `PROPN` and `NOUN` as one class.
+  mode. The coarse mode treats `PROPN` and `NOUN` as one class.
 - **UPOS**: the universal word-class tag of a word, for example `NOUN` or
   `VERB`.
 - **Word class**: the grammatical category of a word, for example noun, verb,
