@@ -6,14 +6,14 @@ Status: Approved by the user. Implementation planning follows this specification
 ## Scope note
 
 This ticket first delivers a working end-to-end system with the `coarse`
-profile. The project defers the `detailed` profile to a future ticket. The
-`coarse` profile keeps the grammatical structure only. The `detailed` profile
+mode. The project defers the `detailed` mode to a future ticket. The
+`coarse` mode keeps the grammatical structure only. The `detailed` mode
 also keeps an allowlist of grammatical features, such as `Definite`, `Gender`,
 and `Tense`.
 
-The code keeps a profile seam, so the future ticket adds the `detailed` branch
+The code keeps a mode seam, so the future ticket adds the `detailed` branch
 without an interface change. The plan records the deferred items in its
-"Deferred Work" section. The `coarse` profile is enough to prove the full
+"Deferred Work" section. The `coarse` mode is enough to prove the full
 pipeline: parse, abstract, encode, store, and query.
 
 ## Objective
@@ -38,8 +38,8 @@ The proposed code-representation workflow becomes: parse French grammar, abstrac
 ## Confirmed Intent
 
 - Support French in this ticket.
-- Offer two grammatical specificity profiles: `coarse` and `detailed`. This ticket implements and validates `coarse` first. It defers `detailed` to a future ticket, keeping the profile seam in the code.
-- Select one profile per indexing run. Changing the profile requires syntax reindexing.
+- Offer two grammatical specificity modes: `coarse` and `detailed`. This ticket implements and validates `coarse` first. It defers `detailed` to a future ticket, keeping the mode seam in the code.
+- Select one mode per indexing run. Changing the mode requires syntax reindexing.
 - Replace retrieval modes with weighted index selection through the API.
 - Give each selected index a documented score between zero and one.
 - Replace `topK` with a minimum combined matching score, `minScore`.
@@ -92,7 +92,7 @@ Validate tree connectivity, head references, roots, and cycles before encoding.
 The encoder receives only abstract grammatical data. Remove token text, lemmas, lexical identifiers, and parser hidden states from its input.
 The parser can use words to infer grammar. Vocabulary independence applies after parsing, not to the parser itself.
 
-Profiles have these proposed definitions:
+Modes have these proposed definitions:
 
 | Detail | `coarse` | `detailed` |
 | --- | --- | --- |
@@ -115,8 +115,8 @@ comparison. The class `PROPN` (proper noun) and the class `NOUN` (common noun)
 are both nominal. Whether a word is a "named thing" or a "common thing" is a
 property of the word, not of the structure.
 
-The `coarse` profile maps `PROPN` onto `NOUN`, so a proper noun and a common
-noun compare as one nominal class. The `detailed` profile keeps the raw class.
+The `coarse` mode maps `PROPN` onto `NOUN`, so a proper noun and a common
+noun compare as one nominal class. The `detailed` mode keeps the raw class.
 This rule was added after the parser evaluation showed the same interjection
 tagged as `NOUN` in one sentence and `PROPN` in another.
 
@@ -158,7 +158,7 @@ It must preserve existing semantic vectors, BM25 vectors, record identifiers, an
 Also populate syntax vectors during subsequent full indexing runs when syntax indexing is enabled.
 The current full indexer deletes its collection. The syntax-only path must not reuse that deletion behavior.
 
-Persist the profile, language, parser version, model revision, abstraction version, and encoder configuration identifier.
+Persist the mode, language, parser version, model revision, abstraction version, and encoder configuration identifier.
 Persist dimensions and feature configuration as part of the reproducible index configuration.
 Queries must use that persisted configuration and reject incompatible runtime configuration.
 
@@ -265,10 +265,10 @@ bun run smoke
 Proposed commands to implement and document in this ticket:
 
 ```sh
-bun run scripts/index-syntax.ts --profile coarse
-bun run scripts/index-syntax.ts --profile detailed
-bun run scripts/evaluate-syntax.ts --profile coarse
-bun run scripts/evaluate-syntax.ts --profile detailed
+bun run scripts/index-syntax.ts --mode coarse
+bun run scripts/index-syntax.ts --mode detailed
+bun run scripts/evaluate-syntax.ts --mode coarse
+bun run scripts/evaluate-syntax.ts --mode detailed
 curl --get 'http://localhost:3000/api/slogans' \
   --data-urlencode 'q=Le garçon regarde le soleil' \
   --data-urlencode 'weights={"syntax":1}' \
@@ -303,7 +303,7 @@ Proposed additions:
 
 ```text
 src/lib/syntax/              Parser adapter, abstraction, encoder, and configuration
-scripts/index-syntax.ts      Syntax-only backfill and profile rebuild
+scripts/index-syntax.ts      Syntax-only backfill and mode rebuild
 scripts/evaluate-syntax.ts   Reproducible French comparison bench
 roadmap/T0004/spec.md        Requirements and review decisions
 roadmap/T0004/plan.md        Implementation plan after specification approval
@@ -322,10 +322,10 @@ Inject parser and database dependencies so encoder tests require neither service
 Illustrative configuration style:
 
 ```ts
-type SyntaxProfile = "coarse" | "detailed"
+type SyntaxMode = "coarse" | "detailed"
 
 /** Return whether two syntax configurations use the same specificity. */
-const hasSameProfile = (indexed: SyntaxProfile, requested: SyntaxProfile): boolean => {
+const hasSameMode = (indexed: SyntaxMode, requested: SyntaxMode): boolean => {
 
 	return indexed === requested
 }
@@ -356,7 +356,7 @@ Use manually reviewed grammatical trees for encoder tests and actual French sent
 
 Build a reviewed French evaluation set with at least 30 query/positive/negative triplets.
 Include different-word positives, shared-word negatives, and same-word-class cases with different dependency connections.
-Evaluate both profiles through separate indexing runs on the same test data set.
+Evaluate both modes through separate indexing runs on the same test data set.
 Freeze test data set judgments before feature-weight tuning. Report parser failures separately from ranking failures.
 
 Record parser startup time, warm parsing latency, encoding latency, Qdrant latency, indexing throughput, memory, and syntax coverage.
@@ -369,16 +369,16 @@ The following numerical targets are proposed for specification review:
 
 1. Identical canonical trees yield identical vectors and cosine similarity of at least `0.999999` in encoder tests.
 2. The two supplied French sentences produce the same coarse tree and a syntax cosine score of at least `0.99`.
-3. The detailed profile represents determiner definiteness differences and scores those examples below their exact detailed self-match.
+3. The detailed mode represents determiner definiteness differences and scores those examples below their exact detailed self-match.
 4. Every reviewed connection-change test case receives a lower score than its identical-tree counterpart.
-5. At least 90% of the reviewed French triplets rank the structural positive above the negative in each profile.
+5. At least 90% of the reviewed French triplets rank the structural positive above the negative in each mode.
 6. Qdrant exact search reproduces local cosine ordering within floating-point tolerance. Treat equal-score ties as unordered.
 7. All indexed records have either a compatible syntax vector or an explicit exclusion reason in the indexing report.
-8. Reindexing specificity never exposes mixed-profile vectors to syntax queries.
+8. Reindexing specificity never exposes mixed-mode vectors to syntax queries.
 9. Syntax-only requests honor filters and do not call semantic embedding or hybrid fusion.
 10. Each supported index can operate alone or contribute to a weighted combined score.
 11. Syntax-only backfill preserves existing vector data and business payload fields.
-12. Both profile evaluations produce reproducible configuration and measurement reports.
+12. Both mode evaluations produce reproducible configuration and measurement reports.
 13. Returned combined scores equal the weighted sum of component scores within a documented floating-point tolerance.
 14. Every record meeting the inclusive threshold appears exactly once across all pages of a fixed query generation.
 15. No record below the threshold appears. A valid query without qualifying records returns an empty list.
@@ -401,7 +401,7 @@ The following numerical targets are proposed for specification review:
 
 ### Ask first
 
-- Change the approved profile definitions or numerical acceptance targets.
+- Change the approved mode definitions or numerical acceptance targets.
 - Adopt a runtime dependency or model after the feasibility review.
 - Add learned encoder training, remote parsing, or multilingual support.
 - Recreate or delete a collection as part of syntax migration.
@@ -420,7 +420,7 @@ The following numerical targets are proposed for specification review:
 ## Decisions Pending Before Implementation
 
 - Select and pin a parser and French model after the JavaScript-first feasibility gate.
-- Confirm the proposed profile details, morphology allowlist, and numerical acceptance targets during specification review.
+- Confirm the proposed mode details, morphology allowlist, and numerical acceptance targets during specification review.
 - Choose tree-feature families, dimensionality, weights, and hashing policy through evaluation.
 - Choose configuration storage, readiness tracking, and rebuild publication mechanics.
 - Validate and freeze cosine and BM25 normalization formulas and parameters.
@@ -463,7 +463,7 @@ Parser sources are feasibility references. A versioned local mirror is required 
 - **Normalization:** A fixed transformation that converts an index score into the documented range from zero to one.
 - **Pagination:** Delivery of all matching records through multiple bounded responses.
 - **Parser:** A component that identifies words, grammatical features, and grammatical relationships in a sentence.
-- **Specificity profile:** The indexing configuration that selects which grammatical details the syntax representation retains.
+- **Specificity mode:** The indexing configuration that selects which grammatical details the syntax representation retains.
 - **Syntax search:** Retrieval by grammatical-tree resemblance. It differs from the existing keyword search called syntactic proximity in the root README.
 - **Threshold:** The minimum combined score that a record must meet to qualify for retrieval.
 - **Triplet:** A query, a structurally similar positive example, and a structurally different negative example used to evaluate ranking.

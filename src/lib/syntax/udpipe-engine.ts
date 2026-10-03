@@ -2,7 +2,7 @@
  * Real UDPipe engine loader.
  *
  * The npm wrapper `udpipe-wasm` exposes `loadParser`, but its `parse` returns a
- * tree without the `FEATS` column. The detailed profile needs those features.
+ * tree without the `FEATS` column. The detailed mode needs those features.
  * The adapter therefore calls the underlying wasm `parseToConllu` directly,
  * through the package glue.
  *

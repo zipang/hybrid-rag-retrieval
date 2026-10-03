@@ -16,7 +16,7 @@ import { join } from "node:path"
 /** One CoNLL-U token as stored in the test data set. */
 type Token = string[]
 
-/** One text entry: the gold sentence trees. */
+/** One text entry: the expected sentence trees. */
 type TextEntry = {
 	sentences: Token[][]
 }
@@ -30,12 +30,12 @@ type RankingCase = {
 	category: string
 }
 
-/** One structural pair: two texts and the expected relation per profile. */
+/** One structural pair: two texts and the expected relation per mode. */
 type StructuralPair = {
 	id: string
 	a: string
 	b: string
-	profile: string
+	mode: string
 	relation: string
 }
 
@@ -44,7 +44,7 @@ type TestData = {
 	version: number
 	language: string
 	tokenFields: string[]
-	profileFeatures: string[]
+	modeFeatures: string[]
 	texts: Record<string, TextEntry>
 	rankingCases: RankingCase[]
 	structuralPairs: StructuralPair[]

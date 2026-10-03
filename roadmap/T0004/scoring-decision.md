@@ -122,14 +122,14 @@ The order does not depend on page contents or candidate-batch size.
 ## Syntax similarity reference tables
 
 This section gives the syntax similarity between one test sentence and every
-reviewed test sentence. The similarity uses the `coarse` profile. The syntax
+reviewed test sentence. The similarity uses the `coarse` mode. The syntax
 weight is `1`, so the table shows the raw syntax component score in `[0, 1]`.
 Read this value as the syntax contribution to the combined score.
 
 ### Method
 
 The encoder does not exist yet. Task 11 implements it. These tables use a
-reference implementation of the `coarse` abstraction over the gold trees in
+reference implementation of the `coarse` abstraction over the expected trees in
 `src/lib/syntax/test-data/french.json`. The reference implementation follows the
 specification:
 
@@ -160,7 +160,7 @@ implements the rule. `scripts/evaluate-syntax.ts` uses it.
 ### Sample selection
 
 `x001` and `x002` share one coarse tree, so their tables must be equal. They
-prove the spec example, but they do not separate the profiles. The tables use
+prove the spec example, but they do not separate the modes. The tables use
 three queries that do separate behavior:
 
 - `x001` — the base one-clause tree.
@@ -363,7 +363,7 @@ rule divides by the larger sentence count on the two sides.
 one coarse tree and score `1.0000`. The specification expects this.
 
 **Defect to review.** `x003` reverses the subject and the object of `x001`. It
-still scores `1.0000`, because the coarse profile removes lexical identity. The
+still scores `1.0000`, because the coarse mode removes lexical identity. The
 project must decide whether the encoder needs an argument-order feature. This is
 a Checkpoint E question.
 
@@ -436,7 +436,7 @@ not select syntax must work without a parser.
   sentence, score an unpaired sentence as zero, divide by
   `max(queryRows, recordRows)`. The user approved this rule at Checkpoint B.
 - Argument order: resolved. A subject-object reversal scores `1.0000`, and that
-  is correct. The coarse profile compares the tree shape alone, so the two
+  is correct. The coarse mode compares the tree shape alone, so the two
   sentences share one tree. The test data set now marks that pair `equal`.
 - Feature weights are frozen in the encoder configuration
   (`DEFAULT_ENCODER_CONFIG` in `src/lib/syntax/encoder.ts`). The role weights

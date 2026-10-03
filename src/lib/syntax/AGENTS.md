@@ -5,7 +5,7 @@ These rules take precedence over the rules of the parent directories.
 - Keep the parser engine behind an injectable interface. Unit tests inject a
   fake engine and never load the model.
 - Read the full CoNLL-U output. The npm wrapper drops the `FEATS` column, and
-  the detailed profile needs it. Keep the column names in the code: `FORM`,
+  the detailed mode needs it. Keep the column names in the code: `FORM`,
   `LEMMA`, `UPOS`, `FEATS`, `HEAD`, `DEPREL`.
 - Validate every parse before returning it: `FORM`, `UPOS`, and `DEPREL` are
   present, every `HEAD` is inside the sentence, every sentence has a root, and

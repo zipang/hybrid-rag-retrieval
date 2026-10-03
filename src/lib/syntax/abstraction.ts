@@ -6,23 +6,23 @@
  * classes, the dependency connections, the relative word order, and the
  * dependency labels.
  *
- * Two profiles select how much detail the abstract tree keeps:
+ * Two modes select how much detail the abstract tree keeps:
  *
  * - `coarse`: keep the structure only. Remove every grammatical feature.
  * - `detailed`: keep the structure and an allowlist of grammatical features.
  *
  * This ticket implements and validates `coarse`. The `detailed` branch is
- * deferred to a future ticket. The functions already take a profile parameter,
+ * deferred to a future ticket. The functions already take a mode parameter,
  * so the future branch needs no interface change. See the plan, "Deferred
  * Work".
  */
 
 import type { ParsedSentence, ParsedText } from "./parser"
 
-/** The grammatical specificity profile. */
-export type SyntaxProfile = "coarse" | "detailed"
+/** The grammatical specificity mode. */
+export type SyntaxMode = "coarse" | "detailed"
 
-/** The grammatical features that the `detailed` profile keeps. */
+/** The grammatical features that the `detailed` mode keeps. */
 export const DETAILED_FEATURE_ALLOWLIST = [
 	"Definite",
 	"Gender",
@@ -41,13 +41,13 @@ export type AbstractNode = {
 	/**
 	 * Dependency label.
 	 *
-	 * The `coarse` profile keeps the base label, before the first colon. The
-	 * `detailed` profile will keep the full label.
+	 * The `coarse` mode keeps the base label, before the first colon. The
+	 * `detailed` mode will keep the full label.
 	 */
 	deprel: string
 	/** 1-based index of the governor, or `0` for the root. */
 	head: number
-	/** Canonical grammatical features, empty for the `coarse` profile. */
+	/** Canonical grammatical features, empty for the `coarse` mode. */
 	feats: string
 }
 
@@ -61,8 +61,8 @@ export type AbstractSentence = {
 
 /** One abstract text: a forest of abstract sentences. */
 export type AbstractTree = {
-	/** The profile that produced this tree. */
-	profile: SyntaxProfile
+	/** The mode that produced this tree. */
+	mode: SyntaxMode
 	/** Abstract sentences, in reading order. */
 	sentences: AbstractSentence[]
 }
@@ -83,25 +83,25 @@ const isPunctuation = (upos: string): boolean => upos === "PUNCT"
 const baseLabel = (deprel: string): string => deprel.split(":")[0] ?? deprel
 
 /**
- * Word classes that mean the same thing for the coarse profile.
+ * Word classes that mean the same thing for the coarse mode.
  *
  * `NOUN` and `PROPN` are both nominal. The choice between a common noun and a
  * proper noun is a lexical property of the word, not a structural one. The
- * coarse profile compares structure only, so it maps a proper noun onto the
- * common-noun class. The detailed profile keeps the raw class.
+ * coarse mode compares structure only, so it maps a proper noun onto the
+ * common-noun class. The detailed mode keeps the raw class.
  */
 export const COARSE_UPOS_EQUIVALENCE: Record<string, string> = {
 	PROPN: "NOUN",
 }
 
 /**
- * Return the word class for one profile.
+ * Return the word class for one mode.
  *
- * The coarse profile maps an equivalent class onto its canonical class, for
- * example `PROPN` onto `NOUN`. The detailed profile keeps the raw class.
+ * The coarse mode maps an equivalent class onto its canonical class, for
+ * example `PROPN` onto `NOUN`. The detailed mode keeps the raw class.
  */
-export const canonicalUpos = (upos: string, profile: SyntaxProfile): string => {
-	if (profile === "coarse") {
+export const canonicalUpos = (upos: string, mode: SyntaxMode): string => {
+	if (mode === "coarse") {
 		return COARSE_UPOS_EQUIVALENCE[upos] ?? upos
 	}
 
@@ -115,10 +115,10 @@ export const canonicalUpos = (upos: string, profile: SyntaxProfile): string => {
  * sorts the entries, and rejoins them. The canonical order makes two equal
  * feature sets produce the same string.
  *
- * The `coarse` profile keeps nothing, so it returns an empty string.
+ * The `coarse` mode keeps nothing, so it returns an empty string.
  */
-export const canonicalFeatures = (feats: string, profile: SyntaxProfile): string => {
-	if (profile === "coarse" || feats === "") {
+export const canonicalFeatures = (feats: string, mode: SyntaxMode): string => {
+	if (mode === "coarse" || feats === "") {
 		return ""
 	}
 
@@ -135,13 +135,10 @@ export const canonicalFeatures = (feats: string, profile: SyntaxProfile): string
  * Abstract one parsed sentence.
  *
  * The function removes punctuation nodes and remaps the head indices to the
- * remaining nodes. It resolves the profile label rule and the profile feature
+ * remaining nodes. It resolves the mode label rule and the mode feature
  * rule. It raises {@link AbstractionError} when the sentence has no root.
  */
-export const abstractSentence = (
-	sentence: ParsedSentence,
-	profile: SyntaxProfile,
-): AbstractSentence => {
+export const abstractSentence = (sentence: ParsedSentence, mode: SyntaxMode): AbstractSentence => {
 	// Keep the tokens that carry grammar, with their original 1-based index.
 	const kept: Array<{ index: number; token: ParsedSentence[number] }> = []
 
@@ -179,10 +176,10 @@ export const abstractSentence = (
 		}
 
 		nodes.push({
-			upos: canonicalUpos(upos, profile),
-			deprel: profile === "coarse" ? baseLabel(deprel) : deprel,
+			upos: canonicalUpos(upos, mode),
+			deprel: mode === "coarse" ? baseLabel(deprel) : deprel,
 			head: newHead,
-			feats: canonicalFeatures(feats, profile),
+			feats: canonicalFeatures(feats, mode),
 		})
 	}
 
@@ -195,13 +192,13 @@ export const abstractSentence = (
  * The function keeps the sentence boundaries, because the specification
  * requires a grammatical forest for a multi-sentence text.
  */
-export const abstractTree = (parsed: ParsedText, profile: SyntaxProfile): AbstractTree => {
+export const abstractTree = (parsed: ParsedText, mode: SyntaxMode): AbstractTree => {
 	if (parsed.sentences.length === 0) {
 		throw new AbstractionError("text has no sentence")
 	}
 
 	return {
-		profile,
-		sentences: parsed.sentences.map((sentence) => abstractSentence(sentence, profile)),
+		mode,
+		sentences: parsed.sentences.map((sentence) => abstractSentence(sentence, mode)),
 	}
 }

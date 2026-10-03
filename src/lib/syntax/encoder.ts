@@ -15,7 +15,7 @@
  * always give the same vector.
  */
 
-import type { AbstractNode, AbstractSentence, AbstractTree, SyntaxProfile } from "./abstraction"
+import type { AbstractNode, AbstractSentence, AbstractTree, SyntaxMode } from "./abstraction"
 
 /** Frozen encoder configuration. */
 export type EncoderConfig = {
@@ -47,7 +47,7 @@ export type EncoderConfig = {
  * The role weights make a core role count more than a modifier. The weights
  * follow the `role` scheme measured at Checkpoint B: core roles (`root`,
  * `nsubj`, `obj`) are heavier than modifiers (`advmod`, `det`, `expl`). The
- * `coarse` profile keeps base labels, so the role table uses base labels.
+ * `coarse` mode keeps base labels, so the role table uses base labels.
  */
 export const DEFAULT_ENCODER_CONFIG: EncoderConfig = {
 	version: "coarse-1",
@@ -337,5 +337,5 @@ export const l2Normalize = (vector: number[]): number[] => {
 	return vector.map((value) => value / norm)
 }
 
-/** Re-export the profile type for callers of the encoder. */
-export type { SyntaxProfile }
+/** Re-export the mode type for callers of the encoder. */
+export type { SyntaxMode }

@@ -171,6 +171,8 @@ These memos record our findings
   once in `design-tokens.css` and used everywhere through `var()`.
 - **Design System**: the pair of files, `DESIGN.md` and `design-tokens.css`,
   that define every token and every component rule.
+- **expected tree**: the hand-made syntax tree of one reviewed sentence. The
+  parser must reproduce it, and the encoder uses it to check its output.
 - **filter field**: a payload field that narrows a search, for example the year
   or the author. It does not enter the vectors.
 - **flat design**: a style with no shadow and no corner radius. This project
@@ -183,6 +185,9 @@ These memos record our findings
   way to arrange content in this project.
 - **LLM (Large Language Model)**: a model that reads and writes natural
   language. The chat application uses it to answer a question.
+- **mode**: the syntax setting that chooses the grammatical detail in the syntax
+  vector. The `coarse` mode keeps the structure only, and the `detailed` mode
+  also keeps an allowlist of features.
 - **RAG (Retrieval-Augmented Generation)**: a method. The application first
   retrieves records from a database, then gives the records to the LLM. The LLM
   answers from the records.

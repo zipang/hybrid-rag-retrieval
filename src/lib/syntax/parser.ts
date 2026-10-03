@@ -3,7 +3,7 @@
  *
  * The adapter wraps the selected parser (`udpipe-wasm` with the pinned
  * `french-gsd` model). It reads the full CoNLL-U output, because the npm wrapper
- * drops the `FEATS` column that the detailed profile needs.
+ * drops the `FEATS` column that the detailed mode needs.
  *
  * The adapter keeps the parser engine behind an injectable interface. Tests
  * inject a fake engine. The real engine loads the model once and reuses it.

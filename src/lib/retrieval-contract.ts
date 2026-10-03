@@ -76,7 +76,7 @@ export type WeightedResultMetadata = {
 	normalizationVersion: string
 	/** Index generation of the corpus and the scoring configuration. */
 	generation: string
-	/** Syntax profile identifier, when syntax is selected. */
+	/** Syntax mode identifier, when syntax is selected. */
 	syntaxConfigId?: string
 }
 

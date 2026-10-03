@@ -53,7 +53,7 @@ The project rejected it on speed, memory, and runtime simplicity.
 ## Output completeness
 
 The package `Parser.parse` returns `form`, `lemma`, `upos`, `head`, and
-`deprel`. It does not expose the morphological features. The `detailed` profile
+`deprel`. It does not expose the morphological features. The `detailed` mode
 needs the features.
 
 The underlying wasm `parseToConllu` produces the full CoNLL-U record, including

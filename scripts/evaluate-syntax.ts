@@ -9,7 +9,7 @@
  * - structural accuracy: the share of structural pairs whose expected relation
  *   holds;
  * - parser accuracy: the share of tokens whose `UPOS`, `HEAD`, and `DEPREL`
- *   match the gold annotation, when the real parser runs;
+ *   match the expected annotation, when the real parser runs;
  * - failures: the texts that produce no valid tree;
  * - latency: warm parse time and encode time.
  *
@@ -19,17 +19,17 @@
  * Run it with:
  *
  * ```sh
- * bun run scripts/evaluate-syntax.ts --profile coarse
+ * bun run scripts/evaluate-syntax.ts --mode coarse
  * ```
  *
- * Add `--gold` to evaluate the encoder on the gold trees only. Add `--parser`
- * to run the real parser. The default runs the gold encoder evaluation.
+ * The default evaluates the encoder on the expected trees. Add `--parser` to
+ * run the real parser and evaluate the whole pipeline.
  */
 
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import { multivectorSimilarity } from "../src/lib/scoring"
-import { abstractTree, type SyntaxProfile } from "../src/lib/syntax/abstraction"
+import { abstractTree, type SyntaxMode } from "../src/lib/syntax/abstraction"
 import { createSyntaxParser } from "../src/lib/syntax/config"
 import { DEFAULT_ENCODER_CONFIG, type EncoderConfig, encodeTree } from "../src/lib/syntax/encoder"
 import type { ParsedText } from "../src/lib/syntax/parser"
@@ -37,7 +37,7 @@ import type { ParsedText } from "../src/lib/syntax/parser"
 /** One token tuple in the test data set shape. */
 type Token = [string, string, string, number, string, string]
 
-/** One text entry of the test data set: the gold sentence trees. */
+/** One text entry of the test data set: the expected sentence trees. */
 type TextEntry = { sentences: Token[][] }
 
 /** One ranking case. */
@@ -50,7 +50,7 @@ type RankingCase = {
 }
 
 /** One structural pair. */
-type StructuralPair = { id: string; a: string; b: string; profile: string; relation: string }
+type StructuralPair = { id: string; a: string; b: string; mode: string; relation: string }
 
 /** The shape of the test data set file. */
 type TestData = {
@@ -81,22 +81,18 @@ const loadTestData = (): TestData => {
 export const syntaxSimilarity = (query: EncodedText, record: EncodedText): number =>
 	multivectorSimilarity(query, record)
 
-/** Encode one gold text with the coarse profile. */
-const encodeGold = (
-	entry: TextEntry,
-	profile: SyntaxProfile,
-	config: EncoderConfig,
-): EncodedText => {
+/** Encode one expected text with the coarse mode. */
+const encodeExpected = (entry: TextEntry, mode: SyntaxMode, config: EncoderConfig): EncodedText => {
 	const parsed: ParsedText = {
 		sentences: entry.sentences.map((sentence) => sentence.map((token) => [...token] as Token)),
 	}
 
-	return encodeTree(abstractTree(parsed, profile), config).map((vector) => vector.values)
+	return encodeTree(abstractTree(parsed, mode), config).map((vector) => vector.values)
 }
 
-/** Token-level accuracy of the parser against the gold trees. */
+/** Token-level accuracy of the parser against the expected trees. */
 export type ParserAccuracy = {
-	/** Tokens compared, over the texts whose token count matches the gold. */
+	/** Tokens compared, over the texts whose token count matches the expected. */
 	total: number
 	/** Share of tokens with the correct `UPOS`. */
 	upos: number
@@ -108,9 +104,9 @@ export type ParserAccuracy = {
 
 /** Shape of the evaluation report. */
 export type SyntaxReport = {
-	profile: SyntaxProfile
+	mode: SyntaxMode
 	encoderVersion: string
-	source: "gold" | "parser"
+	source: "expected" | "parser"
 	ranking: { total: number; correct: number; accuracy: number }
 	structural: { total: number; correct: number; accuracy: number }
 	failures: string[]
@@ -121,8 +117,8 @@ export type SyntaxReport = {
 
 /** Options for one evaluation run. */
 export type EvaluateOptions = {
-	profile: SyntaxProfile
-	source: "gold" | "parser"
+	mode: SyntaxMode
+	source: "expected" | "parser"
 	config?: EncoderConfig
 	/** Optional text-to-encoded map, when the caller already encoded the texts. */
 	encoded?: Map<string, EncodedText>
@@ -156,7 +152,7 @@ export const evaluateSyntax = (data: TestData, options: EvaluateOptions): Syntax
 		}
 
 		try {
-			const value = encodeGold(entry, options.profile, config)
+			const value = encodeExpected(entry, options.mode, config)
 
 			encoded.set(text, value)
 
@@ -191,7 +187,7 @@ export const evaluateSyntax = (data: TestData, options: EvaluateOptions): Syntax
 	let structuralCorrect = 0
 
 	for (const pair of data.structuralPairs) {
-		if (pair.profile !== options.profile) {
+		if (pair.mode !== options.mode) {
 			continue
 		}
 
@@ -213,7 +209,7 @@ export const evaluateSyntax = (data: TestData, options: EvaluateOptions): Syntax
 	}
 
 	return {
-		profile: options.profile,
+		mode: options.mode,
 		encoderVersion: config.version,
 		source: options.source,
 		ranking: {
@@ -231,24 +227,24 @@ export const evaluateSyntax = (data: TestData, options: EvaluateOptions): Syntax
 	}
 }
 
-/** Parse the `--profile` flag. Defaults to `coarse`. */
-const parseProfile = (argv: readonly string[]): SyntaxProfile => {
-	const index = argv.indexOf("--profile")
+/** Parse the `--mode` flag. Defaults to `coarse`. */
+const parseMode = (argv: readonly string[]): SyntaxMode => {
+	const index = argv.indexOf("--mode")
 	const value = index === -1 ? "coarse" : argv[index + 1]
 
 	if (value !== "coarse" && value !== "detailed") {
-		throw new Error(`unknown profile "${value ?? ""}"`)
+		throw new Error(`unknown mode "${value ?? ""}"`)
 	}
 
 	if (value === "detailed") {
-		throw new Error("the detailed profile is deferred to a future ticket")
+		throw new Error("the detailed mode is deferred to a future ticket")
 	}
 
 	return value
 }
 
 /**
- * Measure the parser's token accuracy against the gold trees.
+ * Measure the parser's token accuracy against the expected trees.
  *
  * The function compares `UPOS`, `HEAD`, and `DEPREL` token by token. It compares
  * a text only when the parser produces the same number of sentences and the
@@ -261,21 +257,21 @@ export const parserAccuracy = (data: TestData, parsed: Map<string, ParsedText>):
 	let deprelOk = 0
 
 	for (const [text, entry] of Object.entries(data.texts)) {
-		const gold = entry.sentences
+		const expected = entry.sentences
 		const produced = parsed.get(text)?.sentences
 
-		if (produced === undefined || produced.length !== gold.length) {
+		if (produced === undefined || produced.length !== expected.length) {
 			continue
 		}
 
-		for (const [sentenceIndex, goldSentence] of gold.entries()) {
+		for (const [sentenceIndex, expectedSentence] of expected.entries()) {
 			const producedSentence = produced[sentenceIndex]
 
-			if (producedSentence === undefined || producedSentence.length !== goldSentence.length) {
+			if (producedSentence === undefined || producedSentence.length !== expectedSentence.length) {
 				continue
 			}
 
-			for (const [tokenIndex, goldToken] of goldSentence.entries()) {
+			for (const [tokenIndex, expectedToken] of expectedSentence.entries()) {
 				const producedToken = producedSentence[tokenIndex]
 
 				if (producedToken === undefined) {
@@ -284,15 +280,15 @@ export const parserAccuracy = (data: TestData, parsed: Map<string, ParsedText>):
 
 				total += 1
 
-				if (goldToken[2] === producedToken[2]) {
+				if (expectedToken[2] === producedToken[2]) {
 					uposOk += 1
 				}
 
-				if (Number(goldToken[3]) === producedToken[3]) {
+				if (Number(expectedToken[3]) === producedToken[3]) {
 					headOk += 1
 				}
 
-				if (goldToken[4] === producedToken[4]) {
+				if (expectedToken[4] === producedToken[4]) {
 					deprelOk += 1
 				}
 			}
@@ -308,7 +304,7 @@ export const parserAccuracy = (data: TestData, parsed: Map<string, ParsedText>):
 export const formatReport = (report: SyntaxReport): string => {
 	const percent = (value: number): string => `${(value * 100).toFixed(1)}%`
 	const lines = [
-		`Syntax evaluation (${report.profile}, ${report.source}, encoder ${report.encoderVersion})`,
+		`Syntax evaluation (${report.mode}, ${report.source}, encoder ${report.encoderVersion})`,
 		`  ranking accuracy:    ${percent(report.ranking.accuracy)} (${report.ranking.correct}/${report.ranking.total})`,
 		`  structural accuracy: ${percent(report.structural.accuracy)} (${report.structural.correct}/${report.structural.total})`,
 		`  failures:            ${report.failures.length}`,
@@ -328,12 +324,12 @@ export const formatReport = (report: SyntaxReport): string => {
 /** Run the command-line evaluation. */
 const main = async (): Promise<void> => {
 	const argv = process.argv.slice(2)
-	const profile = parseProfile(argv)
+	const mode = parseMode(argv)
 	const useParser = argv.includes("--parser")
 	const data = loadTestData()
 
 	if (!useParser) {
-		const report = evaluateSyntax(data, { profile, source: "gold" })
+		const report = evaluateSyntax(data, { mode, source: "expected" })
 
 		console.log(formatReport(report))
 
@@ -358,7 +354,7 @@ const main = async (): Promise<void> => {
 			parsed.set(text, tree)
 			encoded.set(
 				text,
-				encodeTree(abstractTree(tree, profile)).map((vector) => vector.values),
+				encodeTree(abstractTree(tree, mode)).map((vector) => vector.values),
 			)
 			parseMs += startEncode - startParse
 			encodeMs += performance.now() - startEncode
@@ -367,7 +363,7 @@ const main = async (): Promise<void> => {
 		}
 	}
 
-	const report = evaluateSyntax(data, { profile, source: "parser", encoded })
+	const report = evaluateSyntax(data, { mode, source: "parser", encoded })
 	report.failures = [...new Set([...report.failures, ...failures])]
 	report.latencyMs = { parse: parseMs, encode: encodeMs }
 	report.parser = parserAccuracy(data, parsed)

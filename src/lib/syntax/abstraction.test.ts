@@ -30,18 +30,18 @@ const SIMPLE: ParsedSentence = [
 ]
 
 describe("canonicalUpos", () => {
-	test("maps a proper noun onto a common noun for the coarse profile", () => {
+	test("maps a proper noun onto a common noun for the coarse mode", () => {
 		// A named month and a common noun share one nominal class.
 		expect(canonicalUpos("PROPN", "coarse")).toBe("NOUN")
 		expect(canonicalUpos("NOUN", "coarse")).toBe("NOUN")
 	})
 
-	test("keeps every other class unchanged for the coarse profile", () => {
+	test("keeps every other class unchanged for the coarse mode", () => {
 		expect(canonicalUpos("VERB", "coarse")).toBe("VERB")
 		expect(canonicalUpos("ADV", "coarse")).toBe("ADV")
 	})
 
-	test("keeps the raw class for the detailed profile", () => {
+	test("keeps the raw class for the detailed mode", () => {
 		expect(canonicalUpos("PROPN", "detailed")).toBe("PROPN")
 	})
 
@@ -51,12 +51,12 @@ describe("canonicalUpos", () => {
 })
 
 describe("canonicalFeatures", () => {
-	test("removes every feature for the coarse profile", () => {
+	test("removes every feature for the coarse mode", () => {
 		expect(canonicalFeatures("Definite=Def|Gender=Masc", "coarse")).toBe("")
 	})
 
-	test("keeps only the allowlist for the detailed profile", () => {
-		// PronType is not in the allowlist, so the detailed profile drops it.
+	test("keeps only the allowlist for the detailed mode", () => {
+		// PronType is not in the allowlist, so the detailed mode drops it.
 		expect(canonicalFeatures("Definite=Def|Gender=Masc|PronType=Art", "detailed")).toBe(
 			"Definite=Def|Gender=Masc",
 		)
@@ -101,7 +101,7 @@ describe("abstractSentence", () => {
 		expect(abstract.root).toBe(3)
 	})
 
-	test("keeps the full label for the detailed profile", () => {
+	test("keeps the full label for the detailed mode", () => {
 		const sentence: ParsedSentence = [
 			token("La", "le", "DET", 2, "det", "Definite=Def"),
 			token("lettre", "lettre", "NOUN", 4, "nsubj:pass", "Gender=Fem"),
@@ -115,7 +115,7 @@ describe("abstractSentence", () => {
 		expect(abstract.nodes[1]?.feats).toBe("Gender=Fem")
 	})
 
-	test("uses the base label for the coarse profile", () => {
+	test("uses the base label for the coarse mode", () => {
 		const sentence: ParsedSentence = [
 			token("La", "le", "DET", 2, "det"),
 			token("lettre", "lettre", "NOUN", 3, "nsubj:pass"),
@@ -167,7 +167,7 @@ describe("abstractTree", () => {
 		}
 		const tree = abstractTree(parsed, "coarse")
 
-		expect(tree.profile).toBe("coarse")
+		expect(tree.mode).toBe("coarse")
 		expect(tree.sentences).toHaveLength(2)
 	})
 

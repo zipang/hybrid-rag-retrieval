@@ -7,7 +7,7 @@ structural pairs. The author annotated every tree by hand. A reviewer must
 confirm the trees and the expected relations before the project tunes any
 encoder weight.
 
-Scope note: this ticket evaluates the `coarse` profile first. The test data set
+Scope note: this ticket evaluates the `coarse` mode first. The test data set
 still carries the feature allowlist and the detailed expectations, so the
 deferred `detailed` evaluation needs no new data.
 
@@ -30,8 +30,8 @@ The project uses precise names. One name has one meaning.
 - A **sentence** is one grammatical tree. A text with two sentences holds a
   forest with two roots.
 - A **ranking case** is a query text, a structural positive, and a structural
-  negative. The positive must score above the negative in each profile.
-- A **structural pair** is two texts with one expected relation for one profile.
+  negative. The positive must score above the negative in each mode.
+- A **structural pair** is two texts with one expected relation for one mode.
 - A **token** is one word with its grammatical annotation.
 
 The specification calls a ranking case a "triplet". This document uses
@@ -48,7 +48,7 @@ keys:
 | `version` | The test data set format version. |
 | `language` | The language code, `fr`. |
 | `tokenFields` | The token field order. |
-| `profileFeatures` | The morphological allowlist for the detailed profile. |
+| `modeFeatures` | The morphological allowlist for the detailed mode. |
 | `texts` | The annotated texts. |
 | `rankingCases` | The ranking cases. |
 | `structuralPairs` | The controlled structural comparisons. |
@@ -62,7 +62,7 @@ is a tuple. The tuple order is:
 The project stores the syntax vector as a multivector. Each sentence is one row
 of the matrix. Qdrant `max_sim` scores a query row against the best matching row
 of a record. See `memos/syntax-trees.md` and the plan section "Use one active
-syntax profile per collection generation".
+syntax mode per collection generation".
 
 The tuple order is:
 
@@ -88,7 +88,7 @@ evaluation honest.
 
 ### Relations
 
-A `structuralPairs` entry declares one relation for one profile:
+A `structuralPairs` entry declares one relation for one mode:
 
 - `equal`: the two texts produce the same syntax score of one. Only exactly
   isomorphic trees qualify.
@@ -184,14 +184,14 @@ to keep the set varied.
 
 ## Measurement
 
-The evaluation reports these numbers for each profile:
+The evaluation reports these numbers for each mode:
 
 1. Ranking accuracy: the share of ranking cases that rank the positive above
    the negative.
 2. Structural accuracy: the share of structural pairs whose `equal` or
    `different` relation holds.
 3. Parser accuracy: the share of tokens whose `upos`, `head`, and `deprel` match
-   the gold annotation.
+   the expected annotation.
 4. Parser failures: the texts that produce no valid tree.
 5. Latency: parser start time, warm parse time, encode time, and query time.
 
@@ -199,13 +199,13 @@ The project fixes the judgments before it tunes the encoder weights. The
 held-out list stays out of every tuning step.
 
 The project reports the parser numbers separately from the encoder numbers. The
-gold evaluation measures the encoder with the hand-made trees. The parser
-evaluation measures the whole pipeline with the real model. A ranking case that
-fails only in the parser run is a parser error, not an encoder error. The
+evaluation on the expected trees measures the encoder with the hand-made trees.
+The parser evaluation measures the whole pipeline with the real model. A ranking
+case that fails only in the parser run is a parser error, not an encoder error. The
 project records the cause of each parser run failure before it judges the
 encoder.
 
-The coarse profile maps `PROPN` onto `NOUN`. The parser tags the same
+The coarse mode maps `PROPN` onto `NOUN`. The parser tags the same
 interjection as `NOUN` in one sentence and `PROPN` in another. The map removes
 that lexical difference, because it is not structural. See `spec.md`, "Word-class
 normalization".
@@ -261,13 +261,14 @@ set for the ranking test.
 
 - **Canonical tree**: a grammatical tree written in a consistent form, without
   vocabulary and without irrelevant annotation order.
-- **Coarse profile**: the indexing profile that keeps connections and word
+- **Coarse mode**: the indexing mode that keeps connections and word
   classes, and removes morphological features.
-- **Detailed profile**: the indexing profile that keeps the allowlisted
+- **Detailed mode**: the indexing mode that keeps the allowlisted
   morphological features.
 - **Development item**: a test data set entry that parameter tuning may use.
+- **Expected annotation**: the reviewed annotation of a sentence that the parser
+  output and the encoder result must match.
 - **Forest**: one or more grammatical trees for the sentences of one text.
-- **Gold annotation**: the reviewed reference annotation for a sentence.
 - **Governor**: the head word that another word depends on.
 - **Held-out item**: a test data set entry that parameter tuning must not use.
 - **Negative**: in a ranking case, the text with a different grammatical
@@ -276,7 +277,7 @@ set for the ranking test.
   and different words.
 - **Ranking case**: a query text, a structural positive, and a structural
   negative for ranking evaluation.
-- **Structural pair**: two texts with one expected relation for one profile.
+- **Structural pair**: two texts with one expected relation for one mode.
 - **Test data set**: the reviewed French material that the evaluation uses.
 - **Test environment**: the isolated services and pinned parser and model that a
   test run uses.

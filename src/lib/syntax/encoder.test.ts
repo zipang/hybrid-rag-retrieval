@@ -8,7 +8,7 @@ import type { ParsedText } from "./parser"
 /** One token tuple in the test data set shape. */
 type Token = [string, string, string, number, string, string]
 
-/** One text entry of the test data set: the gold sentence trees. */
+/** One text entry of the test data set: the expected sentence trees. */
 type TextEntry = { sentences: Token[][] }
 
 /** Read the reviewed test data set, keyed by the text itself. */
@@ -21,7 +21,7 @@ const loadTexts = (): Map<string, TextEntry> => {
 
 const TEXTS = loadTexts()
 
-/** Encode one test text with the coarse profile and return its first vector. */
+/** Encode one test text with the coarse mode and return its first vector. */
 const vectorOf = (text: string): number[] => {
 	const entry = TEXTS.get(text)
 
