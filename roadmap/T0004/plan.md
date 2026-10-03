@@ -16,14 +16,14 @@ Deliver a semantic-only complete retrieval slice first. Extend it with keyword s
 
 Place grammatical components in `src/lib/syntax/`.
 The parser adapter returns validated grammatical annotations.
-Abstraction removes vocabulary and selects the indexing profile.
+Abstraction removes vocabulary and selects the indexing mode.
 The deterministic encoder uses only abstract structure.
 Retrieval orchestrates selected indexes, normalization, combination, thresholding, and pagination.
 Keep HTTP input handling and Qdrant transport separate from scoring logic.
 
-### Use one active syntax profile per collection generation
+### Use one active syntax mode per collection generation
 
-Store the active profile and complete parser/model/encoder identity with the index generation.
+Store the active mode and complete parser/model/encoder identity with the index generation.
 Add `syntax` as a multivector with the `max_sim` comparator through Qdrant's documented vector-schema operation.
 Backfill existing point vectors without deleting the collection.
 Block syntax reads during a syntax rebuild and publish readiness after coverage validation.
@@ -124,16 +124,22 @@ Select explicit legacy semantic/keyword weights and a minimum score at the scori
 
 ```text
 1 reviewed test data set ----+----> 3 parser decision ---> 10 parser adapter ---> 11 tree encoder
-                       |                                                  |
-2 Qdrant proof --------+--> 4 scoring contracts --> 5 generation state      |
-                                                 |                        |
-                                                 v                        v
-                                     6 exhaustive score transport --> 12 syntax storage
-                                                 |                        |
-                                                 v                        v
+                       |                                                         |
+                       |                                                         v
+                       |                                          11a punctuation evaluation
+                       |                                                         |
+                       |                                                         v
+                       |                                          11b sentence-type feature
+                       |                                                         |
+2 Qdrant proof --------+--> 4 scoring contracts --> 5 generation state             |
+                                                 |                                |
+                                                 v                                v
+                                     6 exhaustive score transport ---------> 12 syntax storage
+                                                 |                                |
+                                                 v                                v
                                      7 semantic threshold slice      13 syntax backfill
-                                                 |                        |
-                                                 v                        v
+                                                 |                                |
+                                                 v                                v
                                      8 stable pagination ---------> 14 syntax retrieval
                                                  |
                                                  v
@@ -165,7 +171,7 @@ can progress independently after their shared contracts stabilize.
 - [x] **Task 1: Create reviewed French evaluation test data set**
   - Acceptance: At least 30 reviewed triplets cover vocabulary changes, morphological differences, connection changes, fragments, and multiple sentences.
   - Acceptance: Freeze judgments and separate development items from held-out evaluation items.
-  - Verify: Human review of the test data trees and the expected profile relationships. Do not auto-generate expected parses from the selected parser.
+  - Verify: Human review of the test data trees and the expected mode relationships. Do not auto-generate expected parses from the selected parser.
   - Files: `src/lib/syntax/test-data/french.json`, `roadmap/T0004/evaluation.md`.
   - Depends: None. Scope: Small.
 
@@ -307,22 +313,44 @@ Status: passed. `bun test` covers a second collection with custom vector and fie
   - Notes: Added the `udpipe-wasm` runtime dependency. Merged the Qdrant setup into one `scripts/init.sh` that also downloads the pinned model with a checksum check. Integration tests skip when the model is absent.
   - Depends: Tasks 1, 3–4. Scope: Medium, at most five files after adapter selection.
 
-- [ ] **Task 11: Implement coarse profile abstraction and tree encoding**
-  - Acceptance: The `coarse` profile implements the approved feature rules without lexical data. Identical canonical trees yield identical vectors.
-  - Acceptance: The abstraction and the encoder take a profile parameter, so the `detailed` profile slots in later without a rewrite. Only `coarse` is implemented and validated in this ticket.
+- [ ] **Task 11: Implement coarse mode abstraction and tree encoding**
+  - Acceptance: The `coarse` mode implements the approved feature rules without lexical data. Identical canonical trees yield identical vectors.
+  - Acceptance: The abstraction and the encoder take a mode parameter, so the `detailed` mode slots in later without a rewrite. Only `coarse` is implemented and validated in this ticket.
   - Acceptance: Evaluate connected features, choose dimensions and weights, and freeze encoder identity against the held-out items.
   - Acceptance: Weight features by grammatical role, not uniformly. Core-role edges (`root`, `nsubj`, `obj`) weigh more than modifier edges (`advmod`, `det`, `expl`). Checkpoint B measured that uniform weights over-weight a single missing node. See `memos/syntax-trees.md`, section 9. The exact weights and the risk of gap compression stay open for this task.
   - Acceptance: Move the reference scorer into the repository as a reproducible evaluation tool, and drive the frozen weights from it.
-  - Verify: `bun test src/lib/syntax/abstraction.test.ts src/lib/syntax/encoder.test.ts`, plus `scripts/evaluate-syntax.ts --profile coarse` on the held-out split. Meet specification targets before database backfill.
+  - Verify: `bun test src/lib/syntax/abstraction.test.ts src/lib/syntax/encoder.test.ts`, plus `scripts/evaluate-syntax.ts --mode coarse` on the held-out split. Meet specification targets before database backfill.
   - Files: `src/lib/syntax/abstraction.ts`, `src/lib/syntax/abstraction.test.ts`, `src/lib/syntax/encoder.ts`, `src/lib/syntax/encoder.test.ts`, `scripts/evaluate-syntax.ts`, `roadmap/T0004/evaluation.md`.
+  - Notes: Tasks 11a and 11b can change the feature set. Freeze the final encoder identity at Checkpoint E, after they close.
   - Depends: Tasks 1, 4, 10. Scope: Medium.
+
+- [ ] **Task 11a: Evaluate the punctuation loss on the test data set**
+  - Acceptance: Add reviewed texts and structural pairs that differ only in punctuation. Cover the terminal marks `.`, `?`, and `!`, and an internal comma. Give the expected relation for each mode.
+  - Acceptance: Record the sentence type (statement, question, exclamation) for every reviewed text. Extend the test-data integrity check to enforce the recorded type.
+  - Acceptance: Measure the current `coarse` score for every punctuation-only pair. Report each pair that scores equal although its sentence type differs.
+  - Acceptance: Decide, with the user, whether sentence type must enter the syntax vector. Record the decision in `memos/syntax-trees.md` and `roadmap/T0004/evaluation.md`.
+  - Verify: `bun test src/lib/syntax/test-data.test.ts` and `scripts/evaluate-syntax.ts --mode coarse` on the new pairs. Human review of the expected relations.
+  - Files: `src/lib/syntax/test-data/french.json`, `src/lib/syntax/test-data.test.ts`, `scripts/evaluate-syntax.ts`, `roadmap/T0004/evaluation.md`, `memos/syntax-trees.md`.
+  - Depends: Tasks 1, 10–11. Scope: Small.
+
+- [ ] **Task 11b: Add the sentence-type distinction to the syntax vector**
+  - Acceptance: Derive a canonical sentence type (statement, question, exclamation) from the parse. Read the terminal mark (`?`, `!`, `.`) or the parser mood. Keep raw `PUNCT` nodes out, so parser attachment noise stays out.
+  - Acceptance: Store the sentence type with the abstract sentence. The `coarse` mode keeps it, and the encoder gives it an explicit weight.
+  - Acceptance: `Il vient` and `Il vient ?` no longer score `1.0`. A question and an exclamation with the same words keep their distinction in the `coarse` mode.
+  - Acceptance: Revise the mode table in `spec.md`. The table currently removes punctuation-only nodes. Record the sentence-type exception and its source.
+  - Acceptance: Freeze a new encoder version and re-evaluate the held-out split. Meet the specification target before the syntax backfill.
+  - Verify: `bun test src/lib/syntax/abstraction.test.ts src/lib/syntax/encoder.test.ts` and `scripts/evaluate-syntax.ts --mode coarse` on the held-out split. Update `bun test src/lib/syntax/test-data.test.ts` for the new pairs.
+  - Files: `src/lib/syntax/abstraction.ts`, `src/lib/syntax/abstraction.test.ts`, `src/lib/syntax/encoder.ts`, `src/lib/syntax/encoder.test.ts`, `src/lib/syntax/test-data/french.json`, `roadmap/T0004/spec.md`, `roadmap/T0004/evaluation.md`, `memos/syntax-trees.md`.
+  - Depends: Task 11a. Scope: Medium.
 
 ### Checkpoint E: Syntax quality
 
-Review the two supplied French examples with the `coarse` profile.
+Review the two supplied French examples with the `coarse` mode.
 Require identical coarse representations.
 Verify lexical metadata never enters the encoder and review held-out ranking-case results.
 Review the frozen role weights against the role-weighting finding from Checkpoint B (`memos/syntax-trees.md`, section 9).
+Review the punctuation evaluation (Task 11a) and the sentence-type feature (Task 11b).
+Confirm that a statement, a question, and an exclamation with the same words no longer score `1.0`.
 
 - [ ] **Task 12: Add syntax schema and vector updates**
   - Acceptance: Create the named multivector with the `max_sim` comparator through documented Qdrant operations. Validate dimension, comparator, and configuration compatibility.
@@ -330,12 +358,12 @@ Review the frozen role weights against the role-weighting finding from Checkpoin
   - Acceptance: Store one matrix row per sentence and keep one point per record. Keep the row count within the Qdrant limit `rows * size < 1,048,576`.
   - Verify: `bun test src/lib/qdrant.test.ts src/lib/index-state.test.ts`, plus an isolated collection preservation test.
   - Files: `src/lib/qdrant.ts`, `src/lib/qdrant.test.ts`, `src/lib/index-state.ts`, `src/lib/index-state.test.ts`.
-  - Depends: Tasks 5–6, 11. Scope: Medium.
+  - Depends: Tasks 5–6, 11b. Scope: Medium.
 
 - [ ] **Task 13: Deliver syntax backfill**
-  - Acceptance: Implement `index-syntax.ts --profile coarse` over existing records with complete coverage and exclusion accounting. The flag accepts the profile name, so the deferred `detailed` profile needs no interface change.
-  - Acceptance: Clear stale syntax values on failed or excluded records. Prevent mixed profiles and publish readiness only after validation.
-  - Verify: `bun test scripts/index-syntax.test.ts`. Run the `coarse` profile on an isolated test collection and compare other vectors before and after.
+  - Acceptance: Implement `index-syntax.ts --mode coarse` over existing records with complete coverage and exclusion accounting. The flag accepts the mode name, so the deferred `detailed` mode needs no interface change.
+  - Acceptance: Clear stale syntax values on failed or excluded records. Prevent mixed modes and publish readiness only after validation.
+  - Verify: `bun test scripts/index-syntax.test.ts`. Run the `coarse` mode on an isolated test collection and compare other vectors before and after.
   - Files: `scripts/index-syntax.ts`, `scripts/index-syntax.test.ts`, `src/lib/syntax/config.ts`, `src/lib/syntax/config.test.ts`.
   - Depends: Tasks 10–12. Scope: Medium.
 
@@ -391,9 +419,9 @@ Run the API, chat, retrieval panel, and smoke flows before final evaluation.
 ### Phase 5: Measure and document release readiness
 
 - [ ] **Task 17a: Deliver reproducible evaluation commands**
-  - Acceptance: Implement the `coarse` profile evaluation command and report grammar quality, ranking, full-result equality, and runtime measurements.
+  - Acceptance: Implement the `coarse` mode evaluation command and report grammar quality, ranking, full-result equality, and runtime measurements.
   - Acceptance: Include corpus size, vector dimensions, normalization parameters, memory, page cost, and component timings in reports.
-  - Verify: Run `evaluate-syntax.ts --profile coarse` against an isolated collection. Compare all results with the exhaustive reference.
+  - Verify: Run `evaluate-syntax.ts --mode coarse` against an isolated collection. Compare all results with the exhaustive reference.
   - Files: `scripts/evaluate-syntax.ts`, `scripts/evaluate-syntax.test.ts`, `roadmap/T0004/evaluation.md`.
   - Depends: Tasks 11, 14, 16c. Scope: Medium.
 
@@ -422,6 +450,7 @@ Plan approval is required before application implementation. A commit requires a
 | Rebuild races mix index generations | High | Coordinate all project write paths and reject changed-generation queries and cursors. |
 | Hash collisions erase tree differences | Medium | Evaluate connected features and dimensions against the reviewed connection-change cases. |
 | Parser mistakes alter expected trees | Medium | Separate manual-tree encoder tests from actual parser evaluations. |
+| Punctuation removal erases sentence type | Medium | Task 11a measures the loss on the test data set. Task 11b adds a derived sentence-type feature without raw punctuation nodes. |
 | BM25 transformation gives misleading thresholds | Medium | Tune on the development items and validate held-out threshold behavior. Publish score semantics. |
 | API migration breaks chat or retrieval panel | High | Migrate each known caller before removing the legacy internal path. |
 | Hard-coded dataset fields block other collections | High | Track A removes the slogan collection name and field names from the transport. Prove with a second collection. |
@@ -441,32 +470,32 @@ The project defers these items to a future ticket. Each item is out of scope for
 this ticket, but the code keeps a seam for it, so the future work does not force
 a rewrite.
 
-### Detailed syntax profile
+### Detailed syntax mode
 
-The `coarse` profile is enough to prove the end-to-end system. The `detailed`
-profile adds the grammatical features to the syntax vector.
+The `coarse` mode is enough to prove the end-to-end system. The `detailed`
+mode adds the grammatical features to the syntax vector.
 
-- The `detailed` profile retains an allowlist of features: `Definite`, `Gender`,
+- The `detailed` mode retains an allowlist of features: `Definite`, `Gender`,
   `Mood`, `Number`, `Person`, `Tense`, `VerbForm`, and `Voice`.
-- The `coarse` profile removes all features.
-- The abstraction and the encoder take a profile parameter. A future ticket adds
+- The `coarse` mode removes all features.
+- The abstraction and the encoder take a mode parameter. A future ticket adds
   the `detailed` branch. The interfaces do not change.
-- The syntax index stores one active profile per generation. The deferred work
-  adds the second profile and its reindex run.
-- The specification records the full profile table in `spec.md`, section 1.
+- The syntax index stores one active mode per generation. The deferred work
+  adds the second mode and its reindex run.
+- The specification records the full mode table in `spec.md`, section 1.
 
 The future ticket must:
 - implement the `detailed` branch in `abstraction.ts`.
 - add the detailed feature weights and dimensions.
-- evaluate the detailed profile on the reviewed test data set.
+- evaluate the detailed mode on the reviewed test data set.
 - run a `detailed` backfill.
-- revalidate the syntax success targets for the detailed profile.
+- revalidate the syntax success targets for the detailed mode.
 
 ## Decisions to Resolve at Checkpoints
 
 - Checkpoint B: parser/model versions, dependency approval, normalization parameters, and caller thresholds.
 - Checkpoint C: corpus-size measurements and generation publication guarantees.
-- Checkpoint E: coarse encoder dimensions, features, weights, and quality targets.
+- Checkpoint E: coarse encoder dimensions, features, weights, quality targets, and the sentence-type decision from Task 11a.
 - Checkpoint H: snapshot storage, lifetime, page bounds, and measured release latency targets.
 
 Every research decision must produce an artifact. Stop for review when a decision changes an approved requirement.
@@ -481,8 +510,9 @@ Every research decision must produce an artifact. Stop for review when a decisio
 - **Generation:** A fixed version of indexed data and scoring configuration.
 - **Held-out item:** A test data set entry reserved from parameter tuning.
 - **IDF:** A keyword weight based on how frequently a term occurs across the corpus.
-- **Profile:** The indexing setting that chooses which grammatical details the syntax vector keeps. The `coarse` profile keeps the structure only. The `detailed` profile also keeps an allowlist of features.
+- **Mode:** The indexing setting that chooses which grammatical details the syntax vector keeps. The `coarse` mode keeps the structure only. The `detailed` mode also keeps an allowlist of features.
 - **Query snapshot:** The complete ordered results and metadata retained for stable page delivery.
+- **Sentence type:** The grammatical mood of a sentence: statement, question, or exclamation. The terminal mark or the parser mood supplies it. Tasks 11a and 11b evaluate and encode it.
 - **Sparse nonmatch:** A record without overlapping keyword-vector entries. Its keyword score is zero.
 - **Threshold:** The inclusive minimum combined score required for a record to qualify.
 - **Track A:** The task group that makes the Qdrant transport dataset-agnostic.
