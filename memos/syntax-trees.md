@@ -463,6 +463,9 @@ commercial use.
   are `acl:relcl` against `advcl:cleft`, and `nsubj` against `expl:subj`.
 - The project must mirror the `udpipe-wasm` and UDPipe documentation before
   adoption, as the specification requires.
+- A copular clause and a verbal clause with the same frame score far apart
+  (section 14). The project opens the ticket `roadmap/T0005/spec.md` to
+  investigate a fix on the reviewed data set.
 
 ## 12. Parser behavior and failure modes
 
@@ -617,6 +620,228 @@ The tool uses the parser adapter from `src/lib/syntax/parser.ts`. The adapter
 validates the parse, so the tool fails on a broken tree with
 `ParseValidationError`, and on a missing model with `ParserUnavailableError`.
 
+## 14. A main verb replaced by a copula changes the whole tree
+
+The project asked why two sentences that differ only in the predicate score far
+apart. The probe pair is:
+
+- `Dans son nouveau film, Christopher Lloyd est la pomme`
+- `Dans son nouveau film, Christopher Lloyd mange la pomme`
+
+The first sentence is a **copular clause**. The second is a **transitive
+clause**. The two sentences are near-identical on the surface. The syntax score
+is `0.248858` with the `coarse-3` encoder. The two trees differ more than the
+intuition expects.
+
+The method is the tool `compare-syntax` on the two sentences, with the
+`french-gsd` model and `UDPipe 1.3.1`. The trees below come from
+`show-syntax-tree` on the same model.
+
+### The two trees
+
+Copular clause, `est la pomme`:
+
+```text
+pomme (NOUN, root)
+├── film (NOUN, obl:mod)
+│   ├── Dans (ADP, case)
+│   ├── son (DET, det)
+│   ├── nouveau (ADJ, amod)
+│   └── , (PUNCT, punct)
+├── Christopher (PROPN, nsubj)
+│   └── Lloyd (PROPN, flat:name)
+├── est (AUX, cop)
+└── la (DET, det)
+```
+
+Transitive clause, `mange la pomme`:
+
+```text
+mange (VERB, root)
+├── film (NOUN, obl:mod)
+│   ├── Dans (ADP, case)
+│   ├── son (DET, det)
+│   ├── nouveau (ADJ, amod)
+│   └── , (PUNCT, punct)
+├── Christopher (PROPN, nsubj)
+│   └── Lloyd (PROPN, flat:name)
+└── pomme (NOUN, obj)
+    └── la (DET, det)
+```
+
+The parser is correct, not broken. The UD guidelines require this shape. The
+copula page states: "The copula *be* is not treated as the head of a clause, but
+rather the nonverbal predicate"
+([UD `cop`](https://universaldependencies.org/u/dep/cop.html)). In a copular
+clause the predicate nominal is the root, and the copula is a function word
+that links the subject to it.
+
+### Why the score is low
+
+The two trees agree on the first seven tokens. They disagree on the predicate.
+The disagreement is not only the word class. Four structural facts change at
+once:
+
+| Fact | Copular clause | Transitive clause |
+| --- | --- | --- |
+| Root token | `pomme` (index 10) | `mange` (index 8) |
+| Root class and label | `NOUN` / `root` | `VERB` / `root` |
+| Role of `pomme` | `root` | `obj` |
+| Role of the predicate word | `cop` (`est`) | `root` (`mange`) |
+| Governor of `film` and `Christopher` | index 10 | index 8 |
+
+The encoder compares whole-sentence vectors. Every branch index is computed from
+the governor chain. When the root moves, the branch index of almost every node
+changes. The only shared features come from the identical prefix. The result is
+`0.248858`.
+
+### The uppercase form hides the effect
+
+With the uppercase forms `EST` and `MANGE`, the score rises to `0.395912`. The
+parser tags both uppercase words as `PROPN`. The coarse mode maps `PROPN` onto
+`NOUN` (section 8). Both trees then have a `NOUN` root, so the class of the root
+no longer differs. The rise does not mean the clause types are close. It means
+the parser lost the verb class, and the class map hid one difference.
+
+### Merging AUX into VERB would not repair this case
+
+The project asked whether a class map from `AUX` to `VERB`, like the existing
+`PROPN` to `NOUN` map, closes the gap. It would not. The class string is only one
+of the four changing facts. A class map leaves the root token, the root label,
+the `pomme` role, and the governor chain untouched. The dominant difference is
+the position of the root, and no `UPOS` map moves a root.
+
+The UD `AUX` page supports the merge in one narrow sense. It states: "The class
+`AUX` also include copulas (in the narrow sense of pure linking words for
+nonverbal predication)"
+([UD `AUX`](https://universaldependencies.org/u/pos/AUX_.html)). `AUX` and `VERB`
+are thus both verbal, and the distinction is functional, not semantic. But the
+tree shape, not the class, carries the `cop` analysis.
+
+### What a future fix must change
+
+A class map is not enough. The fix must act on the tree, before the encoder. Two
+candidate rules exist:
+
+1. **Raise the predicate to the root.** During abstraction, turn a
+   `cop` + nonverbal predicate pattern into a verbal-rooted pattern. The verb
+   becomes the root, and the predicate attaches as a core dependent. Both clause
+   types then share a root at the same token position and the same object role.
+2. **Canonicalize the copular pattern into a feature.** Keep the UD tree, but
+   emit one shared feature for "copular predicate" and "transitive predicate",
+   so the two shapes meet in a bucket.
+
+Both rules are guesses. The project did not measure them. The correct choice
+depends on real data, and the parser may itself be the cause (section 12 lists
+the parser errors). The project opens a ticket to investigate the options on the
+reviewed data set. The ticket is `roadmap/T0005/`.
+
+The project defers this work until the end-to-end path exists (encode, store,
+retrieve). The score is a proof-of-concept signal, not a blocker.
+
+### Weight tuning alone cannot close the gap
+
+The project asked whether a pure configuration change is enough: raise
+`VERB`, lower `AUX`, adjust `cop`, and leave the tree as it is. The answer is
+no, from the code, not from a hunch.
+
+A weight scales how much mass a feature adds to its bucket (`addFeature` in
+`src/lib/syntax/encoder.ts`). A weight never changes the feature string. Two
+trees only gain similarity where their feature strings coincide and hash to the
+same bucket. The copula pair and the transitive pair share almost no feature
+string:
+
+| Feature | Copular tree | Transitive tree |
+| --- | --- | --- |
+| Root node | `root:NOUN:<index>` | `root:VERB:<index>` |
+| Predicate | `role:cop:AUX:d<depth>` | `root:VERB:<index>` |
+| `pomme` | `node:NOUN:root:<index>` | `node:NOUN:obj:<index>` |
+| Rooted path | `path:cop`, `path:root` | `path:root` |
+
+Every `node:*:*:<index>` string also differs, because the branch digit changes
+when the root moves. The shared mass is the identical prefix only. A weight
+change moves mass inside buckets that do not overlap. It changes the vector
+length in `l2Normalize`, so it nudges the cosine by a few points. It cannot turn
+`0.248858` into a score near one, because most features are disjoint.
+
+The same code and the same weights score the pair
+`Le garçon regarde le soleil` / `Un chat mange une souris` at `1.0`, because
+their feature strings coincide (section 7 and section 9). The gap is a property
+of the strings, not of the weights. Weight tuning is the **second** step: after a
+tree rule makes the two shapes share a feature, weights decide how much that
+shared feature counts. The ticket `roadmap/T0005/spec.md` records the weight
+tuning as a negative control.
+
+## 15. The dependency roles of the reviewed trees
+
+The memo uses many relation names. This section defines each `DEPREL` that
+appears in the reviewed French data set and in the probe trees. The definitions
+follow the [UD relation index](https://universaldependencies.org/u/dep/index.html)
+and the [simple-clause overview](https://universaldependencies.org/u/overview/simple-syntax.html).
+
+### Core arguments
+
+These links attach the arguments that the predicate needs.
+
+| `DEPREL` | Meaning | French example |
+| --- | --- | --- |
+| `nsubj` | Nominal subject. The proto-agent of the clause. | `Christopher` in `Christopher mange`. |
+| `obj` | Object. The proto-patient of a transitive clause. | `pomme` in `mange la pomme`. |
+| `iobj` | Indirect object. A second core argument. | `lui` in `Il lui parle`. |
+| `csubj` | Clausal subject. A clause acts as the subject. | `Partir` in `Partir, c'est mourir`. |
+| `ccomp` | Clausal complement. A finite clause completes the verb. | `qu'il pleut` in `Je pense qu'il pleut`. |
+| `xcomp` | Open clausal complement. A non-finite clause completes the verb. | `partir` in `Il veut partir`. |
+
+### Non-core dependents
+
+These links add information that the predicate does not require.
+
+| `DEPREL` | Meaning | French example |
+| --- | --- | --- |
+| `obl` | Oblique nominal. A nominal that is not a core argument. | `Dans son film` in the probe. |
+| `advcl` | Adverbial clause. A clause that modifies the main clause. | `en chantant` in a sentence with a gerund. |
+| `advmod` | Adverbial modifier. An adverb modifies a predicate or another modifier. | `vite` in `Il court vite`. |
+| `expl` | Expletive. A pronoun with no semantic role. | `il` in `Il pleut`. |
+| `vocative` | Vocative. The person addressed. | `Marie` in `Marie, viens`. |
+| `dislocated` | Dislocated element. A fronted or postposed topic. | `la plasticine` in `Il faut pas la manger, la plasticine`. |
+
+### Nominal dependents
+
+These links attach words inside a nominal group.
+
+| `DEPREL` | Meaning | French example |
+| --- | --- | --- |
+| `det` | Determiner. | `le` in `le chat`. |
+| `amod` | Adjectival modifier. An adjective modifies a noun. | `rouge` in `une voiture rouge`. |
+| `nmod` | Nominal modifier. A nominal modifies another nominal. | `de la maison` in `la porte de la maison`. |
+| `nummod` | Numeric modifier. | `trois` in `trois enfants`. |
+| `appos` | Apposition. A nominal repeats another nominal. | `mon frère` in `Paul, mon frère`. |
+| `acl` | Adnominal clause. A clause modifies a noun. | `qui dort` in `le chat qui dort`. |
+| `case` | Case marking. A preposition marks the role of a nominal. | `dans` in `dans la forêt`. |
+
+### Function words and coordination
+
+These links attach grammatical words.
+
+| `DEPREL` | Meaning | French example |
+| --- | --- | --- |
+| `aux` | Auxiliary. A verb carries tense, aspect, mood, or voice for the main verb. | `a` in `il a mangé`. |
+| `cop` | Copula. A function word links a subject to a nonverbal predicate. | `est` in `il est content`. The adjective `content` is the root. |
+| `mark` | Marker. A word marks a subordinate clause. | `que` in `je pense qu'il pleut`. |
+| `cc` | Coordinating conjunction. | `et` in `le pain et le fromage`. |
+| `conj` | Conjunct. A coordinated element. | `fromage` in `le pain et le fromage`. |
+| `punct` | Punctuation. | the comma in the probe. |
+| `root` | The one word with no governor. | `mange` in the probe. |
+
+### Why the roles matter to the encoder
+
+The encoder gives a role a weight, and it puts the base role in a feature
+string (section 8). A core role such as `root`, `nsubj`, or `obj` carries a
+higher weight than a modifier such as `det` or `advmod`. The base role is the
+text before the first colon, so `obl:mod` becomes `obl` and `flat:name` becomes
+`flat` in the coarse mode. This is why the probe trees differ on `obj` against
+`cop`.
+
 ## References
 
 - [UD CoNLL-U format specification](https://universaldependencies.org/format.html)
@@ -631,10 +856,16 @@ validates the parse, so the tool fails on a broken tree with
 - [UDPipe project](https://github.com/ufal/udpipe)
 - [UDPipe model page and accuracy table](https://ufal.mff.cuni.cz/udpipe/1/models)
 - [UD_French-GSD treebank and license metadata](https://github.com/UniversalDependencies/UD_French-GSD)
+- [UD `cop` relation](https://universaldependencies.org/u/dep/cop.html)
+- [UD `AUX` class](https://universaldependencies.org/u/pos/AUX_.html)
+- [UD French `aux` relation](https://universaldependencies.org/fr/dep/aux_.html)
+- [UD simple clauses overview](https://universaldependencies.org/u/overview/simple-syntax.html)
+- [UD relation index](https://universaldependencies.org/u/dep/index.html)
 - [Stanza project](https://github.com/stanfordnlp/stanza)
 - `roadmap/T0004/parser-decision.md`
 - The parser candidates and the local mirror rule are in
   `roadmap/T0004/spec.md`.
+- The copula investigation ticket is `roadmap/T0005/spec.md`.
 
 ## Glossary
 
@@ -648,6 +879,12 @@ validates the parse, so the tool fails on a broken tree with
   in `[0, 1]`.
 - **Constituency tree**: a syntax tree whose nodes group words into phrases,
   for example `NP` and `VP`. Also called a phrase-structure tree.
+- **Copula**: a function word that links a subject to a nonverbal predicate, for
+  example `est` in `il est content`. In UD its class is `AUX` and its relation is
+  `cop`.
+- **Copular clause**: a clause whose predicate is nonverbal, such as a noun or an
+  adjective. A copula may link the subject to it. The predicate, not the copula,
+  is the root.
 - **Dependency label**: the name of the grammatical relation between a word and
   its governor, for example `nsubj` or `obj`.
 - **Dependency tree**: a syntax tree whose nodes are words. Each word points to
@@ -690,6 +927,8 @@ validates the parse, so the tool fails on a broken tree with
   MaxSim sum by the larger sentence count on the two sides.
 - **Phrase node**: a node in a constituency tree that groups words, for example
   `NP`.
+- **Predicate**: the part of a clause that says something about the subject. It
+  is a verb in a verbal clause, or a noun or an adjective in a copular clause.
 - **Proper noun**: a word class for a named entity, for example a person or a
   month. In UD its tag is `PROPN`. The coarse mode maps it onto `NOUN`.
 - **Punctuation mark**: the symbol of a punctuation node, for example `?`, `!`,

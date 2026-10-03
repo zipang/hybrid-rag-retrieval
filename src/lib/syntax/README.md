@@ -95,6 +95,65 @@ list in this fixed order: `[FORM, LEMMA, UPOS, HEAD, DEPREL, FEATS]`.
 
 If a check fails, the parser throws an error instead of returning a broken tree.
 
+### The dependency roles
+
+Every link carries a name, the `DEPREL`. The name says which job the dependent
+word does for its governor. The definitions follow the
+[UD relation index](https://universaldependencies.org/u/dep/index.html).
+
+**Core roles.** These links attach the arguments that the predicate needs.
+
+| Role | Plain meaning | Example |
+| --- | --- | --- |
+| `nsubj` | Subject. The doer of the clause. | `chat` in `le chat mange`. |
+| `obj` | Object. The thing acted on. | `souris` in `mange la souris`. |
+| `iobj` | Indirect object. A second core argument. | `lui` in `il lui parle`. |
+| `csubj` | Clausal subject. A clause is the subject. | `Partir` in `Partir, c'est mourir`. |
+| `ccomp` | Clausal complement. A finite clause completes the verb. | `qu'il pleut` in `je pense qu'il pleut`. |
+| `xcomp` | Open clausal complement. A non-finite clause completes the verb. | `partir` in `il veut partir`. |
+
+**Non-core roles.** These links add detail that the predicate does not need.
+
+| Role | Plain meaning | Example |
+| --- | --- | --- |
+| `obl` | Oblique nominal. A nominal that is not a core argument. | `dans la forêt` in `un loup marche dans la forêt`. |
+| `advcl` | Adverbial clause. A clause modifies another clause. | `en chantant` in `elle marche en chantant`. |
+| `advmod` | Adverbial modifier. An adverb modifies a word. | `vite` in `il court vite`. |
+| `expl` | Expletive. A pronoun with no meaning of its own. | `il` in `il pleut`. |
+
+**Roles inside a nominal group.** These links attach words inside a noun phrase.
+
+| Role | Plain meaning | Example |
+| --- | --- | --- |
+| `det` | Determiner. | `le` in `le chat`. |
+| `amod` | Adjectival modifier. An adjective describes a noun. | `rouge` in `une voiture rouge`. |
+| `nmod` | Nominal modifier. A noun describes another noun. | `de la maison` in `la porte de la maison`. |
+| `nummod` | Numeric modifier. | `trois` in `trois enfants`. |
+| `acl` | Adnominal clause. A clause describes a noun. | `qui dort` in `le chat qui dort`. |
+| `case` | Case marker. A preposition marks the role of a nominal. | `dans` in `dans la forêt`. |
+
+**Function words and links between clauses.**
+
+| Role | Plain meaning | Example |
+| --- | --- | --- |
+| `aux` | Auxiliary. A verb carries tense or another detail for the main verb. | `a` in `il a mangé`. |
+| `cop` | Copula. A link word joins a subject to a noun or an adjective. | `est` in `il est content`. |
+| `mark` | Marker. A word marks a subordinate clause. | `que` in `je pense qu'il pleut`. |
+| `cc` | Coordinating conjunction. | `et` in `le pain et le fromage`. |
+| `conj` | Conjunct. A coordinated element. | `fromage` in `le pain et le fromage`. |
+| `punct` | Punctuation. | the comma in `Demain, il part`. |
+| `root` | The one word with no governor. | `mange` in `le chat mange`. |
+
+A copular clause is worth care. In `il est content`, the adjective `content` is
+the **root**, and `est` is the copula. UD treats the noun or adjective as the
+head of the clause, not the verb. The [UD copula page](https://universaldependencies.org/u/dep/cop.html)
+states: "The copula *be* is not treated as the head of a clause, but rather the
+nonverbal predicate." The memo `memos/syntax-trees.md`, section 14, explains the
+effect on the syntax score.
+
+The coarse mode keeps the base role, the part before the first colon. So
+`obl:mod` becomes `obl`, and `flat:name` becomes `flat`.
+
 ### Step 4: the tree becomes an abstract shape **(planned)**
 
 The next module, `abstraction.ts`, will throw away the words and keep only the
@@ -164,6 +223,11 @@ index slogans and to answer syntax queries.
   describe one sentence, one line per word.
 - **Comparison**: one entry of the comparison set. It names a query, its
   `equal` sentences, and its `different` sentences.
+- **Copula**: a link word that joins a subject to a noun or an adjective, for
+  example `est` in `il est content`. In UD its class is `AUX` and its role is
+  `cop`.
+- **Copular clause**: a clause whose predicate is a noun or an adjective, not a
+  verb. The predicate, not the copula, is the root.
 - **Dependency tree**: a tree where each word points to the word it depends on,
   and each link has a grammatical name such as `nsubj` for a subject.
 - **DEPREL**: the CoNLL-U column that names the link between a word and its
@@ -181,6 +245,8 @@ index slogans and to answer syntax queries.
   example "manger" for "mange".
 - **Model**: a trained data file that the parser loads to guess grammar.
 - **Parser**: the part that finds the words and their grammar links.
+- **Predicate**: the part of a clause that says something about the subject. It
+  is a verb, or a noun or an adjective in a copular clause.
 - **Query**: the reference sentence of one comparison.
 - **Reference**: the stored expected tree of one sentence of the comparison set.
 - **Root**: the main word of a sentence. It depends on nothing.
