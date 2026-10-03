@@ -188,7 +188,7 @@ const formatRecord = (id: number, citation: RawCitation): string => {
 }
 
 /** Pass over the dumps: author pages first, then attributed theme and work pages. */
-type PassMode = "authors" | "attributed"
+type Pass = "authors" | "attributed"
 
 /** Stream one decompressed dump and collect citations for the given pass. */
 const processDump = async (
@@ -196,7 +196,7 @@ const processDump = async (
 	lang: "fr" | "en",
 	options: BuildOptions,
 	stats: BuildStats,
-	mode: PassMode,
+	pass: Pass,
 	collected: RawCitation[],
 	allowedAuthors: Set<string>,
 ): Promise<void> => {
@@ -227,7 +227,7 @@ const processDump = async (
 			pageCount += 1
 			stats.pages += 1
 
-			if (mode === "authors" && isInScope(page)) {
+			if (pass === "authors" && isInScope(page)) {
 				stats.inScopePages += 1
 				const citations = extractPageCitations(page, lang)
 
@@ -246,7 +246,7 @@ const processDump = async (
 				(page.text.includes("*") || page.text.includes("{{citation"))
 
 			if (
-				mode === "attributed" &&
+				pass === "attributed" &&
 				hasQuoteMaterial &&
 				page.namespace === 0 &&
 				!isInScope(page) &&
@@ -341,11 +341,11 @@ const main = async (): Promise<void> => {
 
 	const startedAt = Date.now()
 
-	for (const mode of ["authors", "attributed"] as const) {
-		console.log(`Pass: ${mode}`)
+	for (const pass of ["authors", "attributed"] as const) {
+		console.log(`Pass: ${pass}`)
 
 		for (const lang of languages) {
-			await processDump(DUMP_FILES[lang], lang, options, stats, mode, collected, allowedAuthors)
+			await processDump(DUMP_FILES[lang], lang, options, stats, pass, collected, allowedAuthors)
 		}
 
 		console.log(`  collected ${collected.length} citations, ${allowedAuthors.size} known authors`)

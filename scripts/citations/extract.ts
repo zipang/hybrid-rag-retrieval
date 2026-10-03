@@ -234,7 +234,7 @@ export const extractFrenchCitations = (
 export type EnglishCitationOptions = {
 	/**
 	 * When true, read the author from the `[[Author]]` link of the attribution
-	 * line. Use this mode on theme and work pages. When false, use the page
+	 * line. Use this option on theme and work pages. When false, use the page
 	 * title as the author.
 	 */
 	attributed?: boolean
