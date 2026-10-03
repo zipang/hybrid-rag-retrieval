@@ -120,6 +120,7 @@ sentences have a similar shape.
 | `parser.ts` | Reads CoNLL-U and checks the tree. |
 | `udpipe-engine.ts` | Loads the real grammar model. |
 | `config.ts` | Builds the parser from the environment. |
+| `normalize-fr.ts` | Canonicalizes French punctuation and strips non-Latin characters before parsing. |
 | `test-data/french.json` | 55 French texts with their hand-made trees, used to judge the parser and the encoder. Each text is keyed by its own sentence, so a reader sees what a comparison means. |
 | `test-data.test.ts` | Checks the test data set is complete and well formed. |
 
