@@ -1,10 +1,10 @@
 /**
  * Tree abstraction for the syntax encoder.
  *
- * The abstraction removes everything the encoder must not see: the words, the
- * lemmas, and the punctuation. It keeps the grammatical structure: the word
- * classes, the dependency connections, the relative word order, and the
- * dependency labels.
+ * The abstraction removes everything the encoder must not see: the words and
+ * the content-word lemmas. It keeps the grammatical structure: the word
+ * classes, the dependency connections, the relative word order, the dependency
+ * labels, and the punctuation marks.
  *
  * Two modes select how much detail the abstract tree keeps:
  *
@@ -49,6 +49,14 @@ export type AbstractNode = {
 	head: number
 	/** Canonical grammatical features, empty for the `coarse` mode. */
 	feats: string
+	/**
+	 * The mark of a punctuation node, for example `?`, `!`, or `,`.
+	 *
+	 * The value is the token's `LEMMA`, present only for a punctuation node.
+	 * Every other node leaves the field absent, so content-word vocabulary
+	 * never enters. A mark is a closed symbol set, not open vocabulary.
+	 */
+	punctuationMark?: string
 }
 
 /** One abstract sentence: nodes in reading order, plus the root index. */
@@ -134,53 +142,49 @@ export const canonicalFeatures = (feats: string, mode: SyntaxMode): string => {
 /**
  * Abstract one parsed sentence.
  *
- * The function removes punctuation nodes and remaps the head indices to the
- * remaining nodes. It resolves the mode label rule and the mode feature
- * rule. It raises {@link AbstractionError} when the sentence has no root.
+ * The function keeps every node, including the punctuation nodes, in reading
+ * order and with the original 1-based indices, so the parser's governor stays
+ * valid. It resolves the mode label rule and the mode feature rule.
+ *
+ * A punctuation node carries its mark, read from the token's `LEMMA`, in the
+ * {@link AbstractNode.punctuationMark} field. Every other node leaves the
+ * field absent, so content-word vocabulary never enters the encoder.
+ *
+ * The function raises {@link AbstractionError} when the sentence is empty or
+ * has no root.
  */
 export const abstractSentence = (sentence: ParsedSentence, mode: SyntaxMode): AbstractSentence => {
-	// Keep the tokens that carry grammar, with their original 1-based index.
-	const kept: Array<{ index: number; token: ParsedSentence[number] }> = []
-
-	for (const [offset, token] of sentence.entries()) {
-		if (!isPunctuation(token[2])) {
-			kept.push({ index: offset + 1, token })
-		}
-	}
-
-	if (kept.length === 0) {
-		throw new AbstractionError("sentence has no non-punctuation token")
-	}
-
-	// Map an original index to the new 1-based position.
-	const remap = new Map<number, number>()
-
-	for (const [offset, entry] of kept.entries()) {
-		remap.set(entry.index, offset + 1)
+	if (sentence.length === 0) {
+		throw new AbstractionError("sentence has no token")
 	}
 
 	const nodes: AbstractNode[] = []
 	let root = 0
 
-	for (const entry of kept) {
-		const [, , upos, head, deprel, feats] = entry.token
-		const newNode = remap.get(entry.index) ?? 0
-		const newHead = head === 0 ? 0 : (remap.get(head) ?? 0)
+	sentence.forEach((token, offset) => {
+		const [, lemma, upos, head, deprel, feats] = token
+		const index = offset + 1
 
-		if (head !== 0 && newHead === 0) {
-			throw new AbstractionError(`token ${entry.index} depends on removed or missing head ${head}`)
+		if (head === 0) {
+			root = index
 		}
 
-		if (newHead === 0) {
-			root = newNode
-		}
-
-		nodes.push({
+		const node: AbstractNode = {
 			upos: canonicalUpos(upos, mode),
 			deprel: mode === "coarse" ? baseLabel(deprel) : deprel,
-			head: newHead,
+			head,
 			feats: canonicalFeatures(feats, mode),
-		})
+		}
+
+		if (isPunctuation(upos)) {
+			node.punctuationMark = lemma
+		}
+
+		nodes.push(node)
+	})
+
+	if (root === 0) {
+		throw new AbstractionError("sentence has no root")
 	}
 
 	return { nodes, root }

@@ -126,7 +126,7 @@ describe("abstractSentence", () => {
 		expect(abstract.nodes[1]?.deprel).toBe("nsubj")
 	})
 
-	test("removes punctuation nodes and remaps the heads", () => {
+	test("keeps punctuation nodes in position with their mark", () => {
 		const sentence: ParsedSentence = [
 			token("Le", "le", "DET", 2, "det"),
 			token("chat", "chat", "NOUN", 3, "nsubj"),
@@ -135,23 +135,32 @@ describe("abstractSentence", () => {
 		]
 		const abstract = abstractSentence(sentence, "coarse")
 
-		expect(abstract.nodes.map((node) => node.upos)).toEqual(["DET", "NOUN", "VERB"])
+		expect(abstract.nodes.map((node) => node.upos)).toEqual(["DET", "NOUN", "VERB", "PUNCT"])
+		expect(abstract.nodes[3]?.punctuationMark).toBe(".")
+		expect(abstract.nodes[0]?.punctuationMark).toBeUndefined()
 		expect(abstract.root).toBe(3)
 	})
 
-	test("raises when a head points at a removed punctuation node", () => {
+	test("keeps a question mark as the punctuation mark", () => {
 		const sentence: ParsedSentence = [
-			token("Le", "le", "DET", 2, "det"),
-			token("chat", "chat", "NOUN", 4, "nsubj"),
-			token("dort", "dormir", "VERB", 0, "root"),
-			token(".", ".", "PUNCT", 2, "punct"),
+			token("Il", "il", "PRON", 2, "nsubj"),
+			token("vient", "venir", "VERB", 0, "root"),
+			token("?", "?", "PUNCT", 2, "punct"),
 		]
+		const abstract = abstractSentence(sentence, "coarse")
 
-		expect(() => abstractSentence(sentence, "coarse")).toThrow(AbstractionError)
+		expect(abstract.nodes[2]?.punctuationMark).toBe("?")
 	})
 
-	test("raises when a sentence has only punctuation", () => {
-		const sentence: ParsedSentence = [token(".", ".", "PUNCT", 0, "root")]
+	test("raises when a sentence is empty", () => {
+		expect(() => abstractSentence([], "coarse")).toThrow(AbstractionError)
+	})
+
+	test("raises when a sentence has no root", () => {
+		const sentence: ParsedSentence = [
+			token("Le", "le", "DET", 2, "det"),
+			token("chat", "chat", "NOUN", 1, "nsubj"),
+		]
 
 		expect(() => abstractSentence(sentence, "coarse")).toThrow(AbstractionError)
 	})

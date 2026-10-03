@@ -247,3 +247,34 @@ describe("tree position numbering", () => {
 		expect(norm).toBeCloseTo(1, 12)
 	})
 })
+
+describe("punctuation marks", () => {
+	/** The words "Il vient" with no mark. */
+	const plain = [token("Il", "PRON", 2, "nsubj"), token("vient", "VERB", 0, "root")]
+	/** The same words with a period. */
+	const statement = [...plain, token(".", "PUNCT", 2, "punct")]
+	/** The same words with a question mark. */
+	const question = [...plain, token("?", "PUNCT", 2, "punct")]
+	/** The same words with an exclamation mark. */
+	const exclamation = [...plain, token("!", "PUNCT", 2, "punct")]
+	/** The same words with an internal comma. */
+	const comma = [...plain, token(",", "PUNCT", 2, "punct")]
+
+	test("separates a sentence with no mark from one with a period", () => {
+		expect(cosine(encodeSentence(plain), encodeSentence(statement))).toBeLessThan(0.999999)
+	})
+
+	test("separates a question from an exclamation", () => {
+		expect(cosine(encodeSentence(question), encodeSentence(exclamation))).toBeLessThan(0.999999)
+	})
+
+	test("separates a comma from a question mark", () => {
+		expect(cosine(encodeSentence(comma), encodeSentence(question))).toBeLessThan(0.999999)
+	})
+
+	test("keeps two texts with the same mark identical", () => {
+		expect(cosine(encodeSentence(question), encodeSentence(question))).toBeGreaterThanOrEqual(
+			0.999999,
+		)
+	})
+})

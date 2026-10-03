@@ -3,7 +3,9 @@
  *
  * The encoder turns an abstract tree into a fixed-length numeric vector. The
  * vector captures the structure: the word classes, the labeled connections, the
- * relative order, and the rooted paths. It never sees a word or a lemma.
+ * relative order, the rooted paths, and the punctuation marks. It never sees a
+ * content word or a content-word lemma; the only token string it keeps is a
+ * punctuation mark, a closed symbol set.
  *
  * The encoder uses feature hashing. It maps each structural feature to a bucket
  * in a fixed-length vector. Each feature carries a weight, so a core role
@@ -29,6 +31,8 @@ export type EncoderConfig = {
 	roleWeights: Record<string, number>
 	/** Weight of a rooted-path feature. */
 	pathWeight: number
+	/** Weight of one punctuation-mark feature, for example `punct:?`. */
+	punctuationWeight: number
 	/**
 	 * Fixed number of digits in a path index.
 	 *
@@ -50,7 +54,7 @@ export type EncoderConfig = {
  * `coarse` mode keeps base labels, so the role table uses base labels.
  */
 export const DEFAULT_ENCODER_CONFIG: EncoderConfig = {
-	version: "coarse-1",
+	version: "coarse-3",
 	dimensions: 256,
 	uposWeights: {
 		VERB: 3,
@@ -65,6 +69,7 @@ export const DEFAULT_ENCODER_CONFIG: EncoderConfig = {
 		ADP: 0.5,
 		CCONJ: 0.5,
 		SCONJ: 0.5,
+		PUNCT: 0.5,
 	},
 	roleWeights: {
 		root: 3,
@@ -87,8 +92,10 @@ export const DEFAULT_ENCODER_CONFIG: EncoderConfig = {
 		case: 0.5,
 		mark: 0.5,
 		cc: 0.5,
+		punct: 0.5,
 	},
 	pathWeight: 1,
+	punctuationWeight: 1,
 	pathDepth: 6,
 	seed: "t0004-coarse",
 }
@@ -233,7 +240,9 @@ const addFeature = (
  * - one role feature per non-root node, with the base label, the word class,
  *   and the edge depth, weighted by the grammatical role;
  * - one rooted-path feature per node, with the base labels from the root to the
- *   node, weighted by the path weight.
+ *   node, weighted by the path weight;
+ * - one punctuation-mark feature per punctuation node, for example `punct:?`,
+ *   so a question and an exclamation with the same words stay apart.
  */
 const encodeSentence = (
 	vector: number[],
@@ -264,6 +273,10 @@ const encodeSentence = (
 		}
 
 		addFeature(vector, config, `path:${rootedPath(nodes, nodeIndex)}`, config.pathWeight)
+
+		if (node.punctuationMark !== undefined) {
+			addFeature(vector, config, `punct:${node.punctuationMark}`, config.punctuationWeight)
+		}
 	}
 }
 

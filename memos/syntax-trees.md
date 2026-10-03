@@ -159,18 +159,48 @@ The reasons are:
 ## 8. How the encoder will use the tree
 
 - Remove `FORM` and `LEMMA`. Vocabulary must not enter the vector (it is semantic only).
-- Remove punctuation-only nodes.
+- Keep punctuation-only nodes, in position and with the parser governor.
 
-**Open question.** The blanket removal also removes the statement, question, and
-exclamation distinction. `Il vient` and `Il vient ?` become the same tree. The
-user re-opened this rule. Task 11a of the plan measures the loss on the test
-data set. Task 11b adds a sentence-type feature if the evaluation requires it.
+### Punctuation marks stay in the tree
+
+An earlier rule removed every punctuation node. It also removed the statement,
+question, and exclamation distinction, so `Il vient` and `Il vient ?` became one
+tree.
+
+The parser attaches each mark to the head of the clause or phrase it belongs to,
+following the UD `punct` rules. A probe on 15 French sentences confirmed the
+rule: a terminal mark attaches to the root, a mark after a subordinate clause
+attaches to that clause, a mark between coordinated units attaches to the
+following conjunct, and paired marks attach to the same word. The project keeps
+the parser governor and does not normalize it.
+
+The abstraction reads the token's `LEMMA`, which holds the mark (`?`, `!`, `.`,
+`,`), into a `punctuationMark` field on the node. `FORM` and `LEMMA` are still
+dropped for every other token, so a content word never leaks its vocabulary. A
+mark is a closed symbol set, not open vocabulary.
+
+The encoder gives the mark an explicit weight. Task 11a measured the loss before
+the change. Two reviewed texts supply all the pairs, so the set needed no extra
+text: `Quelle belle journée !` supplies the terminal marks and `Voir, c'est
+croire` supplies the internal comma.
+
+| Pair | Marks removed | Marks kept |
+| --- | --- | --- |
+| no mark / `?` | 1.000000 | 0.781454 |
+| no mark / `!` | 1.000000 | 0.781454 |
+| `.` / `?` | 1.000000 | 0.966387 |
+| no mark / `.` | 1.000000 | 0.781454 |
+| comma kept / comma removed | 1.000000 | 0.977424 |
+
+Before the change every pair scored one. After the change every pair with a
+different mark scores below one, and two texts with the same mark stay
+identical. The encoder version moved from `coarse-2` to `coarse-3`.
 
 The specification defined two modes : `coarse` and `detailed`. 
 The encoder will apply them to the dependency tree:
 
-- `coarse`: keep the edges, the `UPOS` classes, the relative order, and the
-  base `DEPREL` labels. Remove `FEATS`.
+- `coarse`: keep the edges, the `UPOS` classes, the relative order, the base
+  `DEPREL` labels, and the punctuation marks. Remove `FEATS`.
 - `detailed`: keep the same data. Also keep the allowlisted `FEATS`
   (`Definite`, `Gender`, `Mood`, `Number`, `Person`, `Tense`, `VerbForm`,
   `Voice`).
@@ -662,6 +692,9 @@ validates the parse, so the tool fails on a broken tree with
   `NP`.
 - **Proper noun**: a word class for a named entity, for example a person or a
   month. In UD its tag is `PROPN`. The coarse mode maps it onto `NOUN`.
+- **Punctuation mark**: the symbol of a punctuation node, for example `?`, `!`,
+  `.`, or `,`. The abstraction keeps it in the `punctuationMark` field, and the
+  encoder weights it. A mark is a closed symbol set, not vocabulary.
 - **Relation accuracy**: the share of words whose dependency label the parser
   identifies correctly.
 - **Role**: the grammatical function of an edge, taken from its dependency

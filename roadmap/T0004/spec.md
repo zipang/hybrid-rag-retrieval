@@ -89,8 +89,9 @@ Read that mirror before implementation. Update the root documentation registry a
 The parser must produce token positions, dependency heads, dependency labels, word classes, and available grammatical features.
 Validate tree connectivity, head references, roots, and cycles before encoding.
 
-The encoder receives only abstract grammatical data. Remove token text, lemmas, lexical identifiers, and parser hidden states from its input.
+The encoder receives only abstract grammatical data. Remove token text, content-word lemmas, lexical identifiers, and parser hidden states from its input.
 The parser can use words to infer grammar. Vocabulary independence applies after parsing, not to the parser itself.
+One exception is a punctuation mark: the abstraction reads the punctuation lemma into a dedicated field, because a mark is a closed grammatical symbol, not vocabulary.
 
 Modes have these proposed definitions:
 
@@ -101,12 +102,30 @@ Modes have these proposed definitions:
 | Relative word order | Retain | Retain |
 | Dependency labels | Retain base labels | Retain full labels, including subtypes |
 | Grammatical features | Remove | Retain an explicit allowlist |
-| Vocabulary and lemmas | Remove | Remove |
-| Punctuation-only nodes | Remove | Remove |
+| Vocabulary and lemmas | Remove, except the punctuation mark | Remove, except the punctuation mark |
+| Punctuation nodes | Retain, in position and with their mark | Retain, in position and with their mark |
 
 The proposed detailed allowlist is `Definite`, `Gender`, `Mood`, `Number`, `Person`, `Tense`, `VerbForm`, and `Voice`.
 Record missing features consistently. Do not infer missing features from lexical identity.
 Canonicalize annotation order so equivalent annotations generate identical representations.
+
+### Punctuation marks
+
+Punctuation carries grammatical information, so both modes keep it. A
+punctuation node stays in its position in the tree and keeps the governor that
+the parser assigned.
+
+The abstraction reads the token's `LEMMA` field, which holds the mark itself
+(`?`, `!`, `.`, `,`), and stores it in a `punctuationMark` field on the node.
+The token's `FORM` and `LEMMA` are still dropped for every other token, so a
+content word never leaks its vocabulary. A mark is a closed symbol set, not
+open vocabulary.
+
+The encoder gives the mark an explicit weight, so `Il vient` and `Il vient ?`
+no longer share one vector. The parser attaches punctuation to the head of the
+clause or phrase it belongs to, following the UD `punct` rules, so the
+attachment is kept without normalization.
+See `memos/syntax-trees.md`, section 8, and Tasks 11a and 11b of the plan.
 
 ### Word-class normalization
 
@@ -122,7 +141,7 @@ tagged as `NOUN` in one sentence and `PROPN` in another.
 
 Support sentence fragments that produce valid trees, because slogans often omit complete clauses.
 For multiple sentences, preserve sentence boundaries in a grammatical forest and encode the complete content field.
-Ignore whitespace and punctuation-only differences when the remaining grammatical parse is equivalent.
+Treat punctuation marks as significant: two texts that differ only in a mark are not equivalent (see "Punctuation marks"). Ignore whitespace differences alone.
 Report malformed or empty parses explicitly. Do not substitute semantic embeddings or word-class sequences.
 
 ### 2. Encode structure into a fixed-length vector

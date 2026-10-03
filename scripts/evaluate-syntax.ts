@@ -81,13 +81,133 @@ const loadTestData = (): TestData => {
 export const syntaxSimilarity = (query: EncodedText, record: EncodedText): number =>
 	multivectorSimilarity(query, record)
 
-/** Encode one expected text with the coarse mode. */
+/** Encode one parsed text into a matrix with one vector per sentence. */
+const encodeParsed = (parsed: ParsedText, mode: SyntaxMode, config: EncoderConfig): EncodedText =>
+	encodeTree(abstractTree(parsed, mode), config).map((vector) => vector.values)
+
+/** Encode one expected text with the selected mode. */
 const encodeExpected = (entry: TextEntry, mode: SyntaxMode, config: EncoderConfig): EncodedText => {
 	const parsed: ParsedText = {
 		sentences: entry.sentences.map((sentence) => sentence.map((token) => [...token] as Token)),
 	}
 
-	return encodeTree(abstractTree(parsed, mode), config).map((vector) => vector.values)
+	return encodeParsed(parsed, mode, config)
+}
+
+/**
+ * One reviewed punctuation-only comparison.
+ *
+ * Both sides come from the same reviewed text. They differ only in the
+ * punctuation mark, so any score below one comes from the mark alone.
+ */
+export type PunctuationCase = {
+	/** The reviewed base text. */
+	base: string
+	/** The mark of the left side, or `keep` for the original text. */
+	leftMark: string
+	/** The mark of the right side, or `keep` for the original text. */
+	rightMark: string
+	/** The coarse syntax score of the two sides. */
+	score: number
+}
+
+/**
+ * The reviewed punctuation-only cases.
+ *
+ * Every base is an existing text of the test data set, as the task requires.
+ * A mark string replaces the terminal mark of the base. An empty mark removes
+ * the punctuation. `Quelle belle journée !` is the reviewed exclamative text;
+ * `Voir, c'est croire` carries the reviewed internal comma.
+ */
+const PUNCTUATION_CASES: Array<{ base: string; left: string; right: string }> = [
+	{ base: "Quelle belle journée !", left: "", right: "?" },
+	{ base: "Quelle belle journée !", left: "", right: "!" },
+	{ base: "Quelle belle journée !", left: ".", right: "?" },
+	{ base: "Quelle belle journée !", left: "", right: "." },
+	{ base: "Voir, c'est croire", left: "keep", right: "" },
+]
+
+/**
+ * Build one punctuation variant of a reviewed text.
+ *
+ * The function removes every punctuation token, remaps the governor indices,
+ * and appends one terminal mark to the root of each sentence. An empty mark
+ * adds no terminal token. The special mark `keep` returns the text unchanged.
+ * The variants of one base share every non-punctuation token, so they differ
+ * only in punctuation.
+ */
+export const punctuationVariant = (entry: TextEntry, mark: string): ParsedText => {
+	if (mark === "keep") {
+		return {
+			sentences: entry.sentences.map((sentence) => sentence.map((token) => [...token] as Token)),
+		}
+	}
+
+	return {
+		sentences: entry.sentences.map((sentence) => {
+			const kept: Token[] = []
+			const remap = new Map<number, number>()
+
+			sentence.forEach((token, offset) => {
+				if (token[2] !== "PUNCT") {
+					remap.set(offset + 1, kept.length + 1)
+					kept.push([...token] as Token)
+				}
+			})
+
+			const nodes = kept.map((token) => {
+				const original = Number(token[3])
+				const head = original === 0 ? 0 : (remap.get(original) ?? 0)
+
+				return [token[0], token[1], token[2], head, token[4], token[5]] as Token
+			})
+
+			if (mark !== "") {
+				const root = nodes.findIndex((token) => Number(token[3]) === 0) + 1
+				const index = root === 0 ? nodes.length : root
+
+				nodes.push([mark, mark, "PUNCT", index, "punct", ""])
+			}
+
+			return nodes
+		}),
+	}
+}
+
+/**
+ * Measure every reviewed punctuation-only comparison.
+ *
+ * The function reports each pair that scores equal although the two sides have
+ * different marks. It runs on the expected trees, so the number is the encoder
+ * result, not the parser result.
+ */
+export const evaluatePunctuation = (
+	data: TestData,
+	mode: SyntaxMode,
+	config: EncoderConfig,
+): PunctuationCase[] => {
+	return PUNCTUATION_CASES.flatMap((item) => {
+		const entry = data.texts[item.base]
+
+		if (entry === undefined) {
+			return []
+		}
+
+		const left = punctuationVariant(entry, item.left)
+		const right = punctuationVariant(entry, item.right)
+
+		return [
+			{
+				base: item.base,
+				leftMark: item.left,
+				rightMark: item.right,
+				score: syntaxSimilarity(
+					encodeParsed(left, mode, config),
+					encodeParsed(right, mode, config),
+				),
+			},
+		]
+	})
 }
 
 /** Token-level accuracy of the parser against the expected trees. */
@@ -111,6 +231,8 @@ export type SyntaxReport = {
 	structural: { total: number; correct: number; accuracy: number }
 	failures: string[]
 	latencyMs: { encode: number; parse: number }
+	/** Reviewed punctuation-only comparisons, derived from existing texts. */
+	punctuation: PunctuationCase[]
 	/** Parser token accuracy, present only for the parser source. */
 	parser?: ParserAccuracy
 }
@@ -224,6 +346,7 @@ export const evaluateSyntax = (data: TestData, options: EvaluateOptions): Syntax
 		},
 		failures,
 		latencyMs: { encode: 0, parse: 0 },
+		punctuation: evaluatePunctuation(data, options.mode, config),
 	}
 }
 
@@ -309,6 +432,20 @@ export const formatReport = (report: SyntaxReport): string => {
 		`  structural accuracy: ${percent(report.structural.accuracy)} (${report.structural.correct}/${report.structural.total})`,
 		`  failures:            ${report.failures.length}`,
 	]
+
+	const equalAcrossMarks = report.punctuation.filter(
+		(item) => item.leftMark !== item.rightMark && item.score >= 0.999999,
+	)
+
+	lines.push(
+		`  punctuation pairs:   ${report.punctuation.length} total, ${equalAcrossMarks.length} equal across marks`,
+	)
+
+	for (const item of report.punctuation) {
+		lines.push(
+			`    ${item.base} | ${item.leftMark || "none"} vs ${item.rightMark || "none"} -> ${item.score.toFixed(6)}`,
+		)
+	}
 
 	if (report.parser !== undefined) {
 		lines.push(

@@ -210,6 +210,42 @@ interjection as `NOUN` in one sentence and `PROPN` in another. The map removes
 that lexical difference, because it is not structural. See `spec.md`, "Word-class
 normalization".
 
+## Punctuation marks
+
+An earlier rule removed every punctuation node. It also removed the statement,
+question, and exclamation distinction, so `Il vient` and `Il vient ?` had one
+tree. Task 11a measured the loss. Task 11b keeps punctuation in the tree and
+weights the mark.
+
+### Attachment
+
+The parser attaches each mark to the head of the clause or phrase it belongs to,
+following the UD `punct` rules. A probe on 15 French sentences confirmed the
+rule: a terminal mark attaches to the root, a mark after a subordinate clause
+attaches to that clause, a mark between coordinated units attaches to the
+following conjunct, and paired marks attach to the same word. The project keeps
+the parser governor and does not normalize it.
+
+### Punctuation-only measurement
+
+The evaluation derives its punctuation pairs from two reviewed texts, so the
+set needs no extra text. It uses `Quelle belle journée !` for the terminal
+marks and `Voir, c'est croire` for the internal comma. Every variant keeps the
+same words and the same tree; only the punctuation changes.
+
+| Pair | Marks removed | Marks kept |
+| --- | --- | --- |
+| no mark / `?` | 1.000000 | 0.781454 |
+| no mark / `!` | 1.000000 | 0.781454 |
+| `.` / `?` | 1.000000 | 0.966387 |
+| no mark / `.` | 1.000000 | 0.781454 |
+| comma kept / comma removed | 1.000000 | 0.977424 |
+
+With the marks removed, every pair scored one. With the marks kept, every pair
+with a different mark scores below one, and two texts with the same mark stay
+identical. The encoder version changed from `coarse-2` to `coarse-3`. Run
+`bun run scripts/evaluate-syntax.ts --mode coarse` to reproduce the numbers.
+
 ## Review protocol
 
 The reviewer checks these points:
@@ -275,6 +311,9 @@ set for the ranking test.
   structure.
 - **Positive**: in a ranking case, the text with the same grammatical structure
   and different words.
+- **Punctuation mark**: the symbol of a punctuation node, for example `?`, `!`,
+  `.`, or `,`. The abstraction keeps it in the `punctuationMark` field, and the
+  encoder weights it.
 - **Ranking case**: a query text, a structural positive, and a structural
   negative for ranking evaluation.
 - **Structural pair**: two texts with one expected relation for one mode.
