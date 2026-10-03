@@ -9,6 +9,7 @@
 		"build:citations": "bun run scripts/build-citations.ts",
 		"index": "bun run scripts/index-slogans.ts",
 		"smoke": "bun run scripts/smoke-retrieval.ts",
+		"show-syntax-tree": "bun run scripts/show-syntax-tree.ts",
 		"init": "bash scripts/init.sh",
 		"lint": "biome check .",
 		"format": "biome check --write ."

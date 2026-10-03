@@ -11,6 +11,12 @@ does not commit the data these scripts produce.
 - `smoke-retrieval.ts` runs a few example queries against the indexed collection
   for a quick manual check. Run it with `bun run scripts/smoke-retrieval.ts`.
 
+## Syntax
+
+- `show-syntax-tree.ts` parses one sentence with the configured UDPipe model and
+  prints its syntax tree as a flat table and as an indented tree. Run it with
+  `bun run show-syntax-tree "Le garçon regarde le soleil"`.
+
 ## Citations
 
 - `build-citations.ts` reads the French and English Wikiquote dumps and writes
