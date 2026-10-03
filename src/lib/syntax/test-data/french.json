@@ -2,16 +2,7 @@
 	"version": 3,
 	"language": "fr",
 	"tokenFields": ["form", "lemma", "upos", "head", "deprel", "feats"],
-	"profileFeatures": [
-		"Definite",
-		"Gender",
-		"Mood",
-		"Number",
-		"Person",
-		"Tense",
-		"VerbForm",
-		"Voice"
-	],
+	"modeFeatures": ["Definite", "Gender", "Mood", "Number", "Person", "Tense", "VerbForm", "Voice"],
 	"texts": {
 		"Le garçon regarde le soleil": {
 			"sentences": [
@@ -112,23 +103,24 @@
 		"C'est la petite fille qui admirait la lune en chantant": {
 			"sentences": [
 				[
-					["C'", "ce", "PRON", 4, "expl", "Gender=Fem|Number=Sing|Person=3"],
-					["est", "être", "AUX", 4, "cop", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"],
-					["la", "le", "DET", 4, "det", "Definite=Def|Gender=Fem|Number=Sing"],
+					["C'", "ce", "PRON", 5, "expl", "Gender=Fem|Number=Sing|Person=3"],
+					["est", "être", "AUX", 5, "cop", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"],
+					["la", "le", "DET", 5, "det", "Definite=Def|Gender=Fem|Number=Sing"],
+					["petite", "petit", "ADJ", 5, "amod", "Gender=Fem|Number=Sing"],
 					["fille", "fille", "NOUN", 0, "root", "Gender=Fem|Number=Sing"],
-					["qui", "qui", "PRON", 6, "nsubj", "Gender=Fem|Number=Sing|Person=3"],
+					["qui", "qui", "PRON", 7, "nsubj", "Gender=Fem|Number=Sing|Person=3"],
 					[
 						"admirait",
 						"admirer",
 						"VERB",
-						4,
+						5,
 						"advcl:cleft",
 						"Mood=Ind|Number=Sing|Person=3|Tense=Imp|VerbForm=Fin"
 					],
-					["la", "le", "DET", 8, "det", "Definite=Def|Gender=Fem|Number=Sing"],
-					["lune", "lune", "NOUN", 6, "obj", "Gender=Fem|Number=Sing"],
-					["en", "en", "ADP", 10, "mark", ""],
-					["chantant", "chanter", "VERB", 6, "advcl", "Tense=Pres|VerbForm=Part"]
+					["la", "le", "DET", 9, "det", "Definite=Def|Gender=Fem|Number=Sing"],
+					["lune", "lune", "NOUN", 7, "obj", "Gender=Fem|Number=Sing"],
+					["en", "en", "ADP", 11, "mark", ""],
+					["chantant", "chanter", "VERB", 7, "advcl", "Tense=Pres|VerbForm=Part"]
 				]
 			]
 		},
@@ -1172,147 +1164,147 @@
 			"id": "p001",
 			"a": "Le garçon regarde le soleil",
 			"b": "Un chat mange une souris",
-			"profile": "coarse",
+			"mode": "coarse",
 			"relation": "equal"
 		},
 		{
 			"id": "p002",
 			"a": "Le garçon regarde le soleil",
 			"b": "Un chat mange une souris",
-			"profile": "detailed",
+			"mode": "detailed",
 			"relation": "different"
 		},
 		{
 			"id": "p003",
 			"a": "Le garçon regarde le soleil",
 			"b": "Le soleil regarde le garçon",
-			"profile": "coarse",
+			"mode": "coarse",
 			"relation": "equal"
 		},
 		{
 			"id": "p004",
 			"a": "Janvier ! Janvier !",
 			"b": "Février ! Février !",
-			"profile": "coarse",
+			"mode": "coarse",
 			"relation": "equal"
 		},
 		{
 			"id": "p005",
 			"a": "Il n'est jamais trop tôt pour un espresso",
 			"b": "Il n'est jamais trop tard pour bien faire",
-			"profile": "coarse",
+			"mode": "coarse",
 			"relation": "different"
 		},
 		{
 			"id": "p006",
 			"a": "Voir, c'est croire",
 			"b": "Partir, c'est mourir un peu",
-			"profile": "coarse",
+			"mode": "coarse",
 			"relation": "different"
 		},
 		{
 			"id": "p007",
 			"a": "Voir, c'est croire",
 			"b": "Partir, c'est mourir un peu",
-			"profile": "detailed",
+			"mode": "detailed",
 			"relation": "different"
 		},
 		{
 			"id": "p008",
 			"a": "Le pain et le fromage",
 			"b": "Le sel et le poivre",
-			"profile": "coarse",
+			"mode": "coarse",
 			"relation": "equal"
 		},
 		{
 			"id": "p009",
 			"a": "Le vieux monsieur avec un chapeau noir",
 			"b": "La vieille dame avec une robe bleue",
-			"profile": "coarse",
+			"mode": "coarse",
 			"relation": "equal"
 		},
 		{
 			"id": "p010",
 			"a": "Trois enfants jouent dans le parc",
 			"b": "Trois chats dorment dans le jardin",
-			"profile": "coarse",
+			"mode": "coarse",
 			"relation": "equal"
 		},
 		{
 			"id": "p011",
 			"a": "Dans la forêt, un loup marche",
 			"b": "Sur la colline, un berger chante",
-			"profile": "coarse",
+			"mode": "coarse",
 			"relation": "equal"
 		},
 		{
 			"id": "p012",
 			"a": "Ferme la porte",
 			"b": "Ouvre la fenêtre",
-			"profile": "coarse",
+			"mode": "coarse",
 			"relation": "equal"
 		},
 		{
 			"id": "p013",
 			"a": "Le petit garçon",
 			"b": "La grande maison",
-			"profile": "coarse",
+			"mode": "coarse",
 			"relation": "equal"
 		},
 		{
 			"id": "p014",
 			"a": "Toujours plus vite",
 			"b": "Souvent trop tard",
-			"profile": "coarse",
+			"mode": "coarse",
 			"relation": "equal"
 		},
 		{
 			"id": "p015",
 			"a": "Le garçon regarde le soleil. Le chat mange une souris.",
 			"b": "La fille admire la lune. Le chien dort.",
-			"profile": "coarse",
+			"mode": "coarse",
 			"relation": "different"
 		},
 		{
 			"id": "p016",
 			"a": "C'est le gentil garçon qui regardait la lune en souriant",
 			"b": "C'est la petite fille qui admirait la lune en chantant",
-			"profile": "coarse",
-			"relation": "different"
+			"mode": "coarse",
+			"relation": "equal"
 		},
 		{
 			"id": "p017",
 			"a": "C'est le gentil garçon qui regardait la lune en souriant",
 			"b": "C'est la petite fille qui admirait la lune en chantant",
-			"profile": "detailed",
-			"relation": "different"
+			"mode": "detailed",
+			"relation": "equal"
 		},
 		{
 			"id": "p018",
 			"a": "La lettre a été écrite par Marie",
 			"b": "La lettre a été lue par Paul",
-			"profile": "coarse",
+			"mode": "coarse",
 			"relation": "equal"
 		},
 		{
 			"id": "p019",
 			"a": "Vous ici ? Pourquoi pas ?",
 			"b": "Toi là ? Et alors ?",
-			"profile": "coarse",
+			"mode": "coarse",
 			"relation": "different"
 		},
 		{
 			"id": "p020",
 			"a": "C'est encore mieux en le disant",
 			"b": "C'est bien pire en le cachant",
-			"profile": "coarse",
+			"mode": "coarse",
 			"relation": "different"
 		},
 		{
 			"id": "p021",
 			"a": "C'est encore mieux en le disant",
 			"b": "C'est bien pire en le cachant",
-			"profile": "detailed",
+			"mode": "detailed",
 			"relation": "different"
 		}
 	],
