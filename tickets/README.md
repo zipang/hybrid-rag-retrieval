@@ -74,6 +74,7 @@ A ticket moves forward one folder at a time. A ticket returns to
 | [T0001](done/T0001-hybrid-slogan-retrieval/)          | Hybrid slogan retrieval and chat demo | Qdrant hybrid index, retrieval API, and streaming chat     |
 | [T0002](done/T0002-schema-driven-dataset-extraction/) | Schema-driven dataset extraction      | Record models, dataset configuration, and generic readers  |
 | [T0003](done/T0003-react-ui-design-system/)           | React UI on an Applied Design System  | Design System, component kit, and the rebuilt chat surface |
+| [T0006](done/T0006-resumable-dataset-import/)         | Resumable dataset import              | Dataset-agnostic, non-destructive, resumable dense import  |
 
 ## Delivery order
 
@@ -85,6 +86,9 @@ T0002 dataset extraction
        └→ T0003 React UI and Design System
             └→ T0004 syntax index and weighted retrieval
                  └→ T0005 copula-versus-verb investigation
+
+T0002 dataset extraction
+  └→ T0006 resumable dataset import
 ```
 
 `T0004` is not finished. Tasks 12 to 17b are open: `ast` vector storage,
