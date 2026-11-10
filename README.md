@@ -154,6 +154,7 @@ These memos record our findings
 
 - [QDrant Memo](memos/qdrant-review.md) for the installation process, indexing methods and the measurements.
 - [Qdrant multivector behavior](memos/qdrant-multivector-behavior.md) for the measured behaviors that the local mirror does not state, with the checks to repeat after an upgrade.
+- [Qdrant on NixOS](memos/qdrant-nixos-setup.md) for the pinned derivation, the `services.qdrant` configuration, and the checks to run after an upgrade.
 
 ## Glossary
 

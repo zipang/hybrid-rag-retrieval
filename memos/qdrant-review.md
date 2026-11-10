@@ -263,7 +263,9 @@ serves it automatically. Both are outside the project rule for this POC.
   per request with `wait=true`.
 - Corpus: `datasets/slogans.txt`, 236 records, about 7 words each.
 - Machine: 16 CPU cores, 30.7 GiB RAM.
-- Command: `bun run scripts/index-slogans.ts --limit 500`.
+- Command: `bun run scripts/index-slogans.ts --limit 500`. The script is now
+  `index-dataset.ts`, so the same run is
+  `bun run index --dataset slogans --limit 500`.
 
 The recorded run uses a warm OS page cache. The first cold run took a similar
 time.
