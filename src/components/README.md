@@ -6,13 +6,13 @@ Every component under `src/components` follows one rule set.
 
 Folders follow Atomic Design: generic pieces live low, product pieces high.
 
-| Folder | Holds | Import direction |
-|---|---|---|
-| `layout/` | `VStack`, `HStack`, `Grid` — structure only | lowest |
-| `base/` | `Heading`, `Text` — typography only | from `layout` up |
-| `ui/` | `Panel`, `Button`, `TextField` — reusable controls | from `base` up |
-| `app/` | `ChatPanel`, `RetrievalPanel`, `MessageBubble`, `RetrievalHit` | from `ui` up |
-| `pages/` | `ChatPage` — the screen | top |
+| Folder    | Holds                                                          | Import direction |
+| --------- | -------------------------------------------------------------- | ---------------- |
+| `layout/` | `VStack`, `HStack`, `Grid` — structure only                    | lowest           |
+| `base/`   | `Heading`, `Text` — typography only                            | from `layout` up |
+| `ui/`     | `Panel`, `Button`, `TextField` — reusable controls             | from `base` up   |
+| `app/`    | `ChatPanel`, `RetrievalPanel`, `MessageBubble`, `RetrievalHit` | from `ui` up     |
+| `pages/`  | `ChatPage` — the screen                                        | top              |
 
 Imports flow downward only: `pages → app → ui → base → layout`.
 

@@ -80,20 +80,20 @@ read descriptions to select content and filters.
 The shared schema type requires each description. Tests reject empty descriptions
 and descriptions without a role label.
 
-| Dataset | Field | Role | Intended use |
-|---|---|---|---|
-| Slogans | `id` | Record identifier | Keep the source ID for record identity. Do not embed or filter on it. |
-| Slogans | `annee` | Filter field | Filter by publication year. Exclude it from content indexing. |
-| Slogans | `marque` | Filter field | Filter by brand or issuing organization. Exclude it from content indexing. |
-| Slogans | `campagne` | Filter field | Filter by campaign when the value is not empty. Exclude it from content indexing. |
-| Slogans | `slogan` | Content field | Use for dense semantic embeddings and BM25 lexical indexing. |
-| Citations | `id` | Record identifier | Keep the source ID for record identity. Do not embed or filter on it. |
-| Citations | `author` | Filter field | Filter by citation author. Exclude it from content indexing. |
-| Citations | `work` | Filter field | Filter by the work that contains the citation. Exclude it from content indexing. |
-| Citations | `year` | Filter field | Filter by the work's publication year. Exclude it from content indexing. |
-| Citations | `lang` | Filter field | Filter by citation language. Exclude it from content indexing. |
-| Citations | `trad` | Filter field | Filter by translator when the value is not empty. Exclude it from content indexing. |
-| Citations | `quote` | Content field | Use for dense semantic embeddings and BM25 lexical indexing. |
+| Dataset   | Field      | Role              | Intended use                                                                        |
+| --------- | ---------- | ----------------- | ----------------------------------------------------------------------------------- |
+| Slogans   | `id`       | Record identifier | Keep the source ID for record identity. Do not embed or filter on it.               |
+| Slogans   | `annee`    | Filter field      | Filter by publication year. Exclude it from content indexing.                       |
+| Slogans   | `marque`   | Filter field      | Filter by brand or issuing organization. Exclude it from content indexing.          |
+| Slogans   | `campagne` | Filter field      | Filter by campaign when the value is not empty. Exclude it from content indexing.   |
+| Slogans   | `slogan`   | Content field     | Use for dense semantic embeddings and BM25 lexical indexing.                        |
+| Citations | `id`       | Record identifier | Keep the source ID for record identity. Do not embed or filter on it.               |
+| Citations | `author`   | Filter field      | Filter by citation author. Exclude it from content indexing.                        |
+| Citations | `work`     | Filter field      | Filter by the work that contains the citation. Exclude it from content indexing.    |
+| Citations | `year`     | Filter field      | Filter by the work's publication year. Exclude it from content indexing.            |
+| Citations | `lang`     | Filter field      | Filter by citation language. Exclude it from content indexing.                      |
+| Citations | `trad`     | Filter field      | Filter by translator when the value is not empty. Exclude it from content indexing. |
+| Citations | `quote`    | Content field     | Use for dense semantic embeddings and BM25 lexical indexing.                        |
 
 Query agents use the JSON Schema descriptions as context. They search the
 content field and apply filters to fields that have the `Filter field` role.

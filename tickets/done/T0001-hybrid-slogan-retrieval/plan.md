@@ -77,6 +77,7 @@ schema titles, and generic in-memory and streaming readers.
   - Depends: Task 1
 
 ### Checkpoint: Foundation
+
 - [x] `bun test` green; Qdrant starts from the binary and the collection can be created
 - [ ] Review with human before indexing the corpus
 
@@ -107,6 +108,7 @@ schema titles, and generic in-memory and streaming readers.
   - Depends: Task 7
 
 ### Checkpoint: Core Features
+
 - [x] End-to-end: HTTP query returns hybrid results; chat returns an answer grounded in retrieved slogans
 - [ ] Review the three README example queries with the human before UI polish
 
@@ -125,23 +127,24 @@ schema titles, and generic in-memory and streaming readers.
   - Depends: Tasks 5, 7
 
 ### Checkpoint: Complete
+
 - [ ] All spec success criteria met
 - [ ] `bunx biome check .` clean, `bun test` green
 - [ ] Ready for human review
 
 ## Risks and Mitigations
 
-| Risk | Impact | Mitigation |
-|------|--------|------------|
-| Local embedding of ~265k slogans is slow / memory-heavy | Med | `--limit` flag for quick runs; batch + stream; revisit model choice if indexing exceeds a practical budget |
-| Multilingual dense model download is large (~1GB) and slow on first run | Low | Download once and cache (fastembed `cacheDir`); document in README |
-| Qdrant binary URL/arch changes across releases | Low | Pin a documented release URL in `setup-qdrant.sh`; fail loudly if download 404s |
-| Provider adapter mismatch (Ollama vs OpenAI tool-call format) | Med | Use the OpenAI-compatible adapter; keep model config env-driven; verify with at least two endpoints |
-| Payload filter syntax on year range is easy to get wrong | Low | Unit-test the filter shape; verify against real data in the smoke script |
-| BM25 defaults to English, and ingest/query options drift | High | Set `language: "french"`, `ascii_folding: true`, and `avg_len` from env; build one `bm25Options(env)` helper shared by indexing and retrieval |
-| BM25 `avg_len` left at default `256` for short slogans | Med | Set `BM25_AVG_LEN` to the corpus average token count; revisit after indexing |
-| Point id type mismatch (numeric string vs uint64) | Low | Resolved: the record schemas type `id` as `integer`, so the reader coerces it and the importer casts nothing |
-| Payload indexes created after ingestion | Med | Recreate the indexes inside the drop/recreate path before upsert |
+| Risk                                                                    | Impact | Mitigation                                                                                                                                    |
+| ----------------------------------------------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Local embedding of ~265k slogans is slow / memory-heavy                 | Med    | `--limit` flag for quick runs; batch + stream; revisit model choice if indexing exceeds a practical budget                                    |
+| Multilingual dense model download is large (~1GB) and slow on first run | Low    | Download once and cache (fastembed `cacheDir`); document in README                                                                            |
+| Qdrant binary URL/arch changes across releases                          | Low    | Pin a documented release URL in `setup-qdrant.sh`; fail loudly if download 404s                                                               |
+| Provider adapter mismatch (Ollama vs OpenAI tool-call format)           | Med    | Use the OpenAI-compatible adapter; keep model config env-driven; verify with at least two endpoints                                           |
+| Payload filter syntax on year range is easy to get wrong                | Low    | Unit-test the filter shape; verify against real data in the smoke script                                                                      |
+| BM25 defaults to English, and ingest/query options drift                | High   | Set `language: "french"`, `ascii_folding: true`, and `avg_len` from env; build one `bm25Options(env)` helper shared by indexing and retrieval |
+| BM25 `avg_len` left at default `256` for short slogans                  | Med    | Set `BM25_AVG_LEN` to the corpus average token count; revisit after indexing                                                                  |
+| Point id type mismatch (numeric string vs uint64)                       | Low    | Resolved: the record schemas type `id` as `integer`, so the reader coerces it and the importer casts nothing                                  |
+| Payload indexes created after ingestion                                 | Med    | Recreate the indexes inside the drop/recreate path before upsert                                                                              |
 
 ## Open Questions
 

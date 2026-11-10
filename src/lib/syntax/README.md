@@ -60,14 +60,14 @@ environment variable. The command `bun run init` downloads the model.
 **CoNLL-U** table: one line per word. Each line has ten columns. This project
 uses six of them:
 
-| Column | Name | Meaning |
-| --- | --- | --- |
-| 2 | `FORM` | The word as it appears in the text. |
-| 3 | `LEMMA` | The dictionary form, for example "manger" for "mange". |
-| 4 | `UPOS` | The universal word class, for example `NOUN` or `VERB`. |
-| 6 | `FEATS` | Small grammar details, for example `Gender=Fem\|Tense=Pres`. |
-| 7 | `HEAD` | The 1-based index of the word this word depends on. `0` marks the root. |
-| 8 | `DEPREL` | The name of the link to the head, for example `nsubj` or `obj`. |
+| Column | Name     | Meaning                                                                 |
+| ------ | -------- | ----------------------------------------------------------------------- |
+| 2      | `FORM`   | The word as it appears in the text.                                     |
+| 3      | `LEMMA`  | The dictionary form, for example "manger" for "mange".                  |
+| 4      | `UPOS`   | The universal word class, for example `NOUN` or `VERB`.                 |
+| 6      | `FEATS`  | Small grammar details, for example `Gender=Fem\|Tense=Pres`.            |
+| 7      | `HEAD`   | The 1-based index of the word this word depends on. `0` marks the root. |
+| 8      | `DEPREL` | The name of the link to the head, for example `nsubj` or `obj`.         |
 
 The other four columns describe the token index, the language-specific tag, the
 enhanced dependencies, and other annotations. This project does not use them.
@@ -103,51 +103,51 @@ word does for its governor. The definitions follow the
 
 **Core roles.** These links attach the arguments that the predicate needs.
 
-| Role | Plain meaning | Example |
-| --- | --- | --- |
-| `nsubj` | Subject. The doer of the clause. | `chat` in `le chat mange`. |
-| `obj` | Object. The thing acted on. | `souris` in `mange la souris`. |
-| `iobj` | Indirect object. A second core argument. | `lui` in `il lui parle`. |
-| `csubj` | Clausal subject. A clause is the subject. | `Partir` in `Partir, c'est mourir`. |
-| `ccomp` | Clausal complement. A finite clause completes the verb. | `qu'il pleut` in `je pense qu'il pleut`. |
-| `xcomp` | Open clausal complement. A non-finite clause completes the verb. | `partir` in `il veut partir`. |
+| Role    | Plain meaning                                                    | Example                                  |
+| ------- | ---------------------------------------------------------------- | ---------------------------------------- |
+| `nsubj` | Subject. The doer of the clause.                                 | `chat` in `le chat mange`.               |
+| `obj`   | Object. The thing acted on.                                      | `souris` in `mange la souris`.           |
+| `iobj`  | Indirect object. A second core argument.                         | `lui` in `il lui parle`.                 |
+| `csubj` | Clausal subject. A clause is the subject.                        | `Partir` in `Partir, c'est mourir`.      |
+| `ccomp` | Clausal complement. A finite clause completes the verb.          | `qu'il pleut` in `je pense qu'il pleut`. |
+| `xcomp` | Open clausal complement. A non-finite clause completes the verb. | `partir` in `il veut partir`.            |
 
 **Non-core roles.** These links add detail that the predicate does not need.
 
-| Role | Plain meaning | Example |
-| --- | --- | --- |
-| `obl` | Oblique nominal. A nominal that is not a core argument. | `dans la forêt` in `un loup marche dans la forêt`. |
-| `advcl` | Adverbial clause. A clause modifies another clause. | `en chantant` in `elle marche en chantant`. |
-| `advmod` | Adverbial modifier. An adverb modifies a word. | `vite` in `il court vite`. |
-| `expl` | Expletive. A pronoun with no meaning of its own. | `il` in `il pleut`. |
+| Role     | Plain meaning                                           | Example                                            |
+| -------- | ------------------------------------------------------- | -------------------------------------------------- |
+| `obl`    | Oblique nominal. A nominal that is not a core argument. | `dans la forêt` in `un loup marche dans la forêt`. |
+| `advcl`  | Adverbial clause. A clause modifies another clause.     | `en chantant` in `elle marche en chantant`.        |
+| `advmod` | Adverbial modifier. An adverb modifies a word.          | `vite` in `il court vite`.                         |
+| `expl`   | Expletive. A pronoun with no meaning of its own.        | `il` in `il pleut`.                                |
 
 **Roles inside a nominal group.** These links attach words inside a noun phrase.
 
-| Role | Plain meaning | Example |
-| --- | --- | --- |
-| `det` | Determiner. | `le` in `le chat`. |
-| `amod` | Adjectival modifier. An adjective describes a noun. | `rouge` in `une voiture rouge`. |
-| `nmod` | Nominal modifier. A noun describes another noun. | `de la maison` in `la porte de la maison`. |
-| `nummod` | Numeric modifier. | `trois` in `trois enfants`. |
-| `acl` | Adnominal clause. A clause describes a noun. | `qui dort` in `le chat qui dort`. |
-| `case` | Case marker. A preposition marks the role of a nominal. | `dans` in `dans la forêt`. |
+| Role     | Plain meaning                                           | Example                                    |
+| -------- | ------------------------------------------------------- | ------------------------------------------ |
+| `det`    | Determiner.                                             | `le` in `le chat`.                         |
+| `amod`   | Adjectival modifier. An adjective describes a noun.     | `rouge` in `une voiture rouge`.            |
+| `nmod`   | Nominal modifier. A noun describes another noun.        | `de la maison` in `la porte de la maison`. |
+| `nummod` | Numeric modifier.                                       | `trois` in `trois enfants`.                |
+| `acl`    | Adnominal clause. A clause describes a noun.            | `qui dort` in `le chat qui dort`.          |
+| `case`   | Case marker. A preposition marks the role of a nominal. | `dans` in `dans la forêt`.                 |
 
 **Function words and links between clauses.**
 
-| Role | Plain meaning | Example |
-| --- | --- | --- |
-| `aux` | Auxiliary. A verb carries tense or another detail for the main verb. | `a` in `il a mangé`. |
-| `cop` | Copula. A link word joins a subject to a noun or an adjective. | `est` in `il est content`. |
-| `mark` | Marker. A word marks a subordinate clause. | `que` in `je pense qu'il pleut`. |
-| `cc` | Coordinating conjunction. | `et` in `le pain et le fromage`. |
-| `conj` | Conjunct. A coordinated element. | `fromage` in `le pain et le fromage`. |
-| `punct` | Punctuation. | the comma in `Demain, il part`. |
-| `root` | The one word with no governor. | `mange` in `le chat mange`. |
+| Role    | Plain meaning                                                        | Example                               |
+| ------- | -------------------------------------------------------------------- | ------------------------------------- |
+| `aux`   | Auxiliary. A verb carries tense or another detail for the main verb. | `a` in `il a mangé`.                  |
+| `cop`   | Copula. A link word joins a subject to a noun or an adjective.       | `est` in `il est content`.            |
+| `mark`  | Marker. A word marks a subordinate clause.                           | `que` in `je pense qu'il pleut`.      |
+| `cc`    | Coordinating conjunction.                                            | `et` in `le pain et le fromage`.      |
+| `conj`  | Conjunct. A coordinated element.                                     | `fromage` in `le pain et le fromage`. |
+| `punct` | Punctuation.                                                         | the comma in `Demain, il part`.       |
+| `root`  | The one word with no governor.                                       | `mange` in `le chat mange`.           |
 
 A copular clause is worth care. In `il est content`, the adjective `content` is
 the **root**, and `est` is the copula. UD treats the noun or adjective as the
 head of the clause, not the verb. The [UD copula page](https://universaldependencies.org/u/dep/cop.html)
-states: "The copula *be* is not treated as the head of a clause, but rather the
+states: "The copula _be_ is not treated as the head of a clause, but rather the
 nonverbal predicate." The memo `memos/syntax-trees.md`, section 14, explains the
 effect on the syntax score.
 
@@ -189,16 +189,16 @@ token format, the tree rules, and the workflow.
 
 ## What is in this folder
 
-| File | Plain description |
-| --- | --- |
-| `parser.ts` | Reads CoNLL-U and checks the tree. |
-| `udpipe-engine.ts` | Loads the real grammar model. |
-| `config.ts` | Builds the parser from the environment. |
-| `normalize-fr.ts` | Canonicalizes French punctuation and strips non-Latin characters before parsing. |
-| `test-data/french.jsonc` | 55 French texts with their hand-made trees, used to judge the parser and the encoder. Each text is keyed by its own sentence, so a reader sees what a comparison means. |
+| File                             | Plain description                                                                                                                                                          |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `parser.ts`                      | Reads CoNLL-U and checks the tree.                                                                                                                                         |
+| `udpipe-engine.ts`               | Loads the real grammar model.                                                                                                                                              |
+| `config.ts`                      | Builds the parser from the environment.                                                                                                                                    |
+| `normalize-fr.ts`                | Canonicalizes French punctuation and strips non-Latin characters before parsing.                                                                                           |
+| `test-data/french.jsonc`         | 55 French texts with their hand-made trees, used to judge the parser and the encoder. Each text is keyed by its own sentence, so a reader sees what a comparison means.    |
 | `test-data/french-dataset.jsonc` | The readable, growing comparison set. Each entry names a query, its `equal` sentences, and its `different` sentences. Every sentence has a stored tree under `references`. |
-| `test-data.test.ts` | Checks `french.jsonc` is complete and well formed. |
-| `dataset.test.ts` | Checks `french-dataset.jsonc` is complete, well formed, and judged the expected way. |
+| `test-data.test.ts`              | Checks `french.jsonc` is complete and well formed.                                                                                                                         |
+| `dataset.test.ts`                | Checks `french-dataset.jsonc` is complete, well formed, and judged the expected way.                                                                                       |
 
 ## The grammar model
 
@@ -211,11 +211,11 @@ index slogans and to answer syntax queries.
 
 ## Errors you can get
 
-| Error | What it means |
-| --- | --- |
-| `ParserUnavailableError` | The grammar model file is missing. Run `bun run init`. |
-| `ParseValidationError` | The parser returned a broken tree, such as a loop or a missing root. |
-| `EmptyInputError` | The text was blank. |
+| Error                    | What it means                                                        |
+| ------------------------ | -------------------------------------------------------------------- |
+| `ParserUnavailableError` | The grammar model file is missing. Run `bun run init`.               |
+| `ParseValidationError`   | The parser returned a broken tree, such as a loop or a missing root. |
+| `EmptyInputError`        | The text was blank.                                                  |
 
 ## Glossary
 

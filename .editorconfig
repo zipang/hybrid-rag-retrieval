@@ -1,5 +1,10 @@
 root = true
 
+# The formatting rules live here, because every editor reads `.editorconfig`.
+# `bun fmt` reads `indent_style`, `indent_size`, `tab_width`, `max_line_length`
+# and `end_of_line` from this file. The options that `.editorconfig` cannot
+# express stay in the `[fmt]` section of `bunfig.toml`.
+
 [*]
 charset = utf-8
 end_of_line = lf
@@ -7,8 +12,12 @@ insert_final_newline = true
 trim_trailing_whitespace = true
 indent_style = tab
 indent_size = 4
+max_line_length = 100
 
 [*.md]
 indent_style = space
 indent_size = 2
 trim_trailing_whitespace = false
+# Keep the hand-wrapped prose and tables. A hard column limit would reflow
+# every paragraph and turn a one-word edit into a whole-file diff.
+max_line_length = off

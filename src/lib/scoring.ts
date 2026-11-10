@@ -1,468 +1,465 @@
 /**
  * Index score normalization and weighted combination.
  *
- * Every selected index contributes a finite component score in `[0, 1]`. The
- * combined score is the weighted sum of those component scores. The functions
- * here are pure. They never read response maxima, page contents, or batch
- * statistics. The same inputs always produce the same outputs.
+ * Every selected index contributes a finite component score in `[0, 1]`. The combined score is the
+ * weighted sum of those component scores. The functions here are pure. They never read response
+ * maxima, page contents, or batch statistics. The same inputs always produce the same outputs.
  *
- * The formulas and their parameters are versioned. A score from one
- * normalization version never mixes with a score from another version.
+ * The formulas and their parameters are versioned. A score from one normalization version never
+ * mixes with a score from another version.
  */
 
-import type { FullIndexWeights, IndexName, IndexScores, IndexWeights } from "./retrieval-contract"
-import { INDEX_NAMES } from "./retrieval-contract"
+import type { FullIndexWeights, IndexName, IndexScores, IndexWeights } from "./retrieval-contract";
+import { INDEX_NAMES } from "./retrieval-contract";
 
 /** Version of the normalization formulas. Bump when a formula or a parameter changes. */
-export const NORMALIZATION_VERSION = "1"
+export const NORMALIZATION_VERSION = "1";
 
 /** BM25 scale parameter for `raw / (raw + scale)`. Positive and versioned. */
-export const BM25_SCALE = 3
+export const BM25_SCALE = 3;
 
 /** Numerical tolerance for weight sums and score comparisons. */
-export const WEIGHT_TOLERANCE = 1e-9
+export const WEIGHT_TOLERANCE = 1e-9;
 
 /** Rounding tolerance for equality checks on combined scores. */
-export const SCORE_TOLERANCE = 1e-9
+export const SCORE_TOLERANCE = 1e-9;
 
 /**
  * Clip a value into `[0, 1]`. Map `NaN`, `Infinity`, and `-Infinity` to zero.
  *
- * The function is the shared guard for every component score. A nonfinite value
- * becomes zero instead of an invalid score.
+ * The function is the shared guard for every component score. A nonfinite value becomes zero
+ * instead of an invalid score.
  */
 export const clamp01 = (value: number): number => {
 	if (!Number.isFinite(value)) {
-		return 0
+		return 0;
 	}
 
 	if (value < 0) {
-		return 0
+		return 0;
 	}
 
 	if (value > 1) {
-		return 1
+		return 1;
 	}
 
-	return value
-}
+	return value;
+};
 
 /**
  * Normalize a cosine score into `[0, 1]`.
  *
- * The transformation is `max(0, min(1, cosine))`. It maps negative cosine
- * values to zero and preserves positive cosine values. This is the fixed,
- * documented transformation for the semantic and syntax indexes.
+ * The transformation is `max(0, min(1, cosine))`. It maps negative cosine values to zero and
+ * preserves positive cosine values. This is the fixed, documented transformation for the semantic
+ * and syntax indexes.
  */
-export const normalizeCosine = (cosine: number): number => clamp01(cosine)
+export const normalizeCosine = (cosine: number): number => clamp01(cosine);
 
 /**
  * Normalize a raw BM25 score into `[0, 1]`.
  *
- * The transformation is `raw / (raw + scale)`. For a nonnegative `raw` the
- * result lies in `[0, 1)` and grows monotonically. A raw score of zero and a
- * negative raw score map to zero. The scale is {@link BM25_SCALE}.
+ * The transformation is `raw / (raw + scale)`. For a nonnegative `raw` the result lies in `[0, 1)`
+ * and grows monotonically. A raw score of zero and a negative raw score map to zero. The scale is
+ * {@link BM25_SCALE}.
  */
 export const normalizeBm25 = (raw: number, scale: number = BM25_SCALE): number => {
 	if (!Number.isFinite(raw) || raw <= 0) {
-		return 0
+		return 0;
 	}
 
 	if (!Number.isFinite(scale) || scale <= 0) {
-		return 0
+		return 0;
 	}
 
-	return raw / (raw + scale)
-}
+	return raw / (raw + scale);
+};
 
 /**
  * Normalize one component score by index name.
  *
- * Dense indexes use the cosine transformation. The keyword index uses the BM25
- * transformation. Both results lie in `[0, 1]`.
+ * Dense indexes use the cosine transformation. The keyword index uses the BM25 transformation. Both
+ * results lie in `[0, 1]`.
  */
 export const normalizeIndexScore = (index: IndexName, raw: number): number => {
 	if (index === "keyword") {
-		return normalizeBm25(raw)
+		return normalizeBm25(raw);
 	}
 
-	return normalizeCosine(raw)
-}
+	return normalizeCosine(raw);
+};
 
 /**
  * Normalize a raw Qdrant `max_sim` score into `[0, 1]`.
  *
- * Qdrant defines `max_sim` as the sum, over the query rows, of the best match
- * against the record rows. The raw value is therefore neither bounded nor
- * symmetric. The syntax index divides the raw value by the larger row count:
+ * Qdrant defines `max_sim` as the sum, over the query rows, of the best match against the record
+ * rows. The raw value is therefore neither bounded nor symmetric. The syntax index divides the raw
+ * value by the larger row count:
  *
  * ```text
  * score = rawMaxSim / max(queryRows, recordRows)
  * ```
  *
- * This rule matches the approved syntax normalization. A perfect match of equal
- * length scores one. An unmatched sentence on the longer side scores zero, and
- * the divisor averages that zero into the result. A raw value from a shorter
- * query never exceeds the divisor, because `max_sim` sums one best match per
- * query row and every match is at most one.
+ * This rule matches the approved syntax normalization. A perfect match of equal length scores one.
+ * An unmatched sentence on the longer side scores zero, and the divisor averages that zero into the
+ * result. A raw value from a shorter query never exceeds the divisor, because `max_sim` sums one
+ * best match per query row and every match is at most one.
  *
- * A nonpositive or nonfinite raw value maps to zero. A zero denominator maps to
- * zero, because a record with no row cannot match.
+ * A nonpositive or nonfinite raw value maps to zero. A zero denominator maps to zero, because a
+ * record with no row cannot match.
  */
 export const normalizeMultivectorMaxSim = (
 	rawMaxSim: number,
 	queryRows: number,
-	recordRows: number,
+	recordRows: number
 ): number => {
-	const divisor = Math.max(queryRows, recordRows)
+	const divisor = Math.max(queryRows, recordRows);
 
 	if (!Number.isFinite(rawMaxSim) || rawMaxSim <= 0) {
-		return 0
+		return 0;
 	}
 
 	if (!Number.isFinite(divisor) || divisor <= 0) {
-		return 0
+		return 0;
 	}
 
-	return clamp01(rawMaxSim / divisor)
-}
+	return clamp01(rawMaxSim / divisor);
+};
 
 /**
  * Return the cosine similarity of two unit vectors, clipped into `[0, 1]`.
  *
- * Both vectors come from an encoder that L2-normalizes its output, so the
- * cosine is the dot product. A negative value becomes zero.
+ * Both vectors come from an encoder that L2-normalizes its output, so the cosine is the dot
+ * product. A negative value becomes zero.
  */
 export const cosineSimilarity = (left: number[], right: number[]): number => {
-	const size = Math.min(left.length, right.length)
-	let sum = 0
+	const size = Math.min(left.length, right.length);
+	let sum = 0;
 
 	for (let index = 0; index < size; index += 1) {
-		sum += (left[index] ?? 0) * (right[index] ?? 0)
+		sum += (left[index] ?? 0) * (right[index] ?? 0);
 	}
 
-	return clamp01(sum)
-}
+	return clamp01(sum);
+};
 
 /**
- * Assign each row of a square cost matrix to a distinct column, maximizing the
- * total cost.
+ * Assign each row of a square cost matrix to a distinct column, maximizing the total cost.
  *
- * The function uses the Hungarian algorithm. It returns, for each row, the
- * column it is assigned to. The matrix must be square. The algorithm is exact,
- * so a query sentence never steals the best record sentence from a query
- * sentence that needs it more.
+ * The function uses the Hungarian algorithm. It returns, for each row, the column it is assigned
+ * to. The matrix must be square. The algorithm is exact, so a query sentence never steals the best
+ * record sentence from a query sentence that needs it more.
  */
 export const maximizeAssignment = (cost: number[][]): number[] => {
-	const size = cost.length
+	const size = cost.length;
 
 	if (size === 0) {
-		return []
+		return [];
 	}
 
 	// Pad the matrix so it is square.
-	const size_ = cost[0]?.length ?? 0
-	const n = Math.max(size, size_)
+	const size_ = cost[0]?.length ?? 0;
+	const n = Math.max(size, size_);
 	const matrix = Array.from({ length: n }, (_, row) =>
-		Array.from({ length: n }, (_, column) => cost[row]?.[column] ?? 0),
-	)
+		Array.from({ length: n }, (_, column) => cost[row]?.[column] ?? 0)
+	);
 	// Negate for a minimization assignment.
-	const a = matrix.map((row) => row.map((value) => -value))
-	const u = new Array<number>(n + 1).fill(0)
-	const v = new Array<number>(n + 1).fill(0)
-	const p = new Array<number>(n + 1).fill(0)
-	const way = new Array<number>(n + 1).fill(0)
+	const a = matrix.map((row) => row.map((value) => -value));
+	const u = new Array<number>(n + 1).fill(0);
+	const v = new Array<number>(n + 1).fill(0);
+	const p = new Array<number>(n + 1).fill(0);
+	const way = new Array<number>(n + 1).fill(0);
 
 	for (let i = 1; i <= n; i += 1) {
-		p[0] = i
-		let j0 = 0
-		const minv = new Array<number>(n + 1).fill(Number.POSITIVE_INFINITY)
-		const used = new Array<boolean>(n + 1).fill(false)
+		p[0] = i;
+		let j0 = 0;
+		const minv = new Array<number>(n + 1).fill(Number.POSITIVE_INFINITY);
+		const used = new Array<boolean>(n + 1).fill(false);
 
 		do {
-			used[j0] = true
-			const i0 = p[j0] ?? 0
-			let delta = Number.POSITIVE_INFINITY
-			let j1 = 0
+			used[j0] = true;
+			const i0 = p[j0] ?? 0;
+			let delta = Number.POSITIVE_INFINITY;
+			let j1 = 0;
 
 			for (let j = 1; j <= n; j += 1) {
 				if (used[j]) {
-					continue
+					continue;
 				}
 
-				const current = (a[i0 - 1]?.[j - 1] ?? 0) - (u[i0] ?? 0) - (v[j] ?? 0)
+				const current = (a[i0 - 1]?.[j - 1] ?? 0) - (u[i0] ?? 0) - (v[j] ?? 0);
 
 				if (current < (minv[j] ?? Number.POSITIVE_INFINITY)) {
-					minv[j] = current
-					way[j] = j0
+					minv[j] = current;
+					way[j] = j0;
 				}
 
 				if ((minv[j] ?? Number.POSITIVE_INFINITY) < delta) {
-					delta = minv[j] ?? Number.POSITIVE_INFINITY
-					j1 = j
+					delta = minv[j] ?? Number.POSITIVE_INFINITY;
+					j1 = j;
 				}
 			}
 
 			for (let j = 0; j <= n; j += 1) {
 				if (used[j]) {
-					u[p[j] ?? 0] = (u[p[j] ?? 0] ?? 0) + delta
-					v[j] = (v[j] ?? 0) - delta
+					u[p[j] ?? 0] = (u[p[j] ?? 0] ?? 0) + delta;
+					v[j] = (v[j] ?? 0) - delta;
 				} else {
-					minv[j] = (minv[j] ?? Number.POSITIVE_INFINITY) - delta
+					minv[j] = (minv[j] ?? Number.POSITIVE_INFINITY) - delta;
 				}
 			}
 
-			j0 = j1
-		} while ((p[j0] ?? 0) !== 0)
+			j0 = j1;
+		} while ((p[j0] ?? 0) !== 0);
 
 		do {
-			const j1 = way[j0] ?? 0
+			const j1 = way[j0] ?? 0;
 
-			p[j0] = p[j1] ?? 0
-			j0 = j1
-		} while (j0 !== 0)
+			p[j0] = p[j1] ?? 0;
+			j0 = j1;
+		} while (j0 !== 0);
 	}
 
-	const assignment = new Array<number>(size).fill(-1)
+	const assignment = new Array<number>(size).fill(-1);
 
 	for (let j = 1; j <= n; j += 1) {
-		const row = (p[j] ?? 0) - 1
+		const row = (p[j] ?? 0) - 1;
 
 		if (row >= 0 && row < size) {
-			assignment[row] = j - 1
+			assignment[row] = j - 1;
 		}
 	}
 
-	return assignment
-}
+	return assignment;
+};
 
 /**
  * Return the frozen syntax similarity of two multivectors.
  *
- * Each row is one sentence. The function pairs each query row with a distinct
- * record row, using the optimal assignment, so one record sentence cannot
- * satisfy two query sentences. An unpaired sentence scores zero. The result
- * divides the matched total by the larger row count on the two sides.
+ * Each row is one sentence. The function pairs each query row with a distinct record row, using the
+ * optimal assignment, so one record sentence cannot satisfy two query sentences. An unpaired
+ * sentence scores zero. The result divides the matched total by the larger row count on the two
+ * sides.
  *
- * A query with two sentences and a record with one sentence scores
- * `(1 + 0) / 2 = 0.5` when the single record sentence matches the first query
- * sentence perfectly.
+ * A query with two sentences and a record with one sentence scores `(1 + 0) / 2 = 0.5` when the
+ * single record sentence matches the first query sentence perfectly.
  */
 export const multivectorSimilarity = (query: number[][], record: number[][]): number => {
 	if (query.length === 0 || record.length === 0) {
-		return 0
+		return 0;
 	}
 
 	const cost = query.map((queryRow) =>
-		record.map((recordRow) => cosineSimilarity(queryRow, recordRow)),
-	)
-	const assignment = maximizeAssignment(cost)
-	let total = 0
+		record.map((recordRow) => cosineSimilarity(queryRow, recordRow))
+	);
+	const assignment = maximizeAssignment(cost);
+	let total = 0;
 
 	for (const [row, column] of assignment.entries()) {
 		if (column >= 0 && column < record.length) {
-			total += cost[row]?.[column] ?? 0
+			total += cost[row]?.[column] ?? 0;
 		}
 	}
 
-	const divisor = Math.max(query.length, record.length)
+	const divisor = Math.max(query.length, record.length);
 
-	return clamp01(total / divisor)
-}
+	return clamp01(total / divisor);
+};
 
 /** Read the value of one index in a partial record, or `undefined`. */
 const readIndexValue = (record: IndexScores, index: IndexName): number | undefined => {
-	return record[index]
-}
+	return record[index];
+};
 
 /**
  * Sum the nonnegative, finite entries of an {@link IndexWeights} object.
  *
- * An absent entry contributes zero. A negative or nonfinite entry contributes
- * zero, because the validator rejects it before scoring.
+ * An absent entry contributes zero. A negative or nonfinite entry contributes zero, because the
+ * validator rejects it before scoring.
  */
 export const sumWeights = (weights: IndexWeights): number => {
-	let total = 0
+	let total = 0;
 
 	for (const index of INDEX_NAMES) {
-		const weight = readIndexValue(weights, index)
+		const weight = readIndexValue(weights, index);
 
 		if (weight !== undefined && Number.isFinite(weight) && weight > 0) {
-			total += weight
+			total += weight;
 		}
 	}
 
-	return total
-}
+	return total;
+};
 
 /** The result of validating an {@link IndexWeights} object. */
 export type WeightValidation =
-	| { valid: true; weights: FullIndexWeights }
-	| { valid: false; reason: string }
+	{ valid: true; weights: FullIndexWeights } | { valid: false; reason: string };
 
 /**
  * Validate index weights against the contract.
  *
- * The rules are: at least one positive weight, every present weight is a
- * nonnegative finite number, no unknown index name, and the sum is one within
- * {@link WEIGHT_TOLERANCE}. The function never silently normalizes invalid
- * weights.
+ * The rules are: at least one positive weight, every present weight is a nonnegative finite number,
+ * no unknown index name, and the sum is one within {@link WEIGHT_TOLERANCE}. The function never
+ * silently normalizes invalid weights.
  */
 export const validateWeights = (weights: IndexWeights): WeightValidation => {
-	const full: FullIndexWeights = { syntax: 0, semantic: 0, keyword: 0 }
-	let positive = 0
+	const full: FullIndexWeights = { syntax: 0, semantic: 0, keyword: 0 };
+	let positive = 0;
 
 	for (const key of Object.keys(weights)) {
 		if (!(INDEX_NAMES as readonly string[]).includes(key)) {
-			return { valid: false, reason: `unknown index name: ${key}` }
+			return { valid: false, reason: `unknown index name: ${key}` };
 		}
 	}
 
 	for (const index of INDEX_NAMES) {
-		const weight = readIndexValue(weights, index)
+		const weight = readIndexValue(weights, index);
 
 		if (weight === undefined) {
-			continue
+			continue;
 		}
 
 		if (!Number.isFinite(weight) || weight < 0) {
-			return { valid: false, reason: `weight for ${index} must be a nonnegative finite number` }
+			return {
+				valid: false,
+				reason: `weight for ${index} must be a nonnegative finite number`
+			};
 		}
 
 		if (weight > 0) {
-			positive += 1
+			positive += 1;
 		}
 
-		full[index] = weight
+		full[index] = weight;
 	}
 
 	if (positive === 0) {
-		return { valid: false, reason: "at least one weight must be positive" }
+		return { valid: false, reason: "at least one weight must be positive" };
 	}
 
-	const total = sumWeights(weights)
+	const total = sumWeights(weights);
 
 	if (Math.abs(total - 1) > WEIGHT_TOLERANCE) {
-		return { valid: false, reason: `weights must sum to 1 within ${WEIGHT_TOLERANCE}` }
+		return {
+			valid: false,
+			reason: `weights must sum to 1 within ${WEIGHT_TOLERANCE}`
+		};
 	}
 
-	return { valid: true, weights: full }
-}
+	return { valid: true, weights: full };
+};
 
 /**
  * Combine component scores with weights into one matching score.
  *
- * The function computes `sum(weight[index] * component[index])` over the
- * selected indexes. An absent component score contributes zero. Nonfinite
- * component values become zero. The result lies in `[0, 1]`.
+ * The function computes `sum(weight[index] * component[index])` over the selected indexes. An
+ * absent component score contributes zero. Nonfinite component values become zero. The result lies
+ * in `[0, 1]`.
  */
 export const combineScores = (weights: FullIndexWeights, scores: IndexScores): number => {
-	let total = 0
+	let total = 0;
 
 	for (const index of INDEX_NAMES) {
-		const weight = weights[index]
+		const weight = weights[index];
 
 		if (weight <= 0) {
-			continue
+			continue;
 		}
 
-		const value = readIndexValue(scores, index)
+		const value = readIndexValue(scores, index);
 
 		if (value === undefined) {
-			continue
+			continue;
 		}
 
-		total += weight * clamp01(value)
+		total += weight * clamp01(value);
 	}
 
-	return clamp01(total)
-}
+	return clamp01(total);
+};
 
 /**
  * Return whether a combined score meets a minimum score.
  *
- * The threshold is inclusive. A record with `combinedScore === minScore`
- * qualifies. The comparison uses {@link SCORE_TOLERANCE}, so floating-point
- * noise does not flip a boundary case.
+ * The threshold is inclusive. A record with `combinedScore === minScore` qualifies. The comparison
+ * uses {@link SCORE_TOLERANCE}, so floating-point noise does not flip a boundary case.
  */
 export const meetsThreshold = (
 	combinedScore: number,
 	minScore: number,
-	tolerance: number = SCORE_TOLERANCE,
+	tolerance: number = SCORE_TOLERANCE
 ): boolean => {
 	if (!Number.isFinite(combinedScore) || !Number.isFinite(minScore)) {
-		return false
+		return false;
 	}
 
-	return combinedScore >= minScore - tolerance
-}
+	return combinedScore >= minScore - tolerance;
+};
 
 /** One record prepared for combined scoring and ordering. */
 export type ScoreInput = {
 	/** Record identifier. */
-	id: number | string
+	id: number | string;
 	/** Available component scores. Missing indexes contribute zero. */
-	scores: IndexScores
-}
+	scores: IndexScores;
+};
 
 /** One record with its combined score. */
 export type ScoredRecord = {
 	/** Record identifier. */
-	id: number | string
+	id: number | string;
 	/** Combined matching score. */
-	score: number
+	score: number;
 	/** Component scores that produced the combined score. */
-	scores?: IndexScores
-}
+	scores?: IndexScores;
+};
 
 /**
  * Compare two identifiers for a deterministic ascending order.
  *
- * Two numeric identifiers compare by value. Two string identifiers compare by
- * code-unit order. A number sorts before a string. This makes the tie-breaker
- * total and stable across runs.
+ * Two numeric identifiers compare by value. Two string identifiers compare by code-unit order. A
+ * number sorts before a string. This makes the tie-breaker total and stable across runs.
  */
 export const compareIdentifiers = (left: number | string, right: number | string): number => {
 	if (typeof left === "number" && typeof right === "number") {
-		return left - right
+		return left - right;
 	}
 
 	if (typeof left === "string" && typeof right === "string") {
 		if (left < right) {
-			return -1
+			return -1;
 		}
 
 		if (left > right) {
-			return 1
+			return 1;
 		}
 
-		return 0
+		return 0;
 	}
 
-	return typeof left === "number" ? -1 : 1
-}
+	return typeof left === "number" ? -1 : 1;
+};
 
 /**
  * Score and order records by combined score descending, then by identifier.
  *
- * The function never filters by the threshold. The caller applies
- * {@link meetsThreshold} when it needs qualification. Keeping scoring and
- * qualification apart lets the pagination layer reuse one stable order.
+ * The function never filters by the threshold. The caller applies {@link meetsThreshold} when it
+ * needs qualification. Keeping scoring and qualification apart lets the pagination layer reuse one
+ * stable order.
  */
 export const scoreAndOrder = (weights: FullIndexWeights, records: ScoreInput[]): ScoredRecord[] => {
 	const scored = records.map((record) => ({
 		id: record.id,
 		score: combineScores(weights, record.scores),
-		scores: record.scores,
-	}))
+		scores: record.scores
+	}));
 
 	scored.sort((left, right) => {
 		if (left.score !== right.score) {
-			return right.score - left.score
+			return right.score - left.score;
 		}
 
-		return compareIdentifiers(left.id, right.id)
-	})
+		return compareIdentifiers(left.id, right.id);
+	});
 
-	return scored
-}
+	return scored;
+};

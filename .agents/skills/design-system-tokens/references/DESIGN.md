@@ -11,30 +11,30 @@ colors:
   # Brand — primary and accent are required; secondary and tertiary are
   # optional.
   brand:
-    primary:   "#ff0000"   # --color-brand-primary   (headings, highlights, logo)
-    accent:    "#065fd4"   # --color-brand-accent    (CTAs, key accents)
-    secondary: "#606060"   # --color-brand-secondary (optional, overridden)
+    primary: "#ff0000" # --color-brand-primary   (headings, highlights, logo)
+    accent: "#065fd4" # --color-brand-accent    (CTAs, key accents)
+    secondary: "#606060" # --color-brand-secondary (optional, overridden)
     # tertiary: omitted → --color-brand-tertiary: var(--color-brand-primary)
 
   # Action — all four are required
   action:
-    success: "#137333"     # --color-action-success
-    info:    "#1a73e8"     # --color-action-info
-    warning: "#e37400"     # --color-action-warning
-    danger:  "#d93025"     # --color-action-danger
+    success: "#137333" # --color-action-success
+    info: "#1a73e8" # --color-action-info
+    warning: "#e37400" # --color-action-warning
+    danger: "#d93025" # --color-action-danger
 
   # Text  (drop-.base rule: colors.text.base -> --color-text)
   text:
-    base:    "#0f0f0f"     # --color-text
-    accent:  "#065fd4"     # --color-text-accent
-    muted:   "#606060"     # --color-text-muted
-    ondark:  "#ffffff"     # --color-text-ondark
+    base: "#0f0f0f" # --color-text
+    accent: "#065fd4" # --color-text-accent
+    muted: "#606060" # --color-text-muted
+    ondark: "#ffffff" # --color-text-ondark
 
   # Surface  (drop-.base rule: colors.surface.base -> --color-surface)
   surface:
-    base: "#ffffff"        # --color-surface
-    alt:  "#f9f9f9"        # --color-surface-alt
-    dark: "#0f0f0f"        # --color-surface-dark      (optional, overridden)
+    base: "#ffffff" # --color-surface
+    alt: "#f9f9f9" # --color-surface-alt
+    dark: "#0f0f0f" # --color-surface-dark      (optional, overridden)
     # card:  omitted → --color-surface-card: var(--color-surface)
 
 # ============================================================================
@@ -43,20 +43,9 @@ colors:
 # ============================================================================
 typography:
   # Font families — No font size
-  base: {
-    fontFamily: "Roboto, Arial, sans-serif",
-    fontWeight: "var(--font-weight-regular)",
-    lineHeight: "var(--line-height-normal)"
-  }
-  display: {
-    fontFamily: "Roboto, Arial, sans-serif",
-    fontWeight: "var(--font-weight-semibold)",
-    lineHeight: "var(--line-height-tight)",
-    letterSpacing: "var(--letter-spacing-tight)"
-  }
-  mono: {
-    fontFamily: 'ui-monospace, "Courier New", monospace'
-  }
+  base: { fontFamily: "Roboto, Arial, sans-serif", fontWeight: "var(--font-weight-regular)", lineHeight: "var(--line-height-normal)" }
+  display: { fontFamily: "Roboto, Arial, sans-serif", fontWeight: "var(--font-weight-semibold)", lineHeight: "var(--line-height-tight)", letterSpacing: "var(--letter-spacing-tight)" }
+  mono: { fontFamily: 'ui-monospace, "Courier New", monospace' }
 
 # ============================================================================
 # ROUNDED  —  corner radius presets (only full is required;
@@ -65,22 +54,22 @@ typography:
 # ============================================================================
 rounded:
   none: "0"
-  sm:   "0.25rem"
-  md:   "0.75rem"
-  lg:   "1.125rem"
-  full: "9999px"   # circular — avatars, icons, pills
+  sm: "0.25rem"
+  md: "0.75rem"
+  lg: "1.125rem"
+  full: "9999px" # circular — avatars, icons, pills
 
 # ============================================================================
 # SPACING  —  spatial rhythm scale, 4px linear (all required)
 # ============================================================================
 spacing:
-  xs:   "0.25rem"
-  sm:   "0.5rem"
-  md:   "0.75rem"
+  xs: "0.25rem"
+  sm: "0.5rem"
+  md: "0.75rem"
   base: "1rem"
-  lg:   "1.25rem"
-  xl:   "2rem"
-  xxl:  "3rem"
+  lg: "1.25rem"
+  xl: "2rem"
+  xxl: "3rem"
 
 # ============================================================================
 # ELEVATION  —  custom top-level family (shadow presets; optional, default none)
@@ -134,7 +123,7 @@ here still exist in the stylesheet with a `var()` fallback to a required token.
 Brand and action colors carry `muted` and `active` variants derived
 automatically from the base color via CSS relative color syntax:
 
-- `muted`  — `hsl(from <base> h calc(s * 0.8) calc(l * 1.2))` — less
+- `muted` — `hsl(from <base> h calc(s * 0.8) calc(l * 1.2))` — less
   saturated, lighter; the softened, resting variant.
 - `active` — `hsl(from <base> h calc(s * 1.2) calc(l * 1.1))` — more
   saturated, lighter; the vivid hover/pressed variant.
@@ -190,15 +179,15 @@ In the stylesheet this maps to:
 
 ```css
 a {
-    color: var(--color-brand-accent);
-    text-decoration: underline;
+  color: var(--color-brand-accent);
+  text-decoration: underline;
 }
 a:hover,
 a:active {
-    color: var(--color-brand-accent-active);
+  color: var(--color-brand-accent-active);
 }
 a:visited {
-    color: var(--color-brand-accent-muted);
+  color: var(--color-brand-accent-muted);
 }
 ```
 

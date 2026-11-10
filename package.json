@@ -14,8 +14,8 @@
 		"show-syntax-tree": "bun run scripts/show-syntax-tree.ts",
 		"compare-syntax": "bun run scripts/compare-syntax.ts",
 		"init": "bash scripts/init.sh",
-		"lint": "biome check .",
-		"format": "biome check --write ."
+		"lint": "biome lint .",
+		"format": "bun fmt"
 	},
 	"dependencies": {
 		"@ai-sdk/openai-compatible": "^3.0.61",

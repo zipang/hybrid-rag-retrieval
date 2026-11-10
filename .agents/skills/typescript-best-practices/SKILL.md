@@ -23,14 +23,20 @@ A TypeScript type is the contract between a function and its callers. Write type
 Name the values the function can produce or consume. A resolver that feeds DOM text, attributes, and input values produces scalars. Type it as a scalar union, not `unknown`.
 
 Good:
+
 ```ts
 export type RenderValue = string | number | boolean;
-export const readProperty = (path: string, data: TemplesData): RenderValue => { /* ... */ }
+export const readProperty = (path: string, data: TemplesData): RenderValue => {
+  /* ... */
+};
 ```
 
 Bad:
+
 ```ts
-export const readProperty = (path: string, data: unknown): unknown => { /* ... */ }
+export const readProperty = (path: string, data: unknown): unknown => {
+  /* ... */
+};
 ```
 
 ### 2. `unknown` only at true boundaries
@@ -42,14 +48,16 @@ export const readProperty = (path: string, data: unknown): unknown => { /* ... *
 A type alias that references itself through a naked union member triggers a circular-alias error (TS2456). Use an `interface` for recursive object shapes. Interfaces resolve lazily and accept the recursion. Wrap every self-reference inside an object, array, or mapped type. Never place a self-reference naked in a union.
 
 Good:
+
 ```ts
 export interface TemplesData {
-	[key: string]: TemplesDataValue;
+  [key: string]: TemplesDataValue;
 }
 export type TemplesDataValue = RenderValue | ((this: TemplesData) => RenderValue) | TemplesData;
 ```
 
 Bad (circular-alias error):
+
 ```ts
 export type TemplesData = Record<string, TemplesDataValue>;
 export type TemplesDataValue = RenderValue | ((this: TemplesData) => RenderValue) | TemplesData;
@@ -64,15 +72,17 @@ Use `type` for unions, primitives, and computed shapes. Use `interface` for exte
 Use `typeof`, `instanceof`, and `in` checks to narrow a value. A cast (`as`) asserts a fact the compiler cannot verify. The cast lies if the value does not match. Reach for a cast only to inject an out-of-contract value in a test, or to coerce at a genuine boundary. State the reason in both cases.
 
 Good (type guard, no cast):
+
 ```ts
 if (typeof current === "function") {
-	const result = current.call(owner);
+  const result = current.call(owner);
 
-	return result == null ? "" : result;
+  return result == null ? "" : result;
 }
 ```
 
 Acceptable (a test injects an out-of-contract value to verify a runtime guard):
+
 ```ts
 const data = { fn: () => undefined } as unknown as TemplesData;
 ```
@@ -105,13 +115,13 @@ if (current == null) return "";
 
 ## Anti-Patterns
 
-| Rationalization | Reality |
-|---|---|
-| "It's typed as `unknown`, so it's safe" | `unknown` shifts every narrowing decision to each caller and hides the real contract. Name a concrete union. |
-| "I'll cast here to make it compile" | A cast asserts a fact the compiler cannot verify. Narrow with a type guard, or the cast is a lie. |
-| "The recursive type needs `any`" | Use an `interface` for the object shape and wrap self-references. Recursion is not a reason for `any`. |
-| "The return type is `unknown` because the data varies" | If the function's purpose constrains the value, name the union. Variation is not ignorance. |
-| "`noUncheckedIndexedAccess` is annoying" | It exposes real missing-key bugs. Handle the `undefined`. Do not disable the check. |
+| Rationalization                                        | Reality                                                                                                      |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| "It's typed as `unknown`, so it's safe"                | `unknown` shifts every narrowing decision to each caller and hides the real contract. Name a concrete union. |
+| "I'll cast here to make it compile"                    | A cast asserts a fact the compiler cannot verify. Narrow with a type guard, or the cast is a lie.            |
+| "The recursive type needs `any`"                       | Use an `interface` for the object shape and wrap self-references. Recursion is not a reason for `any`.       |
+| "The return type is `unknown` because the data varies" | If the function's purpose constrains the value, name the union. Variation is not ignorance.                  |
+| "`noUncheckedIndexedAccess` is annoying"               | It exposes real missing-key bugs. Handle the `undefined`. Do not disable the check.                          |
 
 ## Red Flags
 

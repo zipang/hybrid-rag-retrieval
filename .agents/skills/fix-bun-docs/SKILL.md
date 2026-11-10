@@ -34,11 +34,11 @@ The script scans every `*.md` file under the mirror root and:
 2. Rewrites markdown link destinations `](/docs/<path>)` into relative links.
    The relative prefix depends on the file depth inside the mirror:
 
-   | File location            | Prefix   | Resulting link            |
-   | :----------------------- | :------- | :------------------------ |
-   | root, e.g. `index.md`    | *(none)* | `bundler/loaders`         |
-   | `runtime/...`            | `../`    | `../bundler/loaders`      |
-   | `guides/binary/...`      | `../../` | `../../runtime/sqlite`    |
+   | File location         | Prefix   | Resulting link         |
+   | :-------------------- | :------- | :--------------------- |
+   | root, e.g. `index.md` | _(none)_ | `bundler/loaders`      |
+   | `runtime/...`         | `../`    | `../bundler/loaders`   |
+   | `guides/binary/...`   | `../../` | `../../runtime/sqlite` |
 
    URL fragments (e.g. `#conversion`) are preserved.
 

@@ -154,12 +154,32 @@ test("hello world", () => {
 
 ## Formatting and linting
 
-The project uses **Biome** (`biome.jsonc` and `.editorconfig`). Use **tabs** for every file except Markdown (`.md`), which uses 2 spaces.
+Two tools, two jobs. **`bun fmt` writes the formatting. Biome checks the lint
+rules.** Each tool has one authority, so they never fight over line breaking.
 
-- Run `bunx biome check --write <files>` to format and lint the files you just edited.
-- Run `bunx biome check --write .` to format and lint the whole project.
+- **Formatter: `bun fmt`** (Bun 1.4 native, no dependency). One writer, one
+  source of rules.
+  - The whitespace rules live in `.editorconfig`: tabs, 100-column lines, LF
+    endings, two spaces for Markdown. `.editorconfig` is the source because
+    every editor reads it.
+  - The options that `.editorconfig` cannot express live in the `[fmt]` section
+    of `bunfig.toml`: semicolons, double quotes, no trailing commas, and JSDoc
+    reflow.
+  - `bun run format` formats the whole project.
+  - `bun fmt <files>` formats the files you just edited.
+  - `bun fmt --check` writes nothing and exits with `1` when a file needs
+    formatting. Use it as the CI gate.
+  - The `opencode.jsonc` formatter hook runs `bun fmt $FILE` after every write,
+    edit, or patch. Edited files arrive already formatted.
+- **Linter: Biome** (`biome.jsonc`). Its formatter is disabled on purpose, so
+  `bunx biome check` would only report a formatter disagreement. Run the lint
+  gate as `bunx biome lint .`, or `bun run lint`.
 
-Before you use the `git-commit` skill, reformat the edited sources with Biome. This keeps the commit limited to meaningful changes.
+Before you use the `git-commit` skill, run `bun fmt` on the edited files. The
+commit then holds meaningful changes only.
+
+Never re-enable the Biome formatter. Two writers produce an endless
+reformatting war, and a permanently red gate.
 
 ## Secrets
 

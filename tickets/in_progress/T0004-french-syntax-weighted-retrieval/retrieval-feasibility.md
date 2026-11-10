@@ -47,27 +47,27 @@ The test queries each index three ways and compares the raw scores:
 Exact dense global query:
 
 | Identifier | Score |
-| --- | --- |
-| 1 | 1.0 |
-| 5 | 1.0 |
-| 2 | 0.8 |
-| 6 | 0.6 |
-| 3 | 0.0 |
-| 4 | -1.0 |
+| ---------- | ----- |
+| 1          | 1.0   |
+| 5          | 1.0   |
+| 2          | 0.8   |
+| 6          | 0.6   |
+| 3          | 0.0   |
+| 4          | -1.0  |
 
 Exact dense query on the batch `[1, 2]`: identifier 1 scores `1.0` and
 identifier 2 scores `0.8`. These values equal the global values.
 
 BM25 global query:
 
-| Identifier | Score |
-| --- | --- |
-| 2 | 1.9104025 |
-| 1 | 1.905278 |
-| 5 | 1.905278 |
-| 4 | 0.74570036 |
-| 3 | absent |
-| 6 | absent |
+| Identifier | Score      |
+| ---------- | ---------- |
+| 2          | 1.9104025  |
+| 1          | 1.905278   |
+| 5          | 1.905278   |
+| 4          | 0.74570036 |
+| 3          | absent     |
+| 6          | absent     |
 
 BM25 query on the single identifier 2: score `1.9104025`. This value equals the
 global value. The same holds for every other identifier.
@@ -76,7 +76,7 @@ The findings are:
 
 1. An exact dense query returns the same raw score in the global query and in an
    identifier batch. Negative cosine scores appear in the result. A `params:
-   { exact: true }` request scans all selected vectors and returns a stable
+{ exact: true }` request scans all selected vectors and returns a stable
    order.
 2. A BM25 query returns the same raw score in the global query, in an identifier
    batch, and under a single-identifier filter. The identifier filter is a

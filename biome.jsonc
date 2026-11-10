@@ -16,27 +16,23 @@
 			"!**/local_cache",
 			"!**/node_modules",
 			"!**/.opencode",
-			"!**/.agents"
+			"!**/.agents",
+			"!**/.tmp",
+			"!**/references"
 		],
 		"ignoreUnknown": true
 	},
 	"formatter": {
-		"enabled": true,
-		"indentStyle": "tab",
-		"lineWidth": 100
+		// `bun fmt` is the only writer. Its whitespace rules come from
+		// `.editorconfig` and its remaining options from `bunfig.toml`. Biome
+		// keeps the lint rules only, so the two tools never fight over line
+		// breaking. See AGENTS.md, "Formatting and linting".
+		"enabled": false
 	},
 	"linter": {
 		"enabled": true,
 		"rules": {
 			"preset": "recommended"
-		}
-	},
-	"javascript": {
-		"formatter": {
-			"quoteStyle": "double",
-			"semicolons": "asNeeded",
-			"trailingCommas": "all",
-			"arrowParentheses": "always"
 		}
 	},
 	"json": {

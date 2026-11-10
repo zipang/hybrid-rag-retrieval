@@ -1,9 +1,9 @@
-import type { CSSProperties, FC, FormEventHandler, ReactNode, Ref } from "react"
+import type { CSSProperties, FC, FormEventHandler, ReactNode, Ref } from "react";
 
-import type { GapToken } from "../utils/spacing"
-import type { LayoutTag } from "../utils/tag"
+import type { GapToken } from "../utils/spacing";
+import type { LayoutTag } from "../utils/tag";
 
-import "./VStack.css"
+import "./VStack.css";
 
 /** How children are placed along the column. */
 type VStackAlign = "start" | "center" | "end" | "stretch";
@@ -37,19 +37,20 @@ const ALIGN: Record<VStackAlign, string> = {
 	start: "flex-start",
 	center: "center",
 	end: "flex-end",
-	stretch: "stretch",
-}
+	stretch: "stretch"
+};
 
 /**
  * Vertical flex container: children flow top to bottom.
  *
+ * @example
+ * 	<VStack gap="md" as="section">
+ * 		<Heading level={2}>Titre</Heading>
+ * 		<Text>Corps</Text>
+ * 	</VStack>;
+ *
  * @param props - Gap, cross-axis alignment, padding, and element override.
  * @returns A flex column element.
- * @example
- * <VStack gap="md" as="section">
- *   <Heading level={2}>Titre</Heading>
- *   <Text>Corps</Text>
- * </VStack>
  */
 export const VStack: FC<VStackProps> = ({
 	children,
@@ -61,10 +62,10 @@ export const VStack: FC<VStackProps> = ({
 	id,
 	style,
 	onSubmit,
-	ref,
+	ref
 }) => {
-	const Tag = as
-	const classes = ["v-stack", className].filter(Boolean).join(" ")
+	const Tag = as;
+	const classes = ["v-stack", className].filter(Boolean).join(" ");
 
 	return (
 		<Tag
@@ -75,11 +76,11 @@ export const VStack: FC<VStackProps> = ({
 				gap: `var(--space-${gap})`,
 				alignItems: ALIGN[align],
 				padding: padding === "none" ? undefined : `var(--space-${padding})`,
-				...style,
+				...style
 			}}
 			onSubmit={onSubmit}
 		>
 			{children}
 		</Tag>
-	)
-}
+	);
+};

@@ -1,4 +1,4 @@
-import { ChatPage } from "@components/pages/ChatPage"
+import { ChatPage } from "@components/pages/ChatPage";
 
 /** Root of the application. */
-export const App = () => <ChatPage />
+export const App = () => <ChatPage />;

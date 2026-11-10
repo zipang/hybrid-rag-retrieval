@@ -1,10 +1,10 @@
-import type { FC } from "react"
+import type { FC } from "react";
 
-import { VStack } from "../layout/VStack"
-import { Text } from "../base/Text"
-import type { SloganHit } from "../../lib/slogan-retrieval"
+import { VStack } from "../layout/VStack";
+import { Text } from "../base/Text";
+import type { SloganHit } from "../../lib/slogan-retrieval";
 
-import "./RetrievalHit.css"
+import "./RetrievalHit.css";
 
 /** Props of one retrieved slogan. */
 export interface RetrievalHitProps {
@@ -13,13 +13,14 @@ export interface RetrievalHitProps {
 }
 
 /**
- * One retrieved slogan: its brand and year in muted small type, the slogan
- * itself in the same size as a chat message.
+ * One retrieved slogan: its brand and year in muted small type, the slogan itself in the same size
+ * as a chat message.
+ *
+ * @example
+ * 	<RetrievalHit hit={hit} />;
  *
  * @param props - The ranked slogan.
  * @returns The slogan row.
- * @example
- * <RetrievalHit hit={hit} />
  */
 export const RetrievalHit: FC<RetrievalHitProps> = ({ hit }) => (
 	<VStack gap="xs" id={`retrieval-hit-${String(hit.id)}`} className="retrieval-hit">
@@ -30,4 +31,4 @@ export const RetrievalHit: FC<RetrievalHitProps> = ({ hit }) => (
 			{hit.slogan}
 		</Text>
 	</VStack>
-)
+);

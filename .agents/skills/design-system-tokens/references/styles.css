@@ -57,7 +57,9 @@
 	/* --- Letter spacing --- */
 	--letter-spacing-tight: -0.02em; /* large headings, display text       */
 	--letter-spacing-normal: 0; /* body text, default tracking             */
-	--letter-spacing-wide: var(--letter-spacing-normal); /* optional → var(--letter-spacing-normal) */
+	--letter-spacing-wide: var(
+		--letter-spacing-normal
+	); /* optional → var(--letter-spacing-normal) */
 
 	/* ============================================================================
        2. COLORS — Brand: Red primary, Blue accent, Gray secondary

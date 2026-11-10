@@ -1,14 +1,14 @@
-import { type FC, useState } from "react"
+import { type FC, useState } from "react";
 
-import { Grid } from "../layout/Grid"
-import { VStack } from "../layout/VStack"
-import { HStack } from "../layout/HStack"
-import { Heading } from "../base/Heading"
-import { Text } from "../base/Text"
-import { ChatPanel } from "../app/ChatPanel"
-import { RetrievalPanel } from "../app/RetrievalPanel"
+import { Grid } from "../layout/Grid";
+import { VStack } from "../layout/VStack";
+import { HStack } from "../layout/HStack";
+import { Heading } from "../base/Heading";
+import { Text } from "../base/Text";
+import { ChatPanel } from "../app/ChatPanel";
+import { RetrievalPanel } from "../app/RetrievalPanel";
 
-import "./ChatPage.css"
+import "./ChatPage.css";
 
 /** Props of the chat page. */
 export interface ChatPageProps {
@@ -17,17 +17,18 @@ export interface ChatPageProps {
 }
 
 /**
- * The single screen: a header, the conversation, and the ranked slogans beside
- * it. The page is exactly one viewport tall; the conversation scrolls.
+ * The single screen: a header, the conversation, and the ranked slogans beside it. The page is
+ * exactly one viewport tall; the conversation scrolls.
+ *
+ * @example
+ * 	<ChatPage />;
  *
  * @param props - Optional extra class.
  * @returns The page composition.
- * @example
- * <ChatPage />
  */
 export const ChatPage: FC<ChatPageProps> = ({ className = "" }) => {
-	const [question, setQuestion] = useState("")
-	const [isRetrievalVisible, setIsRetrievalVisible] = useState(true)
+	const [question, setQuestion] = useState("");
+	const [isRetrievalVisible, setIsRetrievalVisible] = useState(true);
 
 	return (
 		<VStack
@@ -63,5 +64,5 @@ export const ChatPage: FC<ChatPageProps> = ({ className = "" }) => {
 				<RetrievalPanel query={question} isVisible={isRetrievalVisible} />
 			</Grid>
 		</VStack>
-	)
-}
+	);
+};

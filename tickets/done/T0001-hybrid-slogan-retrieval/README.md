@@ -107,16 +107,16 @@ Use a model that serves the OpenAI-compatible `/v1/chat/completions` route.
 
 `.env.sample` lists every variable. The important ones are:
 
-| Variable | Meaning |
-|---|---|
-| `QDRANT_URL` | Qdrant HTTP address. |
-| `EMBEDDING_MODEL` | Dense embedding model. |
-| `EMBEDDING_MAX_LENGTH` | Padding width of the dense model. |
-| `BM25_LANGUAGE` | Stemming and stopword language for BM25. |
-| `AI_PROVIDER_URL` | OpenAI-compatible chat endpoint. |
-| `AI_API_KEY` | Chat provider key. |
-| `AI_MODEL` | Chat model name. |
-| `PORT` | Server port. |
+| Variable               | Meaning                                  |
+| ---------------------- | ---------------------------------------- |
+| `QDRANT_URL`           | Qdrant HTTP address.                     |
+| `EMBEDDING_MODEL`      | Dense embedding model.                   |
+| `EMBEDDING_MAX_LENGTH` | Padding width of the dense model.        |
+| `BM25_LANGUAGE`        | Stemming and stopword language for BM25. |
+| `AI_PROVIDER_URL`      | OpenAI-compatible chat endpoint.         |
+| `AI_API_KEY`           | Chat provider key.                       |
+| `AI_MODEL`             | Chat model name.                         |
+| `PORT`                 | Server port.                             |
 
 ## Glossary
 

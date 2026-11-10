@@ -37,9 +37,7 @@ so you can and must explain each section with a `//` comment.
   ],
   "references": {
     "Le petit chat est mort": {
-      "sentences": [
-        [["Le", "le", "DET", 3, "det", "Definite=Def|Gender=Masc|Number=Sing"]]
-      ]
+      "sentences": [[["Le", "le", "DET", 3, "det", "Definite=Def|Gender=Masc|Number=Sing"]]]
     }
   }
 }
@@ -54,14 +52,14 @@ so you can and must explain each section with a `//` comment.
   two sentences holds two lists, in reading order.
 - Each **token** is a list of six values, in this fixed order:
 
-| Position | Field | Meaning |
-| --- | --- | --- |
-| 0 | `FORM` | The word as it appears in the text. |
-| 1 | `LEMMA` | The dictionary form, for example `manger` for `mangé`. |
-| 2 | `UPOS` | The universal word class, for example `NOUN`, `VERB`, `ADJ`. |
-| 3 | `HEAD` | The 1-based index of the governor. `0` marks the root. |
-| 4 | `DEPREL` | The link name, for example `nsubj`, `obj`, `amod`, `det`. |
-| 5 | `FEATS` | The grammar features, joined by `|`. The coarse mode ignores them, but write them for the detailed mode. |
+| Position | Field    | Meaning                                                      |
+| -------- | -------- | ------------------------------------------------------------ |
+| 0        | `FORM`   | The word as it appears in the text.                          |
+| 1        | `LEMMA`  | The dictionary form, for example `manger` for `mangé`.       |
+| 2        | `UPOS`   | The universal word class, for example `NOUN`, `VERB`, `ADJ`. |
+| 3        | `HEAD`   | The 1-based index of the governor. `0` marks the root.       |
+| 4        | `DEPREL` | The link name, for example `nsubj`, `obj`, `amod`, `det`.    |
+| 5        | `FEATS`  | The grammar features, joined by `                            | `. The coarse mode ignores them, but write them for the detailed mode. |
 
 ## Tree rules
 

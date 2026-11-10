@@ -1,6 +1,6 @@
-import type { CSSProperties, FC, ReactNode } from "react"
+import type { CSSProperties, FC, ReactNode } from "react";
 
-import "./Text.css"
+import "./Text.css";
 
 /** Font-size scale tokens from the Design System (`--font-size-*`). */
 export type TextSize = "xs" | "sm" | "md" | "lg" | "xl";
@@ -28,6 +28,7 @@ export interface TextProps {
 	as?: TextTag;
 	/**
 	 * Id of the control this text labels. Only meaningful with `as="label"`.
+	 *
 	 * @defaultValue none (unset)
 	 */
 	htmlFor?: string;
@@ -36,8 +37,9 @@ export interface TextProps {
 	/** Id of the element, for its own scoped rules. @defaultValue none */
 	id?: string;
 	/**
-	 * ARIA role, needed when the text carries live status such as an error
-	 * message read by a screen reader.
+	 * ARIA role, needed when the text carries live status such as an error message read by a screen
+	 * reader.
+	 *
 	 * @defaultValue none (unset)
 	 */
 	role?: "alert" | "status";
@@ -46,16 +48,15 @@ export interface TextProps {
 }
 
 /**
- * Renders text styled exclusively from the Design System typography tokens.
- * Direct usage of `<p>` is forbidden in pages and app components; use this
- * component instead.
+ * Renders text styled exclusively from the Design System typography tokens. Direct usage of `<p>`
+ * is forbidden in pages and app components; use this component instead.
  *
- * @param props - Optional size, tone, weight, and element overrides plus the
- *   text content.
- * @returns The chosen element carrying the `text` class.
  * @example
- * <Text>Body copy.</Text>
- * <Text size="sm" tone="muted">Recherche hybride dense + BM25</Text>
+ * 	<Text>Body copy.</Text>
+ * 	<Text size="sm" tone="muted">Recherche hybride dense + BM25</Text>
+ *
+ * @param props - Optional size, tone, weight, and element overrides plus the text content.
+ * @returns The chosen element carrying the `text` class.
  */
 export const Text: FC<TextProps> = ({
 	size = "md",
@@ -67,13 +68,13 @@ export const Text: FC<TextProps> = ({
 	className = "",
 	id,
 	role,
-	children,
+	children
 }) => {
-	const Tag = as
-	const style: CSSProperties = { textAlign }
+	const Tag = as;
+	const style: CSSProperties = { textAlign };
 	const allClasses = ["text", `text--${size}`, `text--${tone}`, `text--${weight}`, className]
 		.filter(Boolean)
-		.join(" ")
+		.join(" ");
 
 	return (
 		<Tag
@@ -85,5 +86,5 @@ export const Text: FC<TextProps> = ({
 		>
 			{children}
 		</Tag>
-	)
-}
+	);
+};

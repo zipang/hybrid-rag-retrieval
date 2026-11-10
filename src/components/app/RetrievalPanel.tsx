@@ -1,14 +1,14 @@
-import { type FC, useEffect, useState } from "react"
+import { type FC, useEffect, useState } from "react";
 
-import { VStack } from "../layout/VStack"
-import { Heading } from "../base/Heading"
-import { Text } from "../base/Text"
-import { Panel } from "../ui/Panel"
-import type { SloganHit } from "../../lib/slogan-retrieval"
-import { RetrievalHit } from "./RetrievalHit"
+import { VStack } from "../layout/VStack";
+import { Heading } from "../base/Heading";
+import { Text } from "../base/Text";
+import { Panel } from "../ui/Panel";
+import type { SloganHit } from "../../lib/slogan-retrieval";
+import { RetrievalHit } from "./RetrievalHit";
 
 /** How many slogans the panel shows. */
-const TOP_K = 5
+const TOP_K = 5;
 
 /** Props of the retrieval panel. */
 export interface RetrievalPanelProps {
@@ -19,61 +19,64 @@ export interface RetrievalPanelProps {
 }
 
 /**
- * Fetches the slogans ranked for the current question. It owns no conversation
- * state: the query arrives as a prop.
+ * Fetches the slogans ranked for the current question. It owns no conversation state: the query
+ * arrives as a prop.
+ *
+ * @example
+ * 	<RetrievalPanel query={question} />;
  *
  * @param props - The query and the visibility flag.
  * @returns The ranked list, its empty state, or nothing when hidden.
- * @example
- * <RetrievalPanel query={question} />
  */
 export const RetrievalPanel: FC<RetrievalPanelProps> = ({ query, isVisible = true }) => {
-	const [hits, setHits] = useState<SloganHit[]>([])
-	const [error, setError] = useState("")
+	const [hits, setHits] = useState<SloganHit[]>([]);
+	const [error, setError] = useState("");
 
 	useEffect(() => {
 		if (query.trim() === "") {
-			setHits([])
-			setError("")
-			return
+			setHits([]);
+			setError("");
+			return;
 		}
 
 		// A slow response for an old question must not replace a newer one.
-		let isStale = false
+		let isStale = false;
 
 		const load = async () => {
 			try {
 				const response = await fetch(
-					`/api/slogans?q=${encodeURIComponent(query)}&topK=${TOP_K}`,
-				)
+					`/api/slogans?q=${encodeURIComponent(query)}&topK=${TOP_K}`
+				);
 
 				if (!response.ok) {
-					throw new Error(`HTTP ${response.status}`)
+					throw new Error(`HTTP ${response.status}`);
 				}
 
-				const data = (await response.json()) as { results?: SloganHit[] }
+				const data = (await response.json()) as {
+					results?: SloganHit[];
+				};
 
 				if (!isStale) {
-					setHits(data.results ?? [])
-					setError("")
+					setHits(data.results ?? []);
+					setError("");
 				}
 			} catch {
 				if (!isStale) {
-					setHits([])
-					setError("La recherche a échoué.")
+					setHits([]);
+					setError("La recherche a échoué.");
 				}
 			}
-		}
+		};
 
-		void load()
+		void load();
 
 		return () => {
-			isStale = true
-		}
-	}, [query])
+			isStale = true;
+		};
+	}, [query]);
 
 	if (!isVisible) {
-		return null
+		return null;
 	}
 
 	return (
@@ -100,5 +103,5 @@ export const RetrievalPanel: FC<RetrievalPanelProps> = ({ query, isVisible = tru
 				</VStack>
 			)}
 		</Panel>
-	)
-}
+	);
+};

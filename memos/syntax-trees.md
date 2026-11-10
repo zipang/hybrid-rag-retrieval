@@ -28,24 +28,25 @@ must keep the connections between words.
 
 ## 2. Candidate representations
 
-| Representation | Shape | Status |
-| --- | --- | --- |
-| Universal Dependencies (UD) tree, CoNLL-U | Tree over words, typed relations | Selected |
-| Constituency tree | Tree over phrases and words | Rejected |
-| Word-class sequence | Flat list of word classes | Insufficient |
-| Enhanced dependencies | Graph, not a tree | Out of scope |
-| AMR (graph) | Graph of meaning | Out of scope |
-| Source-code AST | Tree for code, not language | Rejected by the spec |
+| Representation                            | Shape                            | Status               |
+| ----------------------------------------- | -------------------------------- | -------------------- |
+| Universal Dependencies (UD) tree, CoNLL-U | Tree over words, typed relations | Selected             |
+| Constituency tree                         | Tree over phrases and words      | Rejected             |
+| Word-class sequence                       | Flat list of word classes        | Insufficient         |
+| Enhanced dependencies                     | Graph, not a tree                | Out of scope         |
+| AMR (graph)                               | Graph of meaning                 | Out of scope         |
+| Source-code AST                           | Tree for code, not language      | Rejected by the spec |
 
 ## 3. The UD representation
 
-The [Universal Dependencies (UD) format](https://universaldependencies.org/format.html) defines the nodes annotation. 
+The [Universal Dependencies (UD) format](https://universaldependencies.org/format.html) defines the nodes annotation.
 The `CoNLL-U` file format carries it.
 In the `CoNLL-U` file format, each word/token is represented with values in 10 fields:
 
 ```
 ID  FORM  LEMMA  UPOS  XPOS  FEATS  HEAD  DEPREL  DEPS  MISC
 ```
+
 1. `ID`: Word index, integer starting at 1 for each new sentence; may be a range for multiword tokens; may be a decimal number for empty nodes (decimal numbers can be lower than 1 but must be greater than 0).
 2. `FORM`: Word form or punctuation symbol.
 3. `LEMMA`: Lemma or stem of word form.
@@ -59,7 +60,7 @@ ID  FORM  LEMMA  UPOS  XPOS  FEATS  HEAD  DEPREL  DEPS  MISC
 
 The `HEAD` field is the identifier of the governor. The `DEPREL` field is the
 label of the relation to that governor. The UD syntax page states the central
-fact: "The *basic* dependency representation forms a tree, where exactly only one
+fact: "The _basic_ dependency representation forms a tree, where exactly only one
 word is the head of the sentence, dependent on a notional ROOT, and all other
 words are dependent on another word"
 ([UD syntax principles](https://universaldependencies.org/u/overview/syntax.html)).
@@ -123,11 +124,11 @@ a unit-cost model. One insertion costs one. One deletion costs one. The nodes
 carry grammatical labels only. Word forms are removed, in line with the syntax
 vector.
 
-| Tree | Sentence 1 nodes | Sentence 2 nodes | Distance |
-| --- | --- | --- | --- |
-| Dependency, labels `UPOS:DEPREL` | 5 | 7 | 2 |
-| Constituency, flat nominal group | 9 | 11 | 2 |
-| Constituency, explicit `ADJP` | 9 | 13 | 4 |
+| Tree                             | Sentence 1 nodes | Sentence 2 nodes | Distance |
+| -------------------------------- | ---------------- | ---------------- | -------- |
+| Dependency, labels `UPOS:DEPREL` | 5                | 7                | 2        |
+| Constituency, flat nominal group | 9                | 11               | 2        |
+| Constituency, explicit `ADJP`    | 9                | 13               | 4        |
 
 The node counts come from the trees in sections 3 to 5. The dependency node
 labels are `DET:det`, `NOUN:nsubj`, `VERB:root`, `DET:det`, and `NOUN:obj` for
@@ -146,15 +147,13 @@ similarity. T.E.D. serves here as a review tool only.
 
 ## 7. Decision
 
-We choose the **Universal Dependencies (UD) trees** syntax in the `CoNLL-U` format. 
+We choose the **Universal Dependencies (UD) trees** syntax in the `CoNLL-U` format.
 The reasons are:
 
-1  Mainly availability and performances: french constituency parsing is not available in the
-   Bun and TypeScript tooling ecosystem.
-2. The UD syntax tree output conforms to the specification needs for "token positions, 
-   dependency heads, dependency labels, word classes, and available grammatical features."
-3. Tree validation is simple. The code checks connectivity, roots, and cycles
-   with the `HEAD` field.
+1 Mainly availability and performances: french constituency parsing is not available in the
+Bun and TypeScript tooling ecosystem. 2. The UD syntax tree output conforms to the specification needs for "token positions,
+dependency heads, dependency labels, word classes, and available grammatical features." 3. Tree validation is simple. The code checks connectivity, roots, and cycles
+with the `HEAD` field.
 
 ## 8. How the encoder will use the tree
 
@@ -184,19 +183,19 @@ the change. Two reviewed texts supply all the pairs, so the set needed no extra
 text: `Quelle belle journée !` supplies the terminal marks and `Voir, c'est
 croire` supplies the internal comma.
 
-| Pair | Marks removed | Marks kept |
-| --- | --- | --- |
-| no mark / `?` | 1.000000 | 0.781454 |
-| no mark / `!` | 1.000000 | 0.781454 |
-| `.` / `?` | 1.000000 | 0.966387 |
-| no mark / `.` | 1.000000 | 0.781454 |
-| comma kept / comma removed | 1.000000 | 0.977424 |
+| Pair                       | Marks removed | Marks kept |
+| -------------------------- | ------------- | ---------- |
+| no mark / `?`              | 1.000000      | 0.781454   |
+| no mark / `!`              | 1.000000      | 0.781454   |
+| `.` / `?`                  | 1.000000      | 0.966387   |
+| no mark / `.`              | 1.000000      | 0.781454   |
+| comma kept / comma removed | 1.000000      | 0.977424   |
 
 Before the change every pair scored one. After the change every pair with a
 different mark scores below one, and two texts with the same mark stay
 identical. The encoder version moved from `coarse-2` to `coarse-3`.
 
-The specification defined two modes : `coarse` and `detailed`. 
+The specification defined two modes : `coarse` and `detailed`.
 The encoder will apply them to the dependency tree:
 
 - `coarse`: keep the edges, the `UPOS` classes, the relative order, the base
@@ -248,9 +247,9 @@ The sum runs over the query rows. The score is therefore a sum, not an average.
 The project measured this on Qdrant `1.19.1` with structural test vectors:
 
 | Query rows | Record 1 row | Record 2 rows (both match) | Record 2 rows (one match) | Record 2 rows (no match) |
-| --- | --- | --- | --- | --- |
-| 1 row | 1.0 | 1.0 | 1.0 | 0.0002 |
-| 2 rows | 2.0 | 2.0 | 2.0 | 0.0004 |
+| ---------- | ------------ | -------------------------- | ------------------------- | ------------------------ |
+| 1 row      | 1.0          | 1.0                        | 1.0                       | 0.0002                   |
+| 2 rows     | 2.0          | 2.0                        | 2.0                       | 0.0004                   |
 
 The measurement shows three facts:
 
@@ -276,13 +275,13 @@ for every query row, so a one-sentence record matched a two-sentence query at
 `2.0 / 2 = 1.0`. That is wrong: a query sentence with no partner must score
 zero. The project measured the corrected rule on the expected trees:
 
-| Case | Reading | Score |
-| --- | --- | --- |
-| One sentence against itself | Exact self-match. | 1.0 |
-| Two sentences against themselves | Exact self-match. | 1.0 |
-| Two sentences against two, both match | Exact match. | 1.0 |
-| Two sentences against one | The second query sentence is unpaired. | 0.5 |
-| One sentence against two | The extra record sentence is unpaired. | 0.5 |
+| Case                                  | Reading                                | Score |
+| ------------------------------------- | -------------------------------------- | ----- |
+| One sentence against itself           | Exact self-match.                      | 1.0   |
+| Two sentences against themselves      | Exact self-match.                      | 1.0   |
+| Two sentences against two, both match | Exact match.                           | 1.0   |
+| Two sentences against one             | The second query sentence is unpaired. | 0.5   |
+| One sentence against two              | The extra record sentence is unpaired. | 0.5   |
 
 The rule is a project decision. The user approved the distinct-pairing rule at
 Checkpoint B.
@@ -309,14 +308,14 @@ The measure compares three weighting schemes:
 
 The scores for three sample queries:
 
-| Pair | Reading | flat | role | nodeboost |
-| --- | --- | --- | --- | --- |
-| "Il n'est jamais trop tard…" / "Il n'est jamais trop tôt…" | same negation and frame | 0.9081 | 0.8784 | 0.9041 |
-| "Il n'est jamais trop tard…" / "Il est toujours trop tard…" | no negation, different complement | 0.8405 | 0.8675 | 0.8967 |
-| "Il n'est jamais trop tard…" / "Toujours plus vite" | shared adverbs only | 0.6498 | 0.6932 | 0.8236 |
-| "Il n'est jamais trop tard…" / "Le garçon regarde le soleil" | unrelated base tree | 0.0552 | 0.0377 | 0.0510 |
-| "La voiture s'arrêta net…" / "Le dernier métro s'arrêta…" | shared frame and particle | 0.8895 | 0.9392 | 0.9221 |
-| "La voiture s'arrêta net…" / "Le garçon regarde le soleil" | unrelated base tree | 0.6699 | 0.7181 | 0.7618 |
+| Pair                                                         | Reading                           | flat   | role   | nodeboost |
+| ------------------------------------------------------------ | --------------------------------- | ------ | ------ | --------- |
+| "Il n'est jamais trop tard…" / "Il n'est jamais trop tôt…"   | same negation and frame           | 0.9081 | 0.8784 | 0.9041    |
+| "Il n'est jamais trop tard…" / "Il est toujours trop tard…"  | no negation, different complement | 0.8405 | 0.8675 | 0.8967    |
+| "Il n'est jamais trop tard…" / "Toujours plus vite"          | shared adverbs only               | 0.6498 | 0.6932 | 0.8236    |
+| "Il n'est jamais trop tard…" / "Le garçon regarde le soleil" | unrelated base tree               | 0.0552 | 0.0377 | 0.0510    |
+| "La voiture s'arrêta net…" / "Le dernier métro s'arrêta…"    | shared frame and particle         | 0.8895 | 0.9392 | 0.9221    |
+| "La voiture s'arrêta net…" / "Le garçon regarde le soleil"   | unrelated base tree               | 0.6699 | 0.7181 | 0.7618    |
 
 The `role` scheme changes the result in the intended direction:
 
@@ -394,11 +393,11 @@ The project measured word-class accuracy (UPOS), governor accuracy (head), and
 relation accuracy (label). The `french-gsd` and native UDPipe rows share one
 model, so their accuracy is the same.
 
-| Candidate | UPOS | Head | Label | Peak memory | Warm time |
-| --- | --- | --- | --- | --- | --- |
-| `udpipe-wasm` 0.1.0, UDPipe 1.3.1 | 95.1% | 81.8% | 80.8% | in-process | 5 to 13 ms |
-| Native UDPipe 1.3.1 | same | same | same | 69 MB | about 3.7 ms |
-| Stanza 1.15.0 | 96.8% | 91.0% | 87.5% | 1237 MB | about 82 ms |
+| Candidate                         | UPOS  | Head  | Label | Peak memory | Warm time    |
+| --------------------------------- | ----- | ----- | ----- | ----------- | ------------ |
+| `udpipe-wasm` 0.1.0, UDPipe 1.3.1 | 95.1% | 81.8% | 80.8% | in-process  | 5 to 13 ms   |
+| Native UDPipe 1.3.1               | same  | same  | same  | 69 MB       | about 3.7 ms |
+| Stanza 1.15.0                     | 96.8% | 91.0% | 87.5% | 1237 MB     | about 82 ms  |
 
 Stanza is more accurate. It needs about 1.2 GB of memory and a Python process.
 The project selected speed and a single Bun runtime, because the T0004 retrieval
@@ -417,12 +416,12 @@ path scores every record.
 
 UDPipe ships four French models. The project compared them:
 
-| Model | Source treebank | Treebank license | UPOS | Head | Head and label |
-| --- | --- | --- | --- | --- | --- |
-| `french-gsd` | UD_French-GSD | CC BY-SA 4.0 | 97.8% | 89.0% | 86.3% |
-| `french-sequoia` | UD_French-Sequoia | LGPL-LR | 97.8% | 86.8% | 84.1% |
-| `french-partut` | UD_French-ParTUT | CC BY-NC-SA 4.0 | 95.6% | 88.0% | 84.3% |
-| `french-spoken` | UD_French-Spoken | (spoken) | 95.5% | 76.1% | 69.9% |
+| Model            | Source treebank   | Treebank license | UPOS  | Head  | Head and label |
+| ---------------- | ----------------- | ---------------- | ----- | ----- | -------------- |
+| `french-gsd`     | UD_French-GSD     | CC BY-SA 4.0     | 97.8% | 89.0% | 86.3%          |
+| `french-sequoia` | UD_French-Sequoia | LGPL-LR          | 97.8% | 86.8% | 84.1%          |
+| `french-partut`  | UD_French-ParTUT  | CC BY-NC-SA 4.0  | 95.6% | 88.0% | 84.3%          |
+| `french-spoken`  | UD_French-Spoken  | (spoken)         | 95.5% | 76.1% | 69.9%          |
 
 The project selected `french-gsd`. It has the best accuracy and a permissive
 license.
@@ -479,14 +478,14 @@ The parser run reports two kinds of number. The token accuracy measures the
 parse against the expected trees. The task accuracy measures the encoder over the
 parser trees.
 
-| Measure | Expected trees | Parser trees |
-| --- | --- | --- |
-| Ranking accuracy | 100.0% | 79.3% |
-| Structural accuracy | 100.0% | 88.2% |
-| Token `UPOS` | — | 95.3% |
-| Token `HEAD` | — | 82.8% |
-| Token `DEPREL` | — | 80.8% |
-| Failures | 0 | 0 |
+| Measure             | Expected trees | Parser trees |
+| ------------------- | -------------- | ------------ |
+| Ranking accuracy    | 100.0%         | 79.3%        |
+| Structural accuracy | 100.0%         | 88.2%        |
+| Token `UPOS`        | —              | 95.3%        |
+| Token `HEAD`        | —              | 82.8%        |
+| Token `DEPREL`      | —              | 80.8%        |
+| Failures            | 0              | 0            |
 
 The run on the expected trees measures the encoder alone. It reaches 100%. The
 parser run measures the whole pipeline. It drops to about 80%. The difference is
@@ -670,7 +669,7 @@ mange (VERB, root)
 ```
 
 The parser is correct, not broken. The UD guidelines require this shape. The
-copula page states: "The copula *be* is not treated as the head of a clause, but
+copula page states: "The copula _be_ is not treated as the head of a clause, but
 rather the nonverbal predicate"
 ([UD `cop`](https://universaldependencies.org/u/dep/cop.html)). In a copular
 clause the predicate nominal is the root, and the copula is a function word
@@ -682,13 +681,13 @@ The two trees agree on the first seven tokens. They disagree on the predicate.
 The disagreement is not only the word class. Four structural facts change at
 once:
 
-| Fact | Copular clause | Transitive clause |
-| --- | --- | --- |
-| Root token | `pomme` (index 10) | `mange` (index 8) |
-| Root class and label | `NOUN` / `root` | `VERB` / `root` |
-| Role of `pomme` | `root` | `obj` |
-| Role of the predicate word | `cop` (`est`) | `root` (`mange`) |
-| Governor of `film` and `Christopher` | index 10 | index 8 |
+| Fact                                 | Copular clause     | Transitive clause |
+| ------------------------------------ | ------------------ | ----------------- |
+| Root token                           | `pomme` (index 10) | `mange` (index 8) |
+| Root class and label                 | `NOUN` / `root`    | `VERB` / `root`   |
+| Role of `pomme`                      | `root`             | `obj`             |
+| Role of the predicate word           | `cop` (`est`)      | `root` (`mange`)  |
+| Governor of `film` and `Christopher` | index 10           | index 8           |
 
 The encoder compares whole-sentence vectors. Every branch index is computed from
 the governor chain. When the root moves, the branch index of almost every node
@@ -751,12 +750,12 @@ trees only gain similarity where their feature strings coincide and hash to the
 same bucket. The copula pair and the transitive pair share almost no feature
 string:
 
-| Feature | Copular tree | Transitive tree |
-| --- | --- | --- |
-| Root node | `root:NOUN:<index>` | `root:VERB:<index>` |
-| Predicate | `role:cop:AUX:d<depth>` | `root:VERB:<index>` |
-| `pomme` | `node:NOUN:root:<index>` | `node:NOUN:obj:<index>` |
-| Rooted path | `path:cop`, `path:root` | `path:root` |
+| Feature     | Copular tree             | Transitive tree         |
+| ----------- | ------------------------ | ----------------------- |
+| Root node   | `root:NOUN:<index>`      | `root:VERB:<index>`     |
+| Predicate   | `role:cop:AUX:d<depth>`  | `root:VERB:<index>`     |
+| `pomme`     | `node:NOUN:root:<index>` | `node:NOUN:obj:<index>` |
+| Rooted path | `path:cop`, `path:root`  | `path:root`             |
 
 Every `node:*:*:<index>` string also differs, because the branch digit changes
 when the root moves. The shared mass is the identical prefix only. A weight
@@ -783,55 +782,55 @@ and the [simple-clause overview](https://universaldependencies.org/u/overview/si
 
 These links attach the arguments that the predicate needs.
 
-| `DEPREL` | Meaning | French example |
-| --- | --- | --- |
-| `nsubj` | Nominal subject. The proto-agent of the clause. | `Christopher` in `Christopher mange`. |
-| `obj` | Object. The proto-patient of a transitive clause. | `pomme` in `mange la pomme`. |
-| `iobj` | Indirect object. A second core argument. | `lui` in `Il lui parle`. |
-| `csubj` | Clausal subject. A clause acts as the subject. | `Partir` in `Partir, c'est mourir`. |
-| `ccomp` | Clausal complement. A finite clause completes the verb. | `qu'il pleut` in `Je pense qu'il pleut`. |
-| `xcomp` | Open clausal complement. A non-finite clause completes the verb. | `partir` in `Il veut partir`. |
+| `DEPREL` | Meaning                                                          | French example                           |
+| -------- | ---------------------------------------------------------------- | ---------------------------------------- |
+| `nsubj`  | Nominal subject. The proto-agent of the clause.                  | `Christopher` in `Christopher mange`.    |
+| `obj`    | Object. The proto-patient of a transitive clause.                | `pomme` in `mange la pomme`.             |
+| `iobj`   | Indirect object. A second core argument.                         | `lui` in `Il lui parle`.                 |
+| `csubj`  | Clausal subject. A clause acts as the subject.                   | `Partir` in `Partir, c'est mourir`.      |
+| `ccomp`  | Clausal complement. A finite clause completes the verb.          | `qu'il pleut` in `Je pense qu'il pleut`. |
+| `xcomp`  | Open clausal complement. A non-finite clause completes the verb. | `partir` in `Il veut partir`.            |
 
 ### Non-core dependents
 
 These links add information that the predicate does not require.
 
-| `DEPREL` | Meaning | French example |
-| --- | --- | --- |
-| `obl` | Oblique nominal. A nominal that is not a core argument. | `Dans son film` in the probe. |
-| `advcl` | Adverbial clause. A clause that modifies the main clause. | `en chantant` in a sentence with a gerund. |
-| `advmod` | Adverbial modifier. An adverb modifies a predicate or another modifier. | `vite` in `Il court vite`. |
-| `expl` | Expletive. A pronoun with no semantic role. | `il` in `Il pleut`. |
-| `vocative` | Vocative. The person addressed. | `Marie` in `Marie, viens`. |
-| `dislocated` | Dislocated element. A fronted or postposed topic. | `la plasticine` in `Il faut pas la manger, la plasticine`. |
+| `DEPREL`     | Meaning                                                                 | French example                                             |
+| ------------ | ----------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `obl`        | Oblique nominal. A nominal that is not a core argument.                 | `Dans son film` in the probe.                              |
+| `advcl`      | Adverbial clause. A clause that modifies the main clause.               | `en chantant` in a sentence with a gerund.                 |
+| `advmod`     | Adverbial modifier. An adverb modifies a predicate or another modifier. | `vite` in `Il court vite`.                                 |
+| `expl`       | Expletive. A pronoun with no semantic role.                             | `il` in `Il pleut`.                                        |
+| `vocative`   | Vocative. The person addressed.                                         | `Marie` in `Marie, viens`.                                 |
+| `dislocated` | Dislocated element. A fronted or postposed topic.                       | `la plasticine` in `Il faut pas la manger, la plasticine`. |
 
 ### Nominal dependents
 
 These links attach words inside a nominal group.
 
-| `DEPREL` | Meaning | French example |
-| --- | --- | --- |
-| `det` | Determiner. | `le` in `le chat`. |
-| `amod` | Adjectival modifier. An adjective modifies a noun. | `rouge` in `une voiture rouge`. |
-| `nmod` | Nominal modifier. A nominal modifies another nominal. | `de la maison` in `la porte de la maison`. |
-| `nummod` | Numeric modifier. | `trois` in `trois enfants`. |
-| `appos` | Apposition. A nominal repeats another nominal. | `mon frère` in `Paul, mon frère`. |
-| `acl` | Adnominal clause. A clause modifies a noun. | `qui dort` in `le chat qui dort`. |
-| `case` | Case marking. A preposition marks the role of a nominal. | `dans` in `dans la forêt`. |
+| `DEPREL` | Meaning                                                  | French example                             |
+| -------- | -------------------------------------------------------- | ------------------------------------------ |
+| `det`    | Determiner.                                              | `le` in `le chat`.                         |
+| `amod`   | Adjectival modifier. An adjective modifies a noun.       | `rouge` in `une voiture rouge`.            |
+| `nmod`   | Nominal modifier. A nominal modifies another nominal.    | `de la maison` in `la porte de la maison`. |
+| `nummod` | Numeric modifier.                                        | `trois` in `trois enfants`.                |
+| `appos`  | Apposition. A nominal repeats another nominal.           | `mon frère` in `Paul, mon frère`.          |
+| `acl`    | Adnominal clause. A clause modifies a noun.              | `qui dort` in `le chat qui dort`.          |
+| `case`   | Case marking. A preposition marks the role of a nominal. | `dans` in `dans la forêt`.                 |
 
 ### Function words and coordination
 
 These links attach grammatical words.
 
-| `DEPREL` | Meaning | French example |
-| --- | --- | --- |
-| `aux` | Auxiliary. A verb carries tense, aspect, mood, or voice for the main verb. | `a` in `il a mangé`. |
-| `cop` | Copula. A function word links a subject to a nonverbal predicate. | `est` in `il est content`. The adjective `content` is the root. |
-| `mark` | Marker. A word marks a subordinate clause. | `que` in `je pense qu'il pleut`. |
-| `cc` | Coordinating conjunction. | `et` in `le pain et le fromage`. |
-| `conj` | Conjunct. A coordinated element. | `fromage` in `le pain et le fromage`. |
-| `punct` | Punctuation. | the comma in the probe. |
-| `root` | The one word with no governor. | `mange` in the probe. |
+| `DEPREL` | Meaning                                                                    | French example                                                  |
+| -------- | -------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| `aux`    | Auxiliary. A verb carries tense, aspect, mood, or voice for the main verb. | `a` in `il a mangé`.                                            |
+| `cop`    | Copula. A function word links a subject to a nonverbal predicate.          | `est` in `il est content`. The adjective `content` is the root. |
+| `mark`   | Marker. A word marks a subordinate clause.                                 | `que` in `je pense qu'il pleut`.                                |
+| `cc`     | Coordinating conjunction.                                                  | `et` in `le pain et le fromage`.                                |
+| `conj`   | Conjunct. A coordinated element.                                           | `fromage` in `le pain et le fromage`.                           |
+| `punct`  | Punctuation.                                                               | the comma in the probe.                                         |
+| `root`   | The one word with no governor.                                             | `mange` in the probe.                                           |
 
 ### Why the roles matter to the encoder
 
@@ -847,10 +846,10 @@ text before the first colon, so `obl:mod` becomes `obl` and `flat:name` becomes
 - [UD CoNLL-U format specification](https://universaldependencies.org/format.html)
 - [UD syntax principles](https://universaldependencies.org/u/overview/syntax.html)
 - Zhang, K., and Shasha, D. (1989). Simple fast algorithms for the editing
-  distance between trees and related problems. *SIAM Journal on Computing*,
+  distance between trees and related problems. _SIAM Journal on Computing_,
   18(6), 1245–1262.
 - Marcus, M., Santorini, B., and Marcinkiewicz, M. (1993). Building a Large
-  Annotated Corpus of English: The Penn Treebank. *Computational Linguistics*,
+  Annotated Corpus of English: The Penn Treebank. _Computational Linguistics_,
   19(2), 313–330.
 - [udpipe-wasm package](https://github.com/exp-ouroborous/udpipe-wasm)
 - [UDPipe project](https://github.com/ufal/udpipe)

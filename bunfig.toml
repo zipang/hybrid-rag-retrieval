@@ -5,3 +5,13 @@
 # links during test discovery, so prune the directory and run only this
 # project's tests.
 pathIgnorePatterns = ["references/**"]
+
+[fmt]
+# Indentation, line length and end of line come from `.editorconfig`, so every
+# editor and `bun fmt` agree. Only the options that `.editorconfig` cannot
+# express stay here. See AGENTS.md, "Formatting and linting".
+semi = true
+singleQuote = false
+trailingComma = "none"
+arrowParens = "always"
+jsdoc = true

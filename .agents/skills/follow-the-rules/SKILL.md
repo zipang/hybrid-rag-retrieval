@@ -22,9 +22,9 @@ A file in a directory with no `AGENTS.md` keeps the parent rules unchanged.
 
 The chain in this repository is:
 
-| File | Scope |
-|---|---|
-| `AGENTS.md` | The whole repository |
+| File                | Scope                                      |
+| ------------------- | ------------------------------------------ |
+| `AGENTS.md`         | The whole repository                       |
 | `scripts/AGENTS.md` | `scripts/` only, and it overrides the root |
 
 If a rule file named by another skill does not exist, say so in the report. Never invent the rule.
@@ -53,11 +53,11 @@ From the root `AGENTS.md`:
 
 Run only what the change can affect:
 
-| Change | Verification |
-|---|---|
+| Change                       | Verification                                                                      |
+| ---------------------------- | --------------------------------------------------------------------------------- |
 | Docs only (`*.md`, comments) | Use the `technical-writing` skill, and check the glossary in the root `README.md` |
-| Tooling or config | Only the tools that config affects |
-| Source code | Full gates: `bun run typecheck`, `bun run lint`, `bun test` |
+| Tooling or config            | Only the tools that config affects                                                |
+| Source code                  | Full gates: `bun run typecheck`, `bun run lint`, `bun test`                       |
 
 Never re-run a command that passed on unchanged files.
 
@@ -79,7 +79,7 @@ Walk the diff once per axis. Cite `file:line` for every finding.
 
 Label each finding so the author knows what is required:
 
-- *(no prefix)* — required fix before the merge
+- _(no prefix)_ — required fix before the merge
 - **Critical:** blocks the merge, such as a broken build, a failed test, or a security hole
 - **Nit:** optional polish
 - **FYI:** context only

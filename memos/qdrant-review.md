@@ -173,17 +173,17 @@ target.
 
 ### Results
 
-| Shape | Throughput |
-|---|---|
-| REST, 1 worker, batch 256 | ~7 000 pts/s |
-| REST, 4 workers, batch 256 | ~11 500 pts/s |
-| gRPC, 1 worker, batch 256 | ~5 900 pts/s |
-| gRPC, 4 workers, batch 256 | ~14 500 pts/s |
-| gRPC, 8 workers, batch 256 | ~19 300 pts/s |
-| REST, 4 workers, 50k points | 7 449 pts/s |
-| gRPC, 4 workers, 50k points | 8 370 pts/s |
-| REST, 4 workers, 100k points | 6 035 pts/s |
-| gRPC, 4 workers, 100k points | 5 551 pts/s |
+| Shape                        | Throughput    |
+| ---------------------------- | ------------- |
+| REST, 1 worker, batch 256    | ~7 000 pts/s  |
+| REST, 4 workers, batch 256   | ~11 500 pts/s |
+| gRPC, 1 worker, batch 256    | ~5 900 pts/s  |
+| gRPC, 4 workers, batch 256   | ~14 500 pts/s |
+| gRPC, 8 workers, batch 256   | ~19 300 pts/s |
+| REST, 4 workers, 50k points  | 7 449 pts/s   |
+| gRPC, 4 workers, 50k points  | 8 370 pts/s   |
+| REST, 4 workers, 100k points | 6 035 pts/s   |
+| gRPC, 4 workers, 100k points | 5 551 pts/s   |
 
 REST column-oriented batch and REST record-oriented list performed the same
 (about 6 900 pts/s at 1 worker).
@@ -270,18 +270,18 @@ time.
 
 ### Baseline results (`maxLength` 512)
 
-| Metric | Value |
-|---|---|
-| Records indexed | 236 |
-| Rejected blocks | 0 |
-| Time to the first log line | 1.6 s |
-| Embedding and upload phase | 256.3 s |
-| Total wall time | 258.8 s (4 min 19 s) |
-| Throughput, total | 0.91 records/s |
-| Throughput, embed phase | 0.92 records/s |
-| Time per record | 1.10 s |
-| Peak resident memory (observed) | about 11 GiB |
-| CPU load (observed) | about 1 400 % (about 14 of 16 threads) |
+| Metric                          | Value                                  |
+| ------------------------------- | -------------------------------------- |
+| Records indexed                 | 236                                    |
+| Rejected blocks                 | 0                                      |
+| Time to the first log line      | 1.6 s                                  |
+| Embedding and upload phase      | 256.3 s                                |
+| Total wall time                 | 258.8 s (4 min 19 s)                   |
+| Throughput, total               | 0.91 records/s                         |
+| Throughput, embed phase         | 0.92 records/s                         |
+| Time per record                 | 1.10 s                                 |
+| Peak resident memory (observed) | about 11 GiB                           |
+| CPU load (observed)             | about 1 400 % (about 14 of 16 threads) |
 
 The importer spends almost all of the time in the dense model. Model session
 creation is fast (1.6 s). The single `fastembed` call pads each text to the
@@ -301,10 +301,10 @@ through the same model with three `maxLength` values. The model session is
 created for each value.
 
 | `maxLength` | Time, 64 records | Time per record | Speedup |
-|---|---|---|---|
-| 512 | 65,868 ms | 1,029 ms | 1.0x |
-| 32 | 3,397 ms | 53 ms | 19.4x |
-| 16 | 1,656 ms | 26 ms | 39.8x |
+| ----------- | ---------------- | --------------- | ------- |
+| 512         | 65,868 ms        | 1,029 ms        | 1.0x    |
+| 32          | 3,397 ms         | 53 ms           | 19.4x   |
+| 16          | 1,656 ms         | 26 ms           | 39.8x   |
 
 The padding to 512 tokens is the main cost. A value of 32 keeps every token of
 this corpus and divides the time by about 19.
@@ -312,19 +312,18 @@ this corpus and divides the time by about 19.
 ### Optimized run (`maxLength` 32)
 
 The local embedder now sets the width from `EMBEDDING_MAX_LENGTH` (default 32).
-The token counts of the 236 records are min 7, p50 13, p90 18, p99 22, and max
-27. A value of 32 keeps every token.
+The token counts of the 236 records are min 7, p50 13, p90 18, p99 22, and max 27. A value of 32 keeps every token.
 
-| Metric | Value |
-|---|---|
-| Records indexed | 236 |
-| Rejected blocks | 0 |
-| Time to the first log line | 1.7 s |
-| Embedding and upload phase | 13.9 s |
-| Total wall time | 15.9 s |
-| Throughput, total | 14.9 records/s |
-| Time per record | 67 ms |
-| Speedup, total | 16.3x |
+| Metric                     | Value          |
+| -------------------------- | -------------- |
+| Records indexed            | 236            |
+| Rejected blocks            | 0              |
+| Time to the first log line | 1.7 s          |
+| Embedding and upload phase | 13.9 s         |
+| Total wall time            | 15.9 s         |
+| Throughput, total          | 14.9 records/s |
+| Time per record            | 67 ms          |
+| Speedup, total             | 16.3x          |
 
 At 14.9 records/s, the full corpus of 265,266 records takes about 5 hours on
 this machine, against about 81 hours at the model default. This is practical

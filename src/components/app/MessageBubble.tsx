@@ -1,9 +1,9 @@
-import type { FC } from "react"
+import type { FC } from "react";
 
-import { VStack } from "../layout/VStack"
-import { Text } from "../base/Text"
+import { VStack } from "../layout/VStack";
+import { Text } from "../base/Text";
 
-import "./MessageBubble.css"
+import "./MessageBubble.css";
 
 /** Author of a chat message. */
 export type MessageRole = "user" | "assistant";
@@ -19,19 +19,16 @@ export interface MessageBubbleProps {
 }
 
 /**
- * One chat message, at the same size as the question field. The two roles are
- * distinguished by surface tone and by which edge the block sits against.
+ * One chat message, at the same size as the question field. The two roles are distinguished by
+ * surface tone and by which edge the block sits against.
+ *
+ * @example
+ * 	<MessageBubble role="user" text="Slogans sur le sucre" />;
  *
  * @param props - Author, body, and the streaming flag.
  * @returns The message block.
- * @example
- * <MessageBubble role="user" text="Slogans sur le sucre" />
  */
-export const MessageBubble: FC<MessageBubbleProps> = ({
-	role,
-	text,
-	isStreaming = false,
-}) => (
+export const MessageBubble: FC<MessageBubbleProps> = ({ role, text, isStreaming = false }) => (
 	<VStack
 		gap="xs"
 		align="start"
@@ -50,4 +47,4 @@ export const MessageBubble: FC<MessageBubbleProps> = ({
 			{text}
 		</Text>
 	</VStack>
-)
+);

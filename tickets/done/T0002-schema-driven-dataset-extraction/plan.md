@@ -158,13 +158,13 @@ T0002 ends after it provides generic extraction and updates T0001's ticket conte
 
 ## Risks and Mitigations
 
-| Risk | Impact | Mitigation |
-|---|---|---|
-| TJS infers a broad type from a widened schema object | High | Keep schema definitions as readonly literals and add type-focused checks before implementing the generic reader. |
-| Corpus files are ignored and absent in a clean checkout | Medium | Keep unit tests independent from local corpus files. Use matching fixtures in tests. |
-| The current project has no declared TypeScript compiler or type-check script | Medium | Use an existing compiler if available. Ask before adding a compiler dependency. |
-| Directory rename changes ignore behavior | Low | Verify the new ignore rules with `git check-ignore` and confirm documentation files remain trackable. |
-| T0001 keeps stale assumptions about the slogan parser | Medium | Update its spec and plan after the generic extraction contract is complete. |
+| Risk                                                                         | Impact | Mitigation                                                                                                       |
+| ---------------------------------------------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------- |
+| TJS infers a broad type from a widened schema object                         | High   | Keep schema definitions as readonly literals and add type-focused checks before implementing the generic reader. |
+| Corpus files are ignored and absent in a clean checkout                      | Medium | Keep unit tests independent from local corpus files. Use matching fixtures in tests.                             |
+| The current project has no declared TypeScript compiler or type-check script | Medium | Use an existing compiler if available. Ask before adding a compiler dependency.                                  |
+| Directory rename changes ignore behavior                                     | Low    | Verify the new ignore rules with `git check-ignore` and confirm documentation files remain trackable.            |
+| T0001 keeps stale assumptions about the slogan parser                        | Medium | Update its spec and plan after the generic extraction contract is complete.                                      |
 
 ## Open Questions
 

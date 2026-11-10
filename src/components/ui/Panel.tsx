@@ -1,10 +1,10 @@
-import type { FC, ReactNode } from "react"
+import type { FC, ReactNode } from "react";
 
-import { VStack } from "../layout/VStack"
-import type { GapToken } from "../utils/spacing"
-import type { LayoutTag } from "../utils/tag"
+import { VStack } from "../layout/VStack";
+import type { GapToken } from "../utils/spacing";
+import type { LayoutTag } from "../utils/tag";
 
-import "./Panel.css"
+import "./Panel.css";
 
 /** Props of the panel. */
 export interface PanelProps {
@@ -23,13 +23,16 @@ export interface PanelProps {
 }
 
 /**
- * A bordered surface that groups one region of the page. Flat and square: a
- * hairline border separates it, never a shadow.
+ * A bordered surface that groups one region of the page. Flat and square: a hairline border
+ * separates it, never a shadow.
+ *
+ * @example
+ * 	<Panel as="aside" id="retrieval-panel" gap="sm">
+ * 		Slogans
+ * 	</Panel>;
  *
  * @param props - Gap, inner space, id, and element override.
  * @returns The panel surface.
- * @example
- * <Panel as="aside" id="retrieval-panel" gap="sm">Slogans</Panel>
  */
 export const Panel: FC<PanelProps> = ({
 	children,
@@ -37,7 +40,7 @@ export const Panel: FC<PanelProps> = ({
 	padding = "lg",
 	as = "section",
 	id,
-	className = "",
+	className = ""
 }) => (
 	<VStack
 		as={as}
@@ -49,4 +52,4 @@ export const Panel: FC<PanelProps> = ({
 	>
 		{children}
 	</VStack>
-)
+);

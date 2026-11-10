@@ -70,8 +70,7 @@ import { schema } from "tjs";
 import type { DescribedRecordSchema } from "./schema";
 
 export const sloganJsonSchema = {
-  description:
-    "A slogan record. Use the slogan as content and metadata fields as filters.",
+  description: "A slogan record. Use the slogan as content and metadata fields as filters.",
   type: "object",
   properties: {
     id: {
@@ -82,8 +81,7 @@ export const sloganJsonSchema = {
     annee: {
       title: "Année",
       type: "integer",
-      description:
-        "Filter field: Use for year filters. Do not index as content."
+      description: "Filter field: Use for year filters. Do not index as content."
     },
     slogan: {
       title: "Slogan",
@@ -102,8 +100,7 @@ export const sloganValidator = schema(sloganJsonSchema, {
 export type Slogan = typeof sloganValidator.type;
 
 /** Validate a value against the slogan JSON Schema. */
-export const validateSlogan = (value: unknown) =>
-  sloganValidator.validate(value);
+export const validateSlogan = (value: unknown) => sloganValidator.validate(value);
 ```
 
 Each model exports its JSON Schema definition, inferred record type, and validator function. Dataset configuration holds corpus paths and selected fields. Schema property keys and titles define text labels. Do not hard-code record fields in the generic reader.

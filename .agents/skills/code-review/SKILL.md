@@ -28,14 +28,14 @@ loads them, points the reviewer at the files, and merges the findings into one r
 
 ## The Axes
 
-| # | Axis | Owning skill | Question it answers |
-|---|---|---|---|
-| 1 | Local rules | `follow-the-rules` | Does the code obey the `AGENTS.md` chain? |
-| 2 | Types | `typescript-best-practices` | Are the types honest, narrow, and free of casts? |
-| 3 | Interfaces | `api-and-interface-design` | Are the contracts stable, validated, and hard to misuse? |
-| 4 | Architecture | `software-architecture-principles` | Do the layers and the dependencies point the right way? |
-| 5 | Simplification | `code-simplification` | Can the same behavior read more clearly? |
-| 6 | Security and performance | Below, in this skill | Is the input hostile, and is the cost bounded? |
+| #   | Axis                     | Owning skill                       | Question it answers                                      |
+| --- | ------------------------ | ---------------------------------- | -------------------------------------------------------- |
+| 1   | Local rules              | `follow-the-rules`                 | Does the code obey the `AGENTS.md` chain?                |
+| 2   | Types                    | `typescript-best-practices`        | Are the types honest, narrow, and free of casts?         |
+| 3   | Interfaces               | `api-and-interface-design`         | Are the contracts stable, validated, and hard to misuse? |
+| 4   | Architecture             | `software-architecture-principles` | Do the layers and the dependencies point the right way?  |
+| 5   | Simplification           | `code-simplification`              | Can the same behavior read more clearly?                 |
+| 6   | Security and performance | Below, in this skill               | Is the input hostile, and is the cost bounded?           |
 
 Load axes 1 to 5 with the skill tool before you start. Run axis 6 from the checklist in this file.
 
@@ -100,12 +100,12 @@ this week. A short list of real problems beats a long list of style notes.
 
 ## Severity
 
-| Level | Meaning | Effect |
-|---|---|---|
-| **Critical** | A security hole, a data-loss bug, a broken build, or a failed test | Blocks the merge |
-| **Major** | A rule break, a wrong layer, a leaky contract, or a clear correctness risk | Fix before the merge |
-| **Minor** | A readability or consistency problem with a known fix | Fix soon |
-| **Nit** | Optional polish | Optional |
+| Level        | Meaning                                                                    | Effect               |
+| ------------ | -------------------------------------------------------------------------- | -------------------- |
+| **Critical** | A security hole, a data-loss bug, a broken build, or a failed test         | Blocks the merge     |
+| **Major**    | A rule break, a wrong layer, a leaky contract, or a clear correctness risk | Fix before the merge |
+| **Minor**    | A readability or consistency problem with a known fix                      | Fix soon             |
+| **Nit**      | Optional polish                                                            | Optional             |
 
 Use no label for a required fix, and use **FYI** for context with no action.
 
@@ -121,16 +121,20 @@ Use no label for a required fix, and use **FYI** for context with no action.
 **Verdict:** <Approve | Approve with nits | Request changes>
 
 ## Blockers
+
 <Critical and Major findings. Empty if none.>
 
 ## Findings
-| # | Location | Axis | Severity | Problem | Fix |
-|---|---|---|---|---|---|
+
+| #   | Location | Axis | Severity | Problem | Fix |
+| --- | -------- | ---- | -------- | ------- | --- |
 
 ## Architecture
+
 <The layer picture and any change that would move code between layers.>
 
 ## Out of scope
+
 <What you did not read, and why.>
 ```
 

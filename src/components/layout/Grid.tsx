@@ -1,17 +1,18 @@
-import type { CSSProperties, FC, ReactNode } from "react"
+import type { CSSProperties, FC, ReactNode } from "react";
 
-import type { GapToken } from "../utils/spacing"
-import type { LayoutTag } from "../utils/tag"
+import type { GapToken } from "../utils/spacing";
+import type { LayoutTag } from "../utils/tag";
 
-import "./Grid.css"
+import "./Grid.css";
 
 /** Props of the grid container. */
 export interface GridProps {
 	/** Content laid out in a grid. */
 	children?: ReactNode;
 	/**
-	 * Named column layout. `"split"` is a wide region beside a narrower one;
-	 * the numeric values are equal columns.
+	 * Named column layout. `"split"` is a wide region beside a narrower one; the numeric values are
+	 * equal columns.
+	 *
 	 * @defaultValue 1
 	 */
 	columns?: 1 | 2 | 3 | "split";
@@ -30,17 +31,18 @@ export interface GridProps {
 }
 
 /**
- * Grid container. Use it for the page's main regions; use the stacks for
- * everything inside a region. The column layout is a class, so a media query
- * in `Grid.css` collapses it on a narrow viewport.
+ * Grid container. Use it for the page's main regions; use the stacks for everything inside a
+ * region. The column layout is a class, so a media query in `Grid.css` collapses it on a narrow
+ * viewport.
+ *
+ * @example
+ * 	<Grid columns="split" gap="lg" as="main">
+ * 		<ChatPanel />
+ * 		<RetrievalPanel />
+ * 	</Grid>;
  *
  * @param props - Column layout, gap, and padding.
  * @returns A grid element.
- * @example
- * <Grid columns="split" gap="lg" as="main">
- *   <ChatPanel />
- *   <RetrievalPanel />
- * </Grid>
  */
 export const Grid: FC<GridProps> = ({
 	children,
@@ -50,11 +52,11 @@ export const Grid: FC<GridProps> = ({
 	as = "div",
 	className = "",
 	id,
-	style,
+	style
 }) => {
-	const Tag = as
-	const layoutClass = typeof columns === "number" ? `grid--cols-${columns}` : `grid--${columns}`
-	const classes = ["grid", layoutClass, className].filter(Boolean).join(" ")
+	const Tag = as;
+	const layoutClass = typeof columns === "number" ? `grid--cols-${columns}` : `grid--${columns}`;
+	const classes = ["grid", layoutClass, className].filter(Boolean).join(" ");
 
 	return (
 		<Tag
@@ -63,10 +65,10 @@ export const Grid: FC<GridProps> = ({
 			style={{
 				gap: `var(--space-${gap})`,
 				padding: padding === "none" ? undefined : `var(--space-${padding})`,
-				...style,
+				...style
 			}}
 		>
 			{children}
 		</Tag>
-	)
-}
+	);
+};

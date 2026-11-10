@@ -1,6 +1,6 @@
-import type { FC, ReactNode } from "react"
+import type { FC, ReactNode } from "react";
 
-import "./Button.css"
+import "./Button.css";
 
 /** Props of the button. */
 export interface ButtonProps {
@@ -17,21 +17,22 @@ export interface ButtonProps {
 }
 
 /**
- * The single action control. Primary is the accent fill; secondary is an
- * outline. No radius, no shadow.
+ * The single action control. Primary is the accent fill; secondary is an outline. No radius, no
+ * shadow.
+ *
+ * @example
+ * 	<Button type="submit">Envoyer</Button>
+ * 	<Button variant="secondary">Effacer</Button>
  *
  * @param props - Label, variant, type, and state.
  * @returns A button element.
- * @example
- * <Button type="submit">Envoyer</Button>
- * <Button variant="secondary">Effacer</Button>
  */
 export const Button: FC<ButtonProps> = ({
 	children,
 	variant = "primary",
 	type = "button",
 	disabled = false,
-	onClick,
+	onClick
 }) => (
 	<button
 		type={type}
@@ -41,4 +42,4 @@ export const Button: FC<ButtonProps> = ({
 	>
 		{children}
 	</button>
-)
+);

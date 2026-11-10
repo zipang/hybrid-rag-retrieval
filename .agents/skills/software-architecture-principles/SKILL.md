@@ -29,12 +29,12 @@ from a layer above it.
 
 For this project the layers are:
 
-| Layer | Location | Role | May import |
-|---|---|---|---|
-| Adapters | `src/cli.ts`, `src/commands/`, `src/server/`, `src/render/` | Parse input, call services, format output | `src/translate/`, `src/extract/`, `src/model/`, `src/shared/` |
-| Services | `src/extract/`, `src/translate/`, and the new `src/services/` | Business logic, orchestration, validation | `src/model/`, `src/shared/` |
-| Domain | `src/model/` | Data shapes, invariants, pure functions | `src/shared/` only |
-| Shared | `src/shared/` | Errors, paths, sanitizing, reporting | nothing internal |
+| Layer    | Location                                                      | Role                                      | May import                                                    |
+| -------- | ------------------------------------------------------------- | ----------------------------------------- | ------------------------------------------------------------- |
+| Adapters | `src/cli.ts`, `src/commands/`, `src/server/`, `src/render/`   | Parse input, call services, format output | `src/translate/`, `src/extract/`, `src/model/`, `src/shared/` |
+| Services | `src/extract/`, `src/translate/`, and the new `src/services/` | Business logic, orchestration, validation | `src/model/`, `src/shared/`                                   |
+| Domain   | `src/model/`                                                  | Data shapes, invariants, pure functions   | `src/shared/` only                                            |
+| Shared   | `src/shared/`                                                 | Errors, paths, sanitizing, reporting      | nothing internal                                              |
 
 A rule the arrow encodes: a service never imports a file from `src/server/`, `src/render/`, or
 `src/commands/`. An adapter may import a service.
@@ -54,7 +54,9 @@ object. It never reads the clock, the network, the terminal, or the current dire
 
 ```ts
 // Good: the caller supplies the root, and the result is data.
-export const buildDocument = async (options: BuildDocumentOptions): Promise<BuildDocumentResult> => { /* ... */ };
+export const buildDocument = async (options: BuildDocumentOptions): Promise<BuildDocumentResult> => {
+  /* ... */
+};
 ```
 
 Every value the function needs must appear in its signature. A function that needs an implicit input
@@ -74,7 +76,9 @@ export const runServe = async (options: ServeOptions): Promise<void> => {
 };
 
 // Right: the service returns data, and the adapter prints it.
-export const startDocumentServer = async (options: StartDocumentServerOptions): Promise<DocumentServer> => { /* ... */ };
+export const startDocumentServer = async (options: StartDocumentServerOptions): Promise<DocumentServer> => {
+  /* ... */
+};
 ```
 
 ### 3. One Service, Many Adapters
@@ -85,12 +89,12 @@ own output formatting, then calls the same service functions the CLI calls.
 Test for this rule: write the new adapter, and change no file under `src/model/`, `src/shared/`, or
 any service module. If a change is required, a service leaked adapter concerns.
 
-| Concern | Owner |
-|---|---|
-| Flag names, argument coercion, exit code | `src/cli.ts` |
-| URL pattern, status code, header, HTML page | `src/server/` |
-| Route, component, fetch call, JSON payload | the future Web UI |
-| Validation of a document, a manifest, a unit list | the service |
+| Concern                                           | Owner             |
+| ------------------------------------------------- | ----------------- |
+| Flag names, argument coercion, exit code          | `src/cli.ts`      |
+| URL pattern, status code, header, HTML page       | `src/server/`     |
+| Route, component, fetch call, JSON payload        | the future Web UI |
+| Validation of a document, a manifest, a unit list | the service       |
 
 ### 4. Adapters Stay Thin
 
@@ -120,7 +124,9 @@ parameter. Apply that pattern to every external boundary.
 
 ```ts
 // Good: the boundary is a parameter, so a test injects a fake.
-export type DocumentReader = { readUnitMarkdown: (unitPath: string) => Promise<string> };
+export type DocumentReader = {
+  readUnitMarkdown: (unitPath: string) => Promise<string>;
+};
 ```
 
 ### 7. One Module, One Responsibility
@@ -162,16 +168,16 @@ function, and put it in the lowest layer that both callers may import.
 
 ## Common Rationalizations
 
-| Rationalization | Reality |
-|---|---|
-| "It is easier to call `loadDocumentContext` from the server module." | A shared service owns the load. Both callers import the service. The direction of the arrow is the design. |
-| "The default `repositoryRoot = process.cwd()` saves every caller an argument." | It hides the one value a Web UI and a test must control. Make it required. |
-| "The service can log, since the user wants to see the progress." | A service returns progress data. The adapter decides what to show. |
-| "This helper is only three lines, so inline it twice." | Two copies drift. Put it in `src/shared/`. Length is not the test. |
-| "The domain model needs the file name to build a path." | Return the parts. Let the caller join the path. |
-| "A Web UI can import the CLI module, because it already reads the files." | A CLI module holds argument parsing and printing. The Web UI needs neither. |
-| "I will move it later, once the second front end exists." | Move it now. The second front end is the reason to move it, and the cost doubles each time you wait. |
-| "The cache saves a file read on every request." | Measure first. Pass the cache in from the caller, so the lifetime is visible. |
+| Rationalization                                                                | Reality                                                                                                    |
+| ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| "It is easier to call `loadDocumentContext` from the server module."           | A shared service owns the load. Both callers import the service. The direction of the arrow is the design. |
+| "The default `repositoryRoot = process.cwd()` saves every caller an argument." | It hides the one value a Web UI and a test must control. Make it required.                                 |
+| "The service can log, since the user wants to see the progress."               | A service returns progress data. The adapter decides what to show.                                         |
+| "This helper is only three lines, so inline it twice."                         | Two copies drift. Put it in `src/shared/`. Length is not the test.                                         |
+| "The domain model needs the file name to build a path."                        | Return the parts. Let the caller join the path.                                                            |
+| "A Web UI can import the CLI module, because it already reads the files."      | A CLI module holds argument parsing and printing. The Web UI needs neither.                                |
+| "I will move it later, once the second front end exists."                      | Move it now. The second front end is the reason to move it, and the cost doubles each time you wait.       |
+| "The cache saves a file read on every request."                                | Measure first. Pass the cache in from the caller, so the lifetime is visible.                              |
 
 ## Red Flags
 

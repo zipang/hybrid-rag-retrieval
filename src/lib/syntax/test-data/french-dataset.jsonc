@@ -32,7 +32,14 @@
 					["Le", "le", "DET", 3, "det", "Definite=Def|Gender=Masc|Number=Sing"],
 					["petit", "petit", "ADJ", 3, "amod", "Gender=Masc|Number=Sing"],
 					["chat", "chat", "NOUN", 5, "nsubj", "Gender=Masc|Number=Sing"],
-					["est", "être", "AUX", 5, "cop", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"],
+					[
+						"est",
+						"être",
+						"AUX",
+						5,
+						"cop",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
+					],
 					["mort", "mort", "ADJ", 0, "root", "Gender=Masc|Number=Sing"]
 				]
 			]
@@ -43,7 +50,14 @@
 					["La", "le", "DET", 3, "det", "Definite=Def|Gender=Fem|Number=Sing"],
 					["petite", "petit", "ADJ", 3, "amod", "Gender=Fem|Number=Sing"],
 					["souris", "souris", "NOUN", 5, "nsubj", "Gender=Fem|Number=Sing"],
-					["est", "être", "AUX", 5, "cop", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"],
+					[
+						"est",
+						"être",
+						"AUX",
+						5,
+						"cop",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
+					],
 					["vivante", "vivant", "ADJ", 0, "root", "Gender=Fem|Number=Sing"]
 				]
 			]
@@ -54,7 +68,14 @@
 					["Le", "le", "DET", 3, "det", "Definite=Def|Gender=Masc|Number=Sing"],
 					["vilain", "vilain", "ADJ", 3, "amod", "Gender=Masc|Number=Sing"],
 					["garçon", "garçon", "NOUN", 5, "nsubj", "Gender=Masc|Number=Sing"],
-					["est", "être", "AUX", 5, "cop", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"],
+					[
+						"est",
+						"être",
+						"AUX",
+						5,
+						"cop",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
+					],
 					["content", "content", "ADJ", 0, "root", "Gender=Masc|Number=Sing"]
 				]
 			]
@@ -109,7 +130,14 @@
 						"aux:tense",
 						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
 					],
-					["tu", "taire", "VERB", 0, "root", "Gender=Masc|Number=Sing|Tense=Past|VerbForm=Part"]
+					[
+						"tu",
+						"taire",
+						"VERB",
+						0,
+						"root",
+						"Gender=Masc|Number=Sing|Tense=Past|VerbForm=Part"
+					]
 				]
 			]
 		},
@@ -127,7 +155,14 @@
 						"aux:tense",
 						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
 					],
-					["mangé", "manger", "VERB", 0, "root", "Gender=Masc|Number=Sing|Tense=Past|VerbForm=Part"]
+					[
+						"mangé",
+						"manger",
+						"VERB",
+						0,
+						"root",
+						"Gender=Masc|Number=Sing|Tense=Past|VerbForm=Part"
+					]
 				]
 			]
 		}

@@ -1,6 +1,6 @@
-import { describe, expect, test } from "bun:test"
-import { citationJsonSchema, validateCitation } from "./citation"
-import { sloganJsonSchema, validateSlogan } from "./slogan"
+import { describe, expect, test } from "bun:test";
+import { citationJsonSchema, validateCitation } from "./citation";
+import { sloganJsonSchema, validateSlogan } from "./slogan";
 
 describe("record models", () => {
 	test("coerces slogan years and accepts a missing optional campaign", () => {
@@ -8,28 +8,28 @@ describe("record models", () => {
 			id: "1",
 			annee: "2004",
 			marque: "Danone",
-			slogan: "Un peu de sucre, beaucoup d'idées",
-		})
+			slogan: "Un peu de sucre, beaucoup d'idées"
+		});
 
-		expect(result.error).toBeUndefined()
+		expect(result.error).toBeUndefined();
 		expect(result.value).toEqual({
 			id: 1,
 			annee: 2004,
 			marque: "Danone",
-			slogan: "Un peu de sucre, beaucoup d'idées",
-		})
-	})
+			slogan: "Un peu de sucre, beaucoup d'idées"
+		});
+	});
 
 	test("rejects a slogan with an empty required field", () => {
 		const result = validateSlogan({
 			id: "1",
 			annee: "2004",
 			marque: "Danone",
-			slogan: "",
-		})
+			slogan: ""
+		});
 
-		expect(result.error).toBeDefined()
-	})
+		expect(result.error).toBeDefined();
+	});
 
 	test("coerces citation years and accepts a blank translation", () => {
 		const result = validateCitation({
@@ -39,10 +39,10 @@ describe("record models", () => {
 			year: "1603",
 			lang: "fr",
 			trad: "",
-			quote: "Quelque chose est pourri dans l'État de Danemark",
-		})
+			quote: "Quelque chose est pourri dans l'État de Danemark"
+		});
 
-		expect(result.error).toBeUndefined()
+		expect(result.error).toBeUndefined();
 		expect(result.value).toEqual({
 			id: 3,
 			author: "William Shakespeare",
@@ -50,9 +50,9 @@ describe("record models", () => {
 			year: 1603,
 			lang: "fr",
 			trad: "",
-			quote: "Quelque chose est pourri dans l'État de Danemark",
-		})
-	})
+			quote: "Quelque chose est pourri dans l'État de Danemark"
+		});
+	});
 
 	test("accepts a citation with an unknown year and an anonymous author", () => {
 		const result = validateCitation({
@@ -61,19 +61,19 @@ describe("record models", () => {
 			work: "Proverbes",
 			lang: "fr",
 			trad: "",
-			quote: "Un proverbe sans date.",
-		})
+			quote: "Un proverbe sans date."
+		});
 
-		expect(result.error).toBeUndefined()
+		expect(result.error).toBeUndefined();
 		expect(result.value).toEqual({
 			id: 7,
 			author: "Anonymous",
 			work: "Proverbes",
 			lang: "fr",
 			trad: "",
-			quote: "Un proverbe sans date.",
-		})
-	})
+			quote: "Un proverbe sans date."
+		});
+	});
 
 	test("rejects a citation with a non-numeric year", () => {
 		const result = validateCitation({
@@ -83,39 +83,31 @@ describe("record models", () => {
 			year: "unknown",
 			lang: "fr",
 			trad: "",
-			quote: "Une citation",
-		})
+			quote: "Une citation"
+		});
 
-		expect(result.error).toBeDefined()
-	})
+		expect(result.error).toBeDefined();
+	});
 
 	test("requires schema and field descriptions with an explicit usage role", () => {
 		for (const recordSchema of [sloganJsonSchema, citationJsonSchema]) {
-			expect(recordSchema.description?.trim()).toBeTruthy()
+			expect(recordSchema.description?.trim()).toBeTruthy();
 
 			for (const property of Object.values(recordSchema.properties)) {
-				expect(property.description?.trim()).toBeTruthy()
-				expect(property.description).toMatch(/^(Content field|Filter field|Record identifier):/)
+				expect(property.description?.trim()).toBeTruthy();
+				expect(property.description).toMatch(
+					/^(Content field|Filter field|Record identifier):/
+				);
 			}
 		}
-	})
+	});
 
 	test("declares source field labels in corpus order", () => {
-		expect(Object.values(sloganJsonSchema.properties).map((property) => property.title)).toEqual([
-			"Id",
-			"Année",
-			"Marque",
-			"Campagne",
-			"Slogan",
-		])
-		expect(Object.values(citationJsonSchema.properties).map((property) => property.title)).toEqual([
-			"id",
-			"author",
-			"work",
-			"year",
-			"lang",
-			"trad",
-			"quote",
-		])
-	})
-})
+		expect(
+			Object.values(sloganJsonSchema.properties).map((property) => property.title)
+		).toEqual(["Id", "Année", "Marque", "Campagne", "Slogan"]);
+		expect(
+			Object.values(citationJsonSchema.properties).map((property) => property.title)
+		).toEqual(["id", "author", "work", "year", "lang", "trad", "quote"]);
+	});
+});

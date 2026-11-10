@@ -41,11 +41,11 @@ Python process.
 Measured on the reviewed test data set. The `french-gsd` row and the native
 UDPipe row share one model, so their accuracy is the same.
 
-| Candidate | UPOS | Head | Label | Peak memory | Warm time |
-| --- | --- | --- | --- | --- | --- |
-| `udpipe-wasm` 0.1.0, UDPipe 1.3.1 | 95.1% | 81.8% | 80.8% | in-process | 5 to 13 ms |
-| Native UDPipe 1.3.1 | same | same | same | 69 MB | about 3.7 ms |
-| Stanza 1.15.0 | 96.8% | 91.0% | 87.5% | 1237 MB | about 82 ms |
+| Candidate                         | UPOS  | Head  | Label | Peak memory | Warm time    |
+| --------------------------------- | ----- | ----- | ----- | ----------- | ------------ |
+| `udpipe-wasm` 0.1.0, UDPipe 1.3.1 | 95.1% | 81.8% | 80.8% | in-process  | 5 to 13 ms   |
+| Native UDPipe 1.3.1               | same  | same  | same  | 69 MB       | about 3.7 ms |
+| Stanza 1.15.0                     | 96.8% | 91.0% | 87.5% | 1237 MB     | about 82 ms  |
 
 Stanza is more accurate. It needs about 1.2 GB of memory and a Python process.
 The project rejected it on speed, memory, and runtime simplicity.
@@ -67,12 +67,12 @@ and resets the token id to 1 for each sentence.
 
 The project compared the four French models that UDPipe ships:
 
-| Model | Source treebank | Treebank license | UPOS | Head | Head and label |
-| --- | --- | --- | --- | --- | --- |
-| `french-gsd` | UD_French-GSD | CC BY-SA 4.0 | 97.8% | 89.0% | 86.3% |
-| `french-sequoia` | UD_French-Sequoia | LGPL-LR | 97.8% | 86.8% | 84.1% |
-| `french-partut` | UD_French-ParTUT | CC BY-NC-SA 4.0 | 95.6% | 88.0% | 84.3% |
-| `french-spoken` | UD_French-Spoken | (spoken) | 95.5% | 76.1% | 69.9% |
+| Model            | Source treebank   | Treebank license | UPOS  | Head  | Head and label |
+| ---------------- | ----------------- | ---------------- | ----- | ----- | -------------- |
+| `french-gsd`     | UD_French-GSD     | CC BY-SA 4.0     | 97.8% | 89.0% | 86.3%          |
+| `french-sequoia` | UD_French-Sequoia | LGPL-LR          | 97.8% | 86.8% | 84.1%          |
+| `french-partut`  | UD_French-ParTUT  | CC BY-NC-SA 4.0  | 95.6% | 88.0% | 84.3%          |
+| `french-spoken`  | UD_French-Spoken  | (spoken)         | 95.5% | 76.1% | 69.9%          |
 
 The project selected `french-gsd`. It has the best accuracy and a permissive
 license.

@@ -1,13 +1,18 @@
 /* ChatPage: the single screen. Exactly one viewport tall, so the page itself
    never scrolls; only the conversation list does. */
-/* Exactly one viewport tall. `100dvh` follows the mobile browser chrome;
-   the `100vh` line is the fallback for browsers that lack it. */
 #page {
 	height: 100vh;
-	height: 100dvh;
 	max-width: 80rem;
 	margin-inline: auto;
 	overflow: hidden;
+}
+
+/* Exactly one viewport tall. `100dvh` follows the mobile browser chrome.
+   Browsers that lack it keep the `100vh` value from the rule above. */
+@supports (height: 100dvh) {
+	#page {
+		height: 100dvh;
+	}
 }
 
 #page-header {

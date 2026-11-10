@@ -443,19 +443,19 @@ Plan approval is required before application implementation. A commit requires a
 
 ## Risks and Mitigations
 
-| Risk | Impact | Mitigation |
-| --- | --- | --- |
-| JavaScript parser lacks morphology or Bun compatibility | High | Test the WASM lead early. Use an approved local fallback with complete annotations. |
-| Batch filtering changes keyword score statistics | High | Prove score equivalence in Task 2 before implementing weighted scoring. |
-| Exhaustive scoring costs grow with corpus size | High | Measure early. Use bounded transport and explicit capacity errors. Preserve completeness. |
-| Query snapshots exceed memory | High | Bound lifetime and storage. Evaluate disk storage before release when needed. Never truncate matches. |
-| Rebuild races mix index generations | High | Coordinate all project write paths and reject changed-generation queries and cursors. |
-| Hash collisions erase tree differences | Medium | Evaluate connected features and dimensions against the reviewed connection-change cases. |
-| Parser mistakes alter expected trees | Medium | Separate manual-tree encoder tests from actual parser evaluations. |
-| Punctuation removal erases sentence type | Medium | Task 11a measures the loss on the test data set. Task 11b keeps the punctuation nodes in position and weights the mark. |
-| BM25 transformation gives misleading thresholds | Medium | Tune on the development items and validate held-out threshold behavior. Publish score semantics. |
-| API migration breaks chat or retrieval panel | High | Migrate each known caller before removing the legacy internal path. |
-| Hard-coded dataset fields block other collections | High | Track A removes the slogan collection name and field names from the transport. Prove with a second collection. |
+| Risk                                                    | Impact | Mitigation                                                                                                              |
+| ------------------------------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------- |
+| JavaScript parser lacks morphology or Bun compatibility | High   | Test the WASM lead early. Use an approved local fallback with complete annotations.                                     |
+| Batch filtering changes keyword score statistics        | High   | Prove score equivalence in Task 2 before implementing weighted scoring.                                                 |
+| Exhaustive scoring costs grow with corpus size          | High   | Measure early. Use bounded transport and explicit capacity errors. Preserve completeness.                               |
+| Query snapshots exceed memory                           | High   | Bound lifetime and storage. Evaluate disk storage before release when needed. Never truncate matches.                   |
+| Rebuild races mix index generations                     | High   | Coordinate all project write paths and reject changed-generation queries and cursors.                                   |
+| Hash collisions erase tree differences                  | Medium | Evaluate connected features and dimensions against the reviewed connection-change cases.                                |
+| Parser mistakes alter expected trees                    | Medium | Separate manual-tree encoder tests from actual parser evaluations.                                                      |
+| Punctuation removal erases sentence type                | Medium | Task 11a measures the loss on the test data set. Task 11b keeps the punctuation nodes in position and weights the mark. |
+| BM25 transformation gives misleading thresholds         | Medium | Tune on the development items and validate held-out threshold behavior. Publish score semantics.                        |
+| API migration breaks chat or retrieval panel            | High   | Migrate each known caller before removing the legacy internal path.                                                     |
+| Hard-coded dataset fields block other collections       | High   | Track A removes the slogan collection name and field names from the transport. Prove with a second collection.          |
 
 ## Scheduling and Parallel Work
 
@@ -487,6 +487,7 @@ mode adds the grammatical features to the syntax vector.
 - The specification records the full mode table in `spec.md`, section 1.
 
 The future ticket must:
+
 - implement the `detailed` branch in `abstraction.ts`.
 - add the detailed feature weights and dimensions.
 - evaluate the detailed mode on the reviewed test data set.

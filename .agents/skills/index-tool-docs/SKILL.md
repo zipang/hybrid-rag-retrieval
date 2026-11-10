@@ -89,6 +89,7 @@ Create the `index.md` entry point.
 
 ```markdown
 ---
+
 This local documentation for **<tool> - <version>** has been locally
 extracted by `The Librarian`, using this remote reference as the source of
 truth: <url of the remote entry point>

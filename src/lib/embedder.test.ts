@@ -1,76 +1,79 @@
-import { describe, expect, test } from "bun:test"
-import { buildEmbedder, createEmbedder, type DenseModel, resolveMaxLength } from "./embedder"
+import { describe, expect, test } from "bun:test";
+import { buildEmbedder, createEmbedder, type DenseModel, resolveMaxLength } from "./embedder";
 
 describe("buildEmbedder", () => {
 	const dense: DenseModel = {
 		passageEmbed: async function* (texts) {
-			yield texts.map((text) => [text.length, 0])
+			yield texts.map((text) => [text.length, 0]);
 		},
-		queryEmbed: async (query) => [query.length, 0],
-	}
+		queryEmbed: async (query) => [query.length, 0]
+	};
 
 	test("delegates documents and queries to the dense model", async () => {
-		const embedder = buildEmbedder(dense, 2)
+		const embedder = buildEmbedder(dense, 2);
 
-		expect(embedder.dims).toBe(2)
+		expect(embedder.dims).toBe(2);
 		expect(await embedder.embedDenseDocuments(["ab", "cde"])).toEqual([
 			[2, 0],
-			[3, 0],
-		])
-		expect(await embedder.embedDenseQuery("abcd")).toEqual([4, 0])
-	})
+			[3, 0]
+		]);
+		expect(await embedder.embedDenseQuery("abcd")).toEqual([4, 0]);
+	});
 
 	test("flattens batches into a single document list", async () => {
 		const batched: DenseModel = {
 			passageEmbed: async function* (texts) {
 				for (const text of texts) {
-					yield [[text.length]]
+					yield [[text.length]];
 				}
 			},
-			queryEmbed: async (query) => [query.length],
-		}
+			queryEmbed: async (query) => [query.length]
+		};
 
-		const embedder = buildEmbedder(batched, 1)
+		const embedder = buildEmbedder(batched, 1);
 
-		expect(await embedder.embedDenseDocuments(["a", "bb", "ccc"])).toEqual([[1], [2], [3]])
-	})
-})
+		expect(await embedder.embedDenseDocuments(["a", "bb", "ccc"])).toEqual([[1], [2], [3]]);
+	});
+});
 
 describe("createEmbedder", () => {
 	test("rejects an unknown provider", async () => {
 		await expect(createEmbedder({ EMBEDDING_PROVIDER: "does-not-exist" })).rejects.toThrow(
-			/Unknown embedding provider/,
-		)
-	})
+			/Unknown embedding provider/
+		);
+	});
 
 	test("asks for the API key of a cloud provider", async () => {
 		await expect(createEmbedder({ EMBEDDING_PROVIDER: "openai" })).rejects.toThrow(
-			/requires EMBEDDING_API_KEY/,
-		)
-	})
+			/requires EMBEDDING_API_KEY/
+		);
+	});
 
 	test("reports the missing cloud adapter when a key is present", async () => {
 		await expect(
-			createEmbedder({ EMBEDDING_PROVIDER: "voyage", EMBEDDING_API_KEY: "secret" }),
-		).rejects.toThrow(/no adapter/)
-	})
-})
+			createEmbedder({
+				EMBEDDING_PROVIDER: "voyage",
+				EMBEDDING_API_KEY: "secret"
+			})
+		).rejects.toThrow(/no adapter/);
+	});
+});
 
 describe("resolveMaxLength", () => {
 	test("defaults to the corpus-sized 32 tokens", () => {
-		expect(resolveMaxLength({})).toBe(32)
-	})
+		expect(resolveMaxLength({})).toBe(32);
+	});
 
 	test("reads a positive integer from the environment", () => {
-		expect(resolveMaxLength({ EMBEDDING_MAX_LENGTH: "16" })).toBe(16)
-	})
+		expect(resolveMaxLength({ EMBEDDING_MAX_LENGTH: "16" })).toBe(16);
+	});
 
 	test("rejects a non-positive or non-numeric value", () => {
 		expect(() => resolveMaxLength({ EMBEDDING_MAX_LENGTH: "0" })).toThrow(
-			/Invalid EMBEDDING_MAX_LENGTH/,
-		)
+			/Invalid EMBEDDING_MAX_LENGTH/
+		);
 		expect(() => resolveMaxLength({ EMBEDDING_MAX_LENGTH: "many" })).toThrow(
-			/Invalid EMBEDDING_MAX_LENGTH/,
-		)
-	})
-})
+			/Invalid EMBEDDING_MAX_LENGTH/
+		);
+	});
+});

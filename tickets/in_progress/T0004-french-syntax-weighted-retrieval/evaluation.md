@@ -43,16 +43,16 @@ member.
 The test data set file is `src/lib/syntax/test-data/french.json`. It has these
 keys:
 
-| Key | Content |
-| --- | --- |
-| `version` | The test data set format version. |
-| `language` | The language code, `fr`. |
-| `tokenFields` | The token field order. |
-| `modeFeatures` | The morphological allowlist for the detailed mode. |
-| `texts` | The annotated texts. |
-| `rankingCases` | The ranking cases. |
-| `structuralPairs` | The controlled structural comparisons. |
-| `split` | The development and the held-out identifier lists. |
+| Key               | Content                                            |
+| ----------------- | -------------------------------------------------- |
+| `version`         | The test data set format version.                  |
+| `language`        | The language code, `fr`.                           |
+| `tokenFields`     | The token field order.                             |
+| `modeFeatures`    | The morphological allowlist for the detailed mode. |
+| `texts`           | The annotated texts.                               |
+| `rankingCases`    | The ranking cases.                                 |
+| `structuralPairs` | The controlled structural comparisons.             |
+| `split`           | The development and the held-out identifier lists. |
 
 ### Tokens
 
@@ -119,63 +119,63 @@ The test data set covers these structural families. Each family has two
 hand-written texts, so a ranking case can pair them. The table names each text
 by its own sentence.
 
-| Category | Text | Grammatical feature under test |
-| --- | --- | --- |
-| vocabulary | Le garçon regarde le soleil | Same tree, different words |
-| vocabulary | Un chat mange une souris | Same tree, different words |
-| vocabulary | La fille admire la lune | Same tree, different words |
-| connection change | Le soleil regarde le garçon | Same tree as the vocabulary texts |
-| relative clause | C'est le gentil garçon qui regardait la lune en souriant | Cleft, relative clause, gerund |
-| relative clause | C'est la petite fille qui admirait la lune en chantant | Cleft, relative clause, gerund |
-| passé simple | La petite fille posa sa main sur le chat | Past tense, possessive, preposition |
-| passé simple | La jeune femme posa son sac sur la table | Past tense, possessive, preposition |
-| oblique | Le train arrive en gare en retard | Two prepositional phrases |
-| oblique | Le bateau arrive au port en avance | Two prepositional phrases |
-| reflexive | Le dernier métro s'arrêta net au terminus | Pronominal verb, adverb, preposition |
-| reflexive | La voiture s'arrêta net devant la maison | Pronominal verb, adverb, preposition |
-| interjection | Janvier ! Janvier ! | Exclamative fragment |
-| interjection | Février ! Février ! | Exclamative fragment |
-| interrogative fragment | Vous ici ? Pourquoi pas ? | Dislocated fragment, two sentences |
-| interrogative fragment | Toi là ? Et alors ? | Dislocated fragment, two sentences |
-| comparative | C'est encore mieux en le disant | `encore mieux` |
-| comparative | C'est bien pire en le cachant | `bien pire` |
-| negation-never | Il n'est jamais trop tôt pour un espresso | `ne ... jamais`, impersonal `il` |
-| adverb tard/tot | Il est toujours trop tard pour se souvenir | `tard` |
-| adverb tard/tot | Il n'est jamais trop tard pour bien faire | `tard`, `ne ... jamais` |
-| infinitive subject | Voir, c'est croire | `Voir, c'est croire` |
-| infinitive subject | Partir, c'est mourir un peu | Comma, infinitive subject |
-| coordination nominal | Le pain et le fromage | Two coordinated nouns, no verb |
-| coordination nominal | Le sel et le poivre | Two coordinated nouns, no verb |
-| nominal PP | Le vieux monsieur avec un chapeau noir | Noun with a prepositional modifier |
-| nominal PP | La vieille dame avec une robe bleue | Noun with a prepositional modifier |
-| adjective and adverb | Une voiture rouge roule vite | Attributive adjective, adverb |
-| adjective and adverb | Un chien noir court vite | Attributive adjective, adverb |
-| numeral | Trois enfants jouent dans le parc | Number determiner, locative phrase |
-| numeral | Trois chats dorment dans le jardin | Number determiner, locative phrase |
-| future | Demain, nous partirons tôt | Future tense, fronted adverb |
-| future | Demain, elle partira tôt | Future tense, fronted adverb |
-| fronted oblique | Dans la forêt, un loup marche | Fronted prepositional phrase |
-| fronted oblique | Sur la colline, un berger chante | Fronted prepositional phrase |
-| imperative | Ferme la porte | Imperative mood |
-| imperative | Ouvre la fenêtre | Imperative mood |
-| infinitive complement | Il veut manger une pomme | `xcomp` with an infinitive |
-| infinitive complement | Elle veut boire un café | `xcomp` with an infinitive |
-| clausal complement | Je pense qu'il pleut | `que` complement clause |
-| clausal complement | Je crois qu'elle chante | `que` complement clause |
-| gerund | En marchant, il chante | `en` + present participle |
-| gerund | En courant, elle rit | `en` + present participle |
-| passive | La lettre a été écrite par Marie | Passive voice, optional agent |
-| passive | La lettre a été lue par Paul | Passive voice, optional agent |
-| exclamative | Quelle belle journée ! | `Quelle belle journée` |
-| exclamative | Quel beau paysage ! | `Quel beau paysage` |
-| coordination clausal | Le chat noir dort et le chien blanc veille | Two coordinated clauses |
-| coordination clausal | La fille chante et le garçon danse | Two coordinated clauses |
-| multiple sentences | Le garçon regarde le soleil. Le chat mange une souris. | Sentence boundaries and a forest |
-| multiple sentences | La fille admire la lune. Le chien dort. | Sentence boundaries and a forest |
-| nominal fragment | Le petit garçon | Verbless noun phrase |
-| nominal fragment | La grande maison | Verbless noun phrase |
-| adverbial fragment | Toujours plus vite | Verbless adverb phrase |
-| adverbial fragment | Souvent trop tard | Verbless adverb phrase |
+| Category               | Text                                                     | Grammatical feature under test       |
+| ---------------------- | -------------------------------------------------------- | ------------------------------------ |
+| vocabulary             | Le garçon regarde le soleil                              | Same tree, different words           |
+| vocabulary             | Un chat mange une souris                                 | Same tree, different words           |
+| vocabulary             | La fille admire la lune                                  | Same tree, different words           |
+| connection change      | Le soleil regarde le garçon                              | Same tree as the vocabulary texts    |
+| relative clause        | C'est le gentil garçon qui regardait la lune en souriant | Cleft, relative clause, gerund       |
+| relative clause        | C'est la petite fille qui admirait la lune en chantant   | Cleft, relative clause, gerund       |
+| passé simple           | La petite fille posa sa main sur le chat                 | Past tense, possessive, preposition  |
+| passé simple           | La jeune femme posa son sac sur la table                 | Past tense, possessive, preposition  |
+| oblique                | Le train arrive en gare en retard                        | Two prepositional phrases            |
+| oblique                | Le bateau arrive au port en avance                       | Two prepositional phrases            |
+| reflexive              | Le dernier métro s'arrêta net au terminus                | Pronominal verb, adverb, preposition |
+| reflexive              | La voiture s'arrêta net devant la maison                 | Pronominal verb, adverb, preposition |
+| interjection           | Janvier ! Janvier !                                      | Exclamative fragment                 |
+| interjection           | Février ! Février !                                      | Exclamative fragment                 |
+| interrogative fragment | Vous ici ? Pourquoi pas ?                                | Dislocated fragment, two sentences   |
+| interrogative fragment | Toi là ? Et alors ?                                      | Dislocated fragment, two sentences   |
+| comparative            | C'est encore mieux en le disant                          | `encore mieux`                       |
+| comparative            | C'est bien pire en le cachant                            | `bien pire`                          |
+| negation-never         | Il n'est jamais trop tôt pour un espresso                | `ne ... jamais`, impersonal `il`     |
+| adverb tard/tot        | Il est toujours trop tard pour se souvenir               | `tard`                               |
+| adverb tard/tot        | Il n'est jamais trop tard pour bien faire                | `tard`, `ne ... jamais`              |
+| infinitive subject     | Voir, c'est croire                                       | `Voir, c'est croire`                 |
+| infinitive subject     | Partir, c'est mourir un peu                              | Comma, infinitive subject            |
+| coordination nominal   | Le pain et le fromage                                    | Two coordinated nouns, no verb       |
+| coordination nominal   | Le sel et le poivre                                      | Two coordinated nouns, no verb       |
+| nominal PP             | Le vieux monsieur avec un chapeau noir                   | Noun with a prepositional modifier   |
+| nominal PP             | La vieille dame avec une robe bleue                      | Noun with a prepositional modifier   |
+| adjective and adverb   | Une voiture rouge roule vite                             | Attributive adjective, adverb        |
+| adjective and adverb   | Un chien noir court vite                                 | Attributive adjective, adverb        |
+| numeral                | Trois enfants jouent dans le parc                        | Number determiner, locative phrase   |
+| numeral                | Trois chats dorment dans le jardin                       | Number determiner, locative phrase   |
+| future                 | Demain, nous partirons tôt                               | Future tense, fronted adverb         |
+| future                 | Demain, elle partira tôt                                 | Future tense, fronted adverb         |
+| fronted oblique        | Dans la forêt, un loup marche                            | Fronted prepositional phrase         |
+| fronted oblique        | Sur la colline, un berger chante                         | Fronted prepositional phrase         |
+| imperative             | Ferme la porte                                           | Imperative mood                      |
+| imperative             | Ouvre la fenêtre                                         | Imperative mood                      |
+| infinitive complement  | Il veut manger une pomme                                 | `xcomp` with an infinitive           |
+| infinitive complement  | Elle veut boire un café                                  | `xcomp` with an infinitive           |
+| clausal complement     | Je pense qu'il pleut                                     | `que` complement clause              |
+| clausal complement     | Je crois qu'elle chante                                  | `que` complement clause              |
+| gerund                 | En marchant, il chante                                   | `en` + present participle            |
+| gerund                 | En courant, elle rit                                     | `en` + present participle            |
+| passive                | La lettre a été écrite par Marie                         | Passive voice, optional agent        |
+| passive                | La lettre a été lue par Paul                             | Passive voice, optional agent        |
+| exclamative            | Quelle belle journée !                                   | `Quelle belle journée`               |
+| exclamative            | Quel beau paysage !                                      | `Quel beau paysage`                  |
+| coordination clausal   | Le chat noir dort et le chien blanc veille               | Two coordinated clauses              |
+| coordination clausal   | La fille chante et le garçon danse                       | Two coordinated clauses              |
+| multiple sentences     | Le garçon regarde le soleil. Le chat mange une souris.   | Sentence boundaries and a forest     |
+| multiple sentences     | La fille admire la lune. Le chien dort.                  | Sentence boundaries and a forest     |
+| nominal fragment       | Le petit garçon                                          | Verbless noun phrase                 |
+| nominal fragment       | La grande maison                                         | Verbless noun phrase                 |
+| adverbial fragment     | Toujours plus vite                                       | Verbless adverb phrase               |
+| adverbial fragment     | Souvent trop tard                                        | Verbless adverb phrase               |
 
 The multi-sentence texts test the grammatical forest and the multivector
 similarity. The fragment texts test the specification rule that slogans often
@@ -233,13 +233,13 @@ set needs no extra text. It uses `Quelle belle journée !` for the terminal
 marks and `Voir, c'est croire` for the internal comma. Every variant keeps the
 same words and the same tree; only the punctuation changes.
 
-| Pair | Marks removed | Marks kept |
-| --- | --- | --- |
-| no mark / `?` | 1.000000 | 0.781454 |
-| no mark / `!` | 1.000000 | 0.781454 |
-| `.` / `?` | 1.000000 | 0.966387 |
-| no mark / `.` | 1.000000 | 0.781454 |
-| comma kept / comma removed | 1.000000 | 0.977424 |
+| Pair                       | Marks removed | Marks kept |
+| -------------------------- | ------------- | ---------- |
+| no mark / `?`              | 1.000000      | 0.781454   |
+| no mark / `!`              | 1.000000      | 0.781454   |
+| `.` / `?`                  | 1.000000      | 0.966387   |
+| no mark / `.`              | 1.000000      | 0.781454   |
+| comma kept / comma removed | 1.000000      | 0.977424   |
 
 With the marks removed, every pair scored one. With the marks kept, every pair
 with a different mark scores below one, and two texts with the same mark stay

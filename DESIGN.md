@@ -140,15 +140,15 @@ keeps body text at the browser default size.
 The application is a dense working tool, so the scale stays small. Chat messages
 use `sm` and are never larger than the input field, which uses `md`.
 
-| Token | Size | Used for |
-|---|---|---|
-| `--font-size-xs` | 0.694rem | Captions, timestamps, metadata |
-| `--font-size-sm` | 0.833rem | Chat messages, list rows, hits |
-| `--font-size-md` | 1rem | Body text, input fields |
-| `--font-size-lg` | 1.2rem | Section titles |
-| `--font-size-xl` | 1.44rem | Page title |
-| `--font-size-2xl` | 1.728rem | Hero titles |
-| `--font-size-display` | 2.074rem | Reserved for a banner |
+| Token                 | Size     | Used for                       |
+| --------------------- | -------- | ------------------------------ |
+| `--font-size-xs`      | 0.694rem | Captions, timestamps, metadata |
+| `--font-size-sm`      | 0.833rem | Chat messages, list rows, hits |
+| `--font-size-md`      | 1rem     | Body text, input fields        |
+| `--font-size-lg`      | 1.2rem   | Section titles                 |
+| `--font-size-xl`      | 1.44rem  | Page title                     |
+| `--font-size-2xl`     | 1.728rem | Hero titles                    |
+| `--font-size-display` | 2.074rem | Reserved for a banner          |
 
 ## Layout
 
@@ -170,7 +170,7 @@ which is retained for API compatibility but is square in this system.
 
 ## Components
 
-Border *colours* are not tokens. Each component picks the colour tokens it needs
+Border _colours_ are not tokens. Each component picks the colour tokens it needs
 for its own states, as shown in the front matter. For example, the primary button
 uses `--color-brand-accent` at rest, `--color-brand-accent-active` while pressed,
 and `--color-brand-accent-muted` while disabled.

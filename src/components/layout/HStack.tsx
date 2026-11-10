@@ -1,9 +1,9 @@
-import type { CSSProperties, FC, ReactNode } from "react"
+import type { CSSProperties, FC, ReactNode } from "react";
 
-import type { GapToken } from "../utils/spacing"
-import type { LayoutTag } from "../utils/tag"
+import type { GapToken } from "../utils/spacing";
+import type { LayoutTag } from "../utils/tag";
 
-import "./HStack.css"
+import "./HStack.css";
 
 /** How children are placed along the row. */
 type HStackJustify = "start" | "center" | "end" | "between";
@@ -40,7 +40,7 @@ const JUSTIFY: Record<HStackJustify, string> = {
 	start: "flex-start",
 	center: "center",
 	end: "flex-end",
-	between: "space-between",
+	between: "space-between"
 };
 
 /** `align` → the CSS `align-items` value. */
@@ -49,20 +49,20 @@ const ALIGN: Record<HStackAlign, string> = {
 	center: "center",
 	end: "flex-end",
 	baseline: "baseline",
-	stretch: "stretch",
+	stretch: "stretch"
 };
 
 /**
  * Horizontal flex container: children flow left to right.
  *
- * @param props - Gap, distribution, alignment, padding, wrapping, and element
- *   override.
- * @returns A flex row element.
  * @example
- * <HStack gap="sm" justify="between" as="header">
- *   <Heading level={1}>Titre</Heading>
- *   <Button>Envoyer</Button>
- * </HStack>
+ * 	<HStack gap="sm" justify="between" as="header">
+ * 		<Heading level={1}>Titre</Heading>
+ * 		<Button>Envoyer</Button>
+ * 	</HStack>;
+ *
+ * @param props - Gap, distribution, alignment, padding, wrapping, and element override.
+ * @returns A flex row element.
  */
 export const HStack: FC<HStackProps> = ({
 	children,
@@ -74,10 +74,10 @@ export const HStack: FC<HStackProps> = ({
 	as = "div",
 	className = "",
 	id,
-	style,
+	style
 }) => {
-	const Tag = as
-	const classes = ["h-stack", className].filter(Boolean).join(" ")
+	const Tag = as;
+	const classes = ["h-stack", className].filter(Boolean).join(" ");
 
 	return (
 		<Tag
@@ -89,10 +89,10 @@ export const HStack: FC<HStackProps> = ({
 				alignItems: ALIGN[align],
 				padding: padding === "none" ? undefined : `var(--space-${padding})`,
 				flexWrap: wrap ? "wrap" : "nowrap",
-				...style,
+				...style
 			}}
 		>
 			{children}
 		</Tag>
-	)
-}
+	);
+};

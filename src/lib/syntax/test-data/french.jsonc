@@ -10,7 +10,16 @@
 	// The six CoNLL-U fields that each token stores, in this exact order.
 	"tokenFields": ["form", "lemma", "upos", "head", "deprel", "feats"],
 	// The grammar features that the deferred `detailed` mode keeps.
-	"modeFeatures": ["Definite", "Gender", "Mood", "Number", "Person", "Tense", "VerbForm", "Voice"],
+	"modeFeatures": [
+		"Definite",
+		"Gender",
+		"Mood",
+		"Number",
+		"Person",
+		"Tense",
+		"VerbForm",
+		"Voice"
+	],
 	// The expected trees, keyed by the sentence string itself. One entry is one
 	// text: `sentences` holds one tree per sentence, in reading order.
 	"texts": {
@@ -90,7 +99,14 @@
 			"sentences": [
 				[
 					["C'", "ce", "PRON", 5, "expl", "Gender=Masc|Number=Sing|Person=3"],
-					["est", "être", "AUX", 5, "cop", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"],
+					[
+						"est",
+						"être",
+						"AUX",
+						5,
+						"cop",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
+					],
 					["le", "le", "DET", 5, "det", "Definite=Def|Gender=Masc|Number=Sing"],
 					["gentil", "gentil", "ADJ", 5, "amod", "Gender=Masc|Number=Sing"],
 					["garçon", "garçon", "NOUN", 0, "root", "Gender=Masc|Number=Sing"],
@@ -114,7 +130,14 @@
 			"sentences": [
 				[
 					["C'", "ce", "PRON", 5, "expl", "Gender=Fem|Number=Sing|Person=3"],
-					["est", "être", "AUX", 5, "cop", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"],
+					[
+						"est",
+						"être",
+						"AUX",
+						5,
+						"cop",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
+					],
 					["la", "le", "DET", 5, "det", "Definite=Def|Gender=Fem|Number=Sing"],
 					["petite", "petit", "ADJ", 5, "amod", "Gender=Fem|Number=Sing"],
 					["fille", "fille", "NOUN", 0, "root", "Gender=Fem|Number=Sing"],
@@ -314,7 +337,14 @@
 			"sentences": [
 				[
 					["C'", "ce", "PRON", 3, "nsubj", "Gender=Masc|Number=Sing|Person=3"],
-					["est", "être", "AUX", 3, "cop", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"],
+					[
+						"est",
+						"être",
+						"AUX",
+						3,
+						"cop",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
+					],
 					["encore", "encore", "ADV", 4, "advmod", ""],
 					["mieux", "mieux", "ADV", 0, "root", ""],
 					["en", "en", "ADP", 6, "mark", ""],
@@ -327,7 +357,14 @@
 			"sentences": [
 				[
 					["C'", "ce", "PRON", 3, "nsubj", "Gender=Masc|Number=Sing|Person=3"],
-					["est", "être", "AUX", 3, "cop", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"],
+					[
+						"est",
+						"être",
+						"AUX",
+						3,
+						"cop",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
+					],
 					["bien", "bien", "ADV", 4, "advmod", ""],
 					["pire", "pire", "ADJ", 0, "root", "Number=Sing"],
 					["en", "en", "ADP", 6, "mark", ""],
@@ -341,7 +378,14 @@
 				[
 					["Il", "il", "PRON", 6, "expl:subj", "Gender=Masc|Number=Sing|Person=3"],
 					["n'", "ne", "ADV", 6, "advmod", "Polarity=Neg"],
-					["est", "être", "AUX", 6, "cop", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"],
+					[
+						"est",
+						"être",
+						"AUX",
+						6,
+						"cop",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
+					],
 					["jamais", "jamais", "ADV", 6, "advmod", "Polarity=Neg"],
 					["trop", "trop", "ADV", 6, "advmod", ""],
 					["tôt", "tôt", "ADV", 0, "root", ""],
@@ -355,7 +399,14 @@
 			"sentences": [
 				[
 					["Il", "il", "PRON", 5, "expl:subj", "Gender=Masc|Number=Sing|Person=3"],
-					["est", "être", "AUX", 5, "cop", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"],
+					[
+						"est",
+						"être",
+						"AUX",
+						5,
+						"cop",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
+					],
 					["toujours", "toujours", "ADV", 5, "advmod", ""],
 					["trop", "trop", "ADV", 5, "advmod", ""],
 					["tard", "tard", "ADV", 0, "root", ""],
@@ -370,7 +421,14 @@
 				[
 					["Il", "il", "PRON", 6, "expl:subj", "Gender=Masc|Number=Sing|Person=3"],
 					["n'", "ne", "ADV", 6, "advmod", "Polarity=Neg"],
-					["est", "être", "AUX", 6, "cop", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"],
+					[
+						"est",
+						"être",
+						"AUX",
+						6,
+						"cop",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
+					],
 					["jamais", "jamais", "ADV", 6, "advmod", "Polarity=Neg"],
 					["trop", "trop", "ADV", 6, "advmod", ""],
 					["tard", "tard", "ADV", 0, "root", ""],
@@ -386,7 +444,14 @@
 					["Voir", "voir", "VERB", 5, "parataxis", "VerbForm=Inf"],
 					[",", ",", "PUNCT", 5, "punct", ""],
 					["c'", "ce", "PRON", 5, "nsubj", "Gender=Masc|Number=Sing|Person=3"],
-					["est", "être", "AUX", 5, "cop", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"],
+					[
+						"est",
+						"être",
+						"AUX",
+						5,
+						"cop",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
+					],
 					["croire", "croire", "VERB", 0, "root", "VerbForm=Inf"]
 				]
 			]
@@ -397,7 +462,14 @@
 					["Partir", "partir", "VERB", 5, "parataxis", "VerbForm=Inf"],
 					[",", ",", "PUNCT", 5, "punct", ""],
 					["c'", "ce", "PRON", 5, "nsubj", "Gender=Masc|Number=Sing|Person=3"],
-					["est", "être", "AUX", 5, "cop", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"],
+					[
+						"est",
+						"être",
+						"AUX",
+						5,
+						"cop",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
+					],
 					["mourir", "mourir", "VERB", 0, "root", "VerbForm=Inf"],
 					["un", "un", "DET", 7, "det", "Definite=Ind|Gender=Masc|Number=Sing"],
 					["peu", "peu", "ADV", 5, "advmod", ""]
@@ -761,7 +833,14 @@
 				[
 					["La", "le", "DET", 2, "det", "Definite=Def|Gender=Fem|Number=Sing"],
 					["lettre", "lettre", "NOUN", 5, "nsubj:pass", "Gender=Fem|Number=Sing"],
-					["a", "avoir", "AUX", 5, "aux", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"],
+					[
+						"a",
+						"avoir",
+						"AUX",
+						5,
+						"aux",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
+					],
 					["été", "être", "AUX", 5, "aux:pass", "Tense=Past|VerbForm=Part"],
 					[
 						"écrite",
@@ -781,9 +860,23 @@
 				[
 					["La", "le", "DET", 2, "det", "Definite=Def|Gender=Fem|Number=Sing"],
 					["lettre", "lettre", "NOUN", 5, "nsubj:pass", "Gender=Fem|Number=Sing"],
-					["a", "avoir", "AUX", 5, "aux", "Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"],
+					[
+						"a",
+						"avoir",
+						"AUX",
+						5,
+						"aux",
+						"Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin"
+					],
 					["été", "être", "AUX", 5, "aux:pass", "Tense=Past|VerbForm=Part"],
-					["lue", "lire", "VERB", 0, "root", "Gender=Fem|Number=Sing|Tense=Past|VerbForm=Part"],
+					[
+						"lue",
+						"lire",
+						"VERB",
+						0,
+						"root",
+						"Gender=Fem|Number=Sing|Tense=Past|VerbForm=Part"
+					],
 					["par", "par", "ADP", 7, "case", ""],
 					["Paul", "Paul", "PROPN", 5, "obl", "Gender=Masc|Number=Sing"]
 				]
