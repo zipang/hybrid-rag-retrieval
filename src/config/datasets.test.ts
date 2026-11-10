@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { DEFAULT_ENCODER_CONFIG } from "../lib/syntax/encoder";
 import { datasetConfigurations } from "./datasets";
 
 describe("datasetConfigurations", () => {
@@ -27,6 +28,12 @@ describe("datasetConfigurations", () => {
 			collection: "slogans",
 			dense: { name: "dense", size: 1024, distance: "Cosine" },
 			sparse: { name: "bm25", modifier: "idf" },
+			ast: {
+				name: "ast",
+				size: DEFAULT_ENCODER_CONFIG.dimensions,
+				distance: "Cosine",
+				comparator: "max_sim"
+			},
 			payloadIndexes: [
 				{ name: "annee", schema: "integer" },
 				{ name: "marque", schema: "keyword" }
@@ -39,6 +46,12 @@ describe("datasetConfigurations", () => {
 			collection: "citations",
 			dense: { name: "dense", size: 1024, distance: "Cosine" },
 			sparse: { name: "bm25", modifier: "idf" },
+			ast: {
+				name: "ast",
+				size: DEFAULT_ENCODER_CONFIG.dimensions,
+				distance: "Cosine",
+				comparator: "max_sim"
+			},
 			payloadIndexes: [
 				{ name: "author", schema: "keyword" },
 				{ name: "work", schema: "keyword" },
@@ -46,5 +59,14 @@ describe("datasetConfigurations", () => {
 				{ name: "lang", schema: "keyword" }
 			]
 		});
+	});
+
+	test("sizes the ast vector from the frozen encoder dimensions", () => {
+		for (const configuration of Object.values(datasetConfigurations)) {
+			expect(configuration.collectionSchema.ast?.size).toBe(256);
+			expect(configuration.collectionSchema.ast?.size).toBe(
+				DEFAULT_ENCODER_CONFIG.dimensions
+			);
+		}
 	});
 });

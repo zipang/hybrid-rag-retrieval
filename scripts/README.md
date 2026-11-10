@@ -34,6 +34,56 @@ does not commit the data these scripts produce.
   score. A score of one means the two trees have the same shape. Run it with
   `bun run compare-syntax "Le garçon regarde le soleil" "Un chat mange une souris"`.
   It accepts `--mode coarse`, the only mode implemented in this ticket.
+- `index-syntax.ts` adds the `ast` vector to records that already exist in the
+  collection, without deleting the collection. It encodes the grammatical
+  structure of every record, keeps the dense vector, the BM25 vector, and the
+  business payload unchanged, and publishes a ready state only after it accounts
+  for every record. It clears the `ast` vector of every excluded record, so a
+  record that cannot be represented is never left searchable by its old vector.
+
+  ```sh
+  bun run scripts/index-syntax.ts --mode coarse
+  bun run scripts/index-syntax.ts --mode coarse --batch-size 64 --limit 20
+  INDEX_STATE_PATH=.tmp/probe-state.json \
+    bun run scripts/index-syntax.ts --collection t0004-task13-probe
+  ```
+
+  Flags:
+
+  - `--mode coarse`: the only mode implemented today. The `detailed` name is
+    accepted by the flag parser and refused with a clear message, because that
+    mode is deferred to a future ticket.
+  - `--batch-size N`: identifiers per payload fetch, per vector update, and per
+    vector clear. Defaults to 128.
+  - `--generation <id>`: the generation to backfill. Defaults to the current
+    generation. The run refuses a generation that is not ready, a generation
+    that already holds the other syntax mode, and a generation that holds the
+    same mode under a different configuration. A configuration change, such as a
+    parser, model, abstraction, or encoder bump, needs a new generation from the
+    full indexer, not a backfill.
+  - `--limit N`: stop after N identifiers. The reported `eligible` count is
+    truncated too, so the coverage stays consistent. A truncated run publishes
+    `pending`, never `ready`, because it does not account for every record.
+  - `--collection <name>`: run against another collection with the same dataset
+    schema. The vector names, the payload fields, and the payload indexes stay
+    those of the dataset schema. Use it for a probe collection.
+
+  `--collection` needs `INDEX_STATE_PATH`, and the path must not resolve to the
+  default file. The generation state describes one collection, so a run against
+  another collection that still wrote the default `data/index-state.json` would
+  publish probe coverage into the real generation. The script therefore compares
+  resolved paths and refuses `data/index-state.json`, `./data/index-state.json`,
+  and `data/../data/index-state.json` alike, with `CustomCollectionStateError`:
+
+  ```sh
+  INDEX_STATE_PATH=.tmp/probe-state.json \
+    bun run scripts/index-syntax.ts --collection t0004-task13-probe
+  ```
+
+  The run records every record that it could not index, with its identifier and a
+  reason. A missing parser model aborts the run before anything is published. The
+  script reads `INDEX_STATE_PATH` and the Qdrant environment, like the full
+  indexer.
 
 ## Citations
 

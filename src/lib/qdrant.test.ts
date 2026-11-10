@@ -881,6 +881,107 @@ describe("ast vector storage", () => {
 		});
 	});
 
+	describe("deleteVectors", () => {
+		test("deletes the named vectors of existing points and waits by default", async () => {
+			const { client, calls } = createClientFor(AST_SCHEMA, () =>
+				jsonResponse({ result: { operation_id: 12, status: "completed" } })
+			);
+
+			await client.deleteVectors([2, 3], ["ast"]);
+
+			expect(calls).toHaveLength(1);
+			expect(calls[0]?.method).toBe("POST");
+			expect(calls[0]?.url).toBe(`${BASE}/points/vectors/delete?wait=true`);
+			expect(calls[0]?.body).toEqual({ points: [2, 3], vectors: ["ast"] });
+		});
+
+		test("takes the vector names from the caller, not from the schema", async () => {
+			const { client, calls } = createClientFor(AST_SCHEMA, () => jsonResponse());
+
+			await client.deleteVectors(["a"], ["ast", "dense"], { wait: false });
+
+			expect(calls[0]?.url).toBe(`${BASE}/points/vectors/delete?wait=false`);
+			expect(calls[0]?.body).toEqual({ points: ["a"], vectors: ["ast", "dense"] });
+		});
+
+		test("sends nothing for an empty identifier list", async () => {
+			const { client, calls } = createClientFor(AST_SCHEMA, () => jsonResponse());
+
+			await client.deleteVectors([], ["ast"]);
+
+			expect(calls).toHaveLength(0);
+		});
+
+		test("resolves and logs when Qdrant reports a point that no longer exists", async () => {
+			const { client, calls } = createClientFor(AST_SCHEMA, () =>
+				jsonResponse({ status: 404, error: "Not found: No point with id 99 found" })
+			);
+			const messages: string[] = [];
+
+			await client.deleteVectors([99], ["ast"], { log: (message) => messages.push(message) });
+
+			// One batch request, then the defensive single-identifier retry.
+			expect(calls).toHaveLength(2);
+			expect(messages.length).toBeGreaterThan(0);
+			expect(messages.some((message) => message.includes("99"))).toBe(true);
+		});
+
+		test("still throws on a server failure", async () => {
+			const { client } = createClientFor(AST_SCHEMA, () =>
+				jsonResponse({ status: 500, error: "service exploded" })
+			);
+
+			await expect(client.deleteVectors([1], ["ast"])).rejects.toThrow(
+				/500.*service exploded/s
+			);
+		});
+
+		test("does not swallow a missing collection", async () => {
+			const { client } = createClientFor(AST_SCHEMA, () =>
+				jsonResponse({
+					status: 404,
+					error: "Not found: Collection `slogans` doesn't exist!"
+				})
+			);
+
+			await expect(client.deleteVectors([1], ["ast"])).rejects.toThrow(/404/);
+		});
+
+		test("retries one identifier at a time after a mixed batch answers not found", async () => {
+			const present = new Set<number | string>([1]);
+			const cleared: Array<number | string> = [];
+			const { client, calls } = createClientFor(AST_SCHEMA, (call) => {
+				const ids = (call.body as { points: Array<number | string> }).points;
+				const absent = ids.filter((id) => !present.has(id));
+
+				// 1.19.1 applies the rest of the batch, then reports the absent point.
+				for (const id of ids) {
+					if (present.has(id)) {
+						present.delete(id);
+						cleared.push(id);
+					}
+				}
+
+				return absent.length === 0
+					? jsonResponse({ result: { operation_id: 1, status: "completed" } })
+					: jsonResponse({
+							status: 404,
+							error: `Not found: No point with id ${absent[0]} found`
+						});
+			});
+
+			await client.deleteVectors([1, 99], ["ast"]);
+
+			expect(calls).toHaveLength(3);
+			expect(calls.map((call) => (call.body as { points: unknown }).points)).toEqual([
+				[1, 99],
+				[1],
+				[99]
+			]);
+			expect(cleared).toEqual([1]);
+		});
+	});
+
 	describe("multivector row limit", () => {
 		test("exports the documented hard limit", () => {
 			expect(MULTIVECTOR_SUBVECTOR_LIMIT).toBe(1_048_576);
@@ -915,7 +1016,7 @@ describe("ast vector storage", () => {
 	describe("matrix serialization", () => {
 		/** Capture the raw request body text of one call. */
 		const rawBodyOf = async (
-			call: (client: ReturnType<typeof createQdrantClient>) => Promise<void>
+			call: (client: ReturnType<typeof createQdrantClient>) => Promise<unknown>
 		) => {
 			let raw = "";
 			const fetchImpl = (async (_input: string | URL | Request, init?: RequestInit) => {

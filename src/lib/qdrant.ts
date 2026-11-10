@@ -209,6 +209,22 @@ export type QdrantClient = {
 	) => Promise<void>;
 	/** Score one identifier batch with an exact ast multivector search. */
 	queryAstExact: (query: ExactAstQuery) => Promise<ExactScoreResult>;
+	/**
+	 * Delete one or more named vectors from existing points.
+	 *
+	 * Every other vector and the payload stay unchanged, and the point is never deleted. The vector
+	 * names come from the caller, so the operation is not tied to the `ast` vector.
+	 *
+	 * @param ids Identifiers to clear. An empty list sends no request.
+	 * @param vectors Vector names to delete, for example `["ast"]`.
+	 * @param options `wait` defaults to `true`. `log` receives one message per point that Qdrant
+	 *   reports as already absent.
+	 */
+	deleteVectors: (
+		ids: Array<number | string>,
+		vectors: string[],
+		options?: { wait?: boolean; log?: (message: string) => void }
+	) => Promise<void>;
 };
 
 /**
@@ -341,9 +357,10 @@ export class MultiVectorLimitError extends Error {
  * Serialize one vector value as JSON, always with a decimal point.
  *
  * Qdrant reads a JSON matrix whose rows are all integers as its legacy sparse-vector form
- * (`[[indices], [values]]`) and rejects it with `Validation error ... indices: must be unique`. A
- * float keeps the documented multivector shape unambiguous, and the numeric value does not change.
- * The encoder produces floats, so this guard costs nothing and removes the edge case.
+ * (`[[indices], [values]]`) and rejects it, with a message that depends on the row shape, such as
+ * `indices: must be unique` or `Conversion between sparse and regular vectors failed`. A float
+ * keeps the documented multivector shape unambiguous, and the numeric value does not change. The
+ * encoder produces floats, so this guard costs nothing and removes the edge case.
  *
  * Only a safe integer gets the decimal suffix. A larger integer such as `1e21` is already written
  * in exponent form by `JSON.stringify`, and `1e+21.0` would not be valid JSON.
@@ -402,6 +419,19 @@ const toStoredDescription = (entry: unknown): StoredVectorDescription => {
 
 	return description;
 };
+
+/**
+ * Return whether an error reports a point that does not exist.
+ *
+ * A missing collection also answers 404, so the check reads the documented point message instead of
+ * the status code.
+ */
+const isMissingPointError = (error: unknown): boolean =>
+	error instanceof Error && /no point with id/i.test(error.message);
+
+/** Read the message of an unknown error. */
+const describeError = (error: unknown): string =>
+	error instanceof Error ? error.message : String(error);
 
 /** Read the error message from a Qdrant error body. */
 const extractErrorMessage = (body: unknown): string => {
@@ -862,6 +892,84 @@ export const createQdrantClient = (
 		return { scores, missing };
 	};
 
+	/**
+	 * Delete named vectors from existing points, and keep every other vector and the payload.
+	 *
+	 * The operation follows the documented "Delete Vectors" endpoint of Qdrant 1.19.1:
+	 *
+	 * ```http
+	 * POST /collections/{collection_name}/points/vectors/delete?wait=true
+	 * { "points": [2], "vectors": ["ast"] }
+	 * ```
+	 *
+	 * Qdrant keeps the other vectors and the payload of each point, and never deletes the point.
+	 * The operation is idempotent on an existing point: a second delete of the same vector succeeds
+	 * again.
+	 *
+	 * A point that Qdrant reports as `Not found: No point with id … found` is already in the target
+	 * state, so the method resolves and reports it through `options.log` instead of aborting the
+	 * caller's sweep. Every other failure, including a `5xx` and a missing collection, still
+	 * throws.
+	 *
+	 * Measured on 1.19.1: a batch that mixes a present and an absent point applies the rest of the
+	 * batch and _then_ reports the absent point. The per-identifier fallback below is therefore a
+	 * defensive layer, not a correctness requirement. If a future version skips a whole batch, the
+	 * fallback still clears every present identifier, because each single-identifier request is
+	 * unambiguous: a success clears the identifier, and an already-absent answer means it is
+	 * already in the target state.
+	 *
+	 * @param ids Identifiers to clear. An empty list sends no request.
+	 * @param vectors Vector names to delete. An empty list sends no request.
+	 * @param options `wait` defaults to `true`; `log` receives one message per absent point.
+	 */
+	const deleteVectors = async (
+		ids: Array<number | string>,
+		vectors: string[],
+		options: { wait?: boolean; log?: (message: string) => void } = {}
+	): Promise<void> => {
+		if (ids.length === 0 || vectors.length === 0) {
+			return;
+		}
+
+		const wait = options.wait ?? true;
+
+		/** Delete the named vectors of one identifier set. */
+		const post = async (batch: Array<number | string>): Promise<void> => {
+			await request("POST", `${base}/points/vectors/delete?wait=${wait}`, {
+				points: batch,
+				vectors
+			});
+		};
+
+		try {
+			await post(ids);
+
+			return;
+		} catch (error) {
+			// Only a vanished point is tolerated. A missing collection also answers 404, so the
+			// check matches the documented point message, not the status code.
+			if (!isMissingPointError(error)) {
+				throw error;
+			}
+
+			options.log?.(
+				`batch of ${ids.length} reported an absent point (${describeError(error)})`
+			);
+		}
+
+		for (const id of ids) {
+			try {
+				await post([id]);
+			} catch (error) {
+				if (!isMissingPointError(error)) {
+					throw error;
+				}
+
+				options.log?.(`${id}: already absent from the collection, nothing to delete`);
+			}
+		}
+	};
+
 	return {
 		url,
 		collection,
@@ -876,6 +984,7 @@ export const createQdrantClient = (
 		querySparseExact,
 		ensureAstVector,
 		updateAstVectors,
-		queryAstExact
+		queryAstExact,
+		deleteVectors
 	};
 };

@@ -1,4 +1,5 @@
 import type { CollectionSchema, PayloadIndexField } from "../lib/qdrant-schema";
+import { DEFAULT_ENCODER_CONFIG } from "../lib/syntax/encoder";
 import { type Citation, citationJsonSchema, citationValidator } from "../models/citation";
 import { type Slogan, sloganJsonSchema, sloganValidator } from "../models/slogan";
 import type { DatasetReader } from "../utils/data-utils";
@@ -57,6 +58,12 @@ export const datasetConfigurations = {
 			collection: "slogans",
 			dense: { name: "dense", size: 1024, distance: "Cosine" },
 			sparse: { name: "bm25", modifier: "idf" },
+			ast: {
+				name: "ast",
+				size: DEFAULT_ENCODER_CONFIG.dimensions,
+				distance: "Cosine",
+				comparator: "max_sim"
+			},
 			payloadIndexes: sloganIndexes
 		}
 	} satisfies DatasetConfiguration<Slogan>,
@@ -72,6 +79,12 @@ export const datasetConfigurations = {
 			collection: "citations",
 			dense: { name: "dense", size: 1024, distance: "Cosine" },
 			sparse: { name: "bm25", modifier: "idf" },
+			ast: {
+				name: "ast",
+				size: DEFAULT_ENCODER_CONFIG.dimensions,
+				distance: "Cosine",
+				comparator: "max_sim"
+			},
 			payloadIndexes: citationIndexes
 		}
 	} satisfies DatasetConfiguration<Citation>

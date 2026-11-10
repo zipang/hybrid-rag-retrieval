@@ -362,7 +362,7 @@ Status: passed. The `coarse` mode reaches `100%` ranking and structural accuracy
   - Files: `src/lib/qdrant.ts`, `src/lib/qdrant.test.ts`, `src/lib/index-state.ts`, `src/lib/index-state.test.ts`.
   - Depends: Tasks 5–6, 11b. Scope: Medium.
 
-- [ ] **Task 13: Deliver syntax backfill**
+- [x] **Task 13: Deliver syntax backfill**
   - Acceptance: Implement `index-syntax.ts --mode coarse` over existing records with complete coverage and exclusion accounting. The flag accepts the mode name, so the deferred `detailed` mode needs no interface change.
   - Acceptance: Clear stale syntax values on failed or excluded records. Prevent mixed modes and publish readiness only after validation.
   - Verify: `bun test scripts/index-syntax.test.ts`. Run the `coarse` mode on an isolated test collection and compare other vectors before and after.
@@ -611,6 +611,9 @@ state the mapping; §4 keeps the public index names unchanged. The `ast vector` 
 
 #### Verified documentation gaps and server behavior (local Qdrant 1.19.1)
 
+The measurements below are recorded in full, with the probe commands and the
+checks to repeat after an upgrade, in `memos/qdrant-multivector-behavior.md`.
+
 - The prose of "Adding and Removing Named Vectors" says the body accepts only `size` and
   `distance`. The server also accepts `multivector_config` in that body. After the call,
   `GET /collections/{name}` reports `config.params.vectors.<name>.multivector_config.comparator`.
@@ -618,8 +621,9 @@ state the mapping; §4 keeps the public index names unchanged. The `ast vector` 
   the vector name comes from the path. Sending the vector name as the body key fails with
   `Format error in JSON body: data did not match any variant of untagged enum VectorNameConfig`.
   The transport keeps the documented `dense` key and records this in a code comment.
-- A JSON matrix whose rows are all integers is parsed as the legacy sparse-vector form
-  `[[indices], [values]]` and is rejected with `indices: must be unique`. The transport therefore
+- A JSON matrix whose rows are all integers is read as the legacy sparse-vector form
+  `[[indices], [values]]` and is rejected with
+  `Wrong input: Conversion between sparse and regular vectors failed`. The transport therefore
   serializes every matrix value with a decimal point (`1.0`, not `1`). The numeric value does not
   change. A unit test asserts the raw request text.
 - `max_sim` is unbounded above: two identical query rows against a two-row record score `2.0`.
@@ -672,3 +676,250 @@ bun test v1.4.4 (38afee6c8)
  4208 expect() calls
 Ran 375 tests across 25 files. [4.22s]
 ```
+
+### Task 13 — Syntax backfill
+
+#### Configuration identity
+
+`src/lib/syntax/config.ts` now owns the whole reproducible identity and the single source of
+each component:
+
+- `PARSER_PACKAGE_NAME = "udpipe-wasm"`. `parserPackageVersion()` reads **`bun.lock`**, not the
+  range in `package.json`. The manifest declares `^0.1.0`, so a lockfile bump inside that range
+  would leave a manifest-only identity unchanged while the parser code changed. The lock file pins
+  the resolved version and its `sha512-` integrity, so `parserPackageVersion()` returns
+  `udpipe-wasm@0.1.0+sha512.en9Ex7j8` — resolved version plus the first 8 characters of the
+  integrity in base64.
+  - `readParserPackageIdentity(lockText?)` is exported as the parsing seam. Without an argument it
+    reads `bun.lock`; with one it parses the given text and never touches the cache, so a test
+    cannot poison the process-wide identity. Eight tests cover the injected text: the version and
+    integrity prefix, a changed version, a changed integrity, a versioned `udpipe-wasm@…` key, the
+    ambiguity message, the missing-entry message, the versionless message, and the non-`sha512`
+    message.
+  - The lock lookup accepts a plain `udpipe-wasm` key and a `udpipe-wasm@…` key. Bun uses the plain
+    key for a single resolution and versioned keys when several resolve. Two matches at once raise
+    a message that names both keys instead of claiming the package does not resolve.
+  - Only a **resolved string** is cached. A failed read or parse leaves the cache empty, so the next
+    call retries; the earlier version cached the promise and repeated a rejection for the life of
+    the process. The cache is `string | undefined`, never a promise.
+  - The text is parsed with `Bun.JSONC.parse`, because the lock file holds trailing commas.
+- `UDPIPE_MODEL_RELEASE`, `UDPIPE_MODEL_NAME`, `UDPIPE_MODEL_FILE`, and `UDPIPE_MODEL_SHA256`
+  mirror `scripts/init.sh`. `DEFAULT_MODEL_PATH` is derived from the file name, so the script and
+  the code cannot disagree. `syntaxModelRevision()` returns
+  `ud-2.5-191206:french-gsd-ud-2.5-191206.udpipe:sha256:3b10…ea30`.
+- `SYNTAX_LANGUAGE = "fr"`, `encoderVersion` and `dimensions` come from `DEFAULT_ENCODER_CONFIG`.
+- `ABSTRACTION_VERSIONS` (`coarse-1`, `detailed-0`) lives in `config.ts`, not in `abstraction.ts`,
+  because `abstraction.ts` is outside this ticket's scope. The `coarse` rule set is frozen; the
+  `detailed` value is declared only, because that branch is deferred.
+- `syntaxConfigId(fields)` hashes the canonical JSON of the fields with
+  `crypto.subtle.digest("SHA-256", …)`, keeps the first 16 lowercase hex characters, and sorts the
+  keys first, so key insertion order cannot change the result. `buildSyntaxIndexConfiguration(mode)`
+  takes the mode as a parameter, so the deferred mode needs no interface change.
+
+`src/config/datasets.ts` declares `ast: { name: "ast", size: DEFAULT_ENCODER_CONFIG.dimensions,
+distance: "Cosine", comparator: "max_sim" }` in both dataset schemas. `datasets.test.ts` asserts
+**both** `ast.size === 256` (a literal) **and** `ast.size === DEFAULT_ENCODER_CONFIG.dimensions`.
+The earlier version derived both sides from the encoder constant, so it could not fail; the pair of
+assertions now catches a silent dimension change on either side.
+
+#### Backfill behaviour
+
+`scripts/index-syntax.ts` exposes `indexSyntax(dependencies, options)`, `schemaForCollection(name)`,
+`resolveCliTarget({ collection, statePath })`, and the CLI. The run:
+
+1. reads the state, resolves `options.generation ?? current.generation`, then calls
+   `assertReady(generation)`, so a rebuild owned by another writer is refused before any write;
+2. builds the configuration and refuses a generation whose stored syntax mode differs, with
+   `SyntaxModeClashError`;
+3. refuses a generation whose stored `configId` differs, with `SyntaxConfigurationChangeError`;
+4. calls `ensureAstVector()` and lets `IncompatibleAstVectorError` propagate;
+5. enumerates identifiers with `scrollIds()`, applies `--limit`, and takes that count as
+   `eligible`;
+6. fetches payloads per batch, reads `datasetConfigurations.slogans.contentField`, parses,
+   abstracts, and encodes one row per sentence;
+7. writes successes with one `updateAstVectors` call per identifier batch, and retries a failed
+   batch one record at a time, so one bad record marks only itself failed;
+8. clears the `ast` vector of every excluded record, in identifier batches;
+9. publishes once, with one exclusion entry per excluded record.
+
+The `ast` name comes straight from `datasetConfigurations.slogans.collectionSchema.ast.name`. A
+schema without an `ast` vector raises `InvalidSchemaError("ast", …)`; there is no `?? "ast"`
+fallback that could silently guess a vector name.
+
+Exclusion policy:
+
+| Cause                                       | Bucket        | Reason                      |
+| ------------------------------------------- | ------------- | --------------------------- |
+| payload has no string content field         | `unsupported` | `missing content field`     |
+| `EmptyInputError` / `ParseValidationError`  | `unsupported` | the error message           |
+| `AbstractionError`                          | `unsupported` | the error message           |
+| encoder yields zero rows or any zero vector | `unsupported` | `empty structure`           |
+| `ParserUnavailableError`                    | abort         | rethrown, nothing published |
+| any other error, including a failed update  | `failed`      | the error message           |
+| a failed clear of that record               | `failed`      | `clear failed: <message>`   |
+
+`AbstractionError` is deterministic and structural — an empty sentence or a sentence with no root —
+so it joins the unsupported branch instead of `failed`.
+
+The zero-vector rule honours the encoder JSDoc ("the caller must treat that as an error before
+indexing"). A run with `indexed === 0` and `eligible > 0` still publishes when every record is
+listed as an exclusion, because `publishSyntax` validates
+`indexed + unsupported + failed === eligible` and `exclusions.length === unsupported + failed`. An
+empty collection publishes `ready` with `{ eligible: 0, indexed: 0, unsupported: 0, failed: 0 }`.
+
+#### Truncation: a partial run publishes `pending`, never `ready`
+
+`--limit N` narrows the identifier set, so it narrows `eligible`. The run computes
+`truncated = ids.length < scrolled.length`. When the run is truncated it logs
+`Warning: --limit covered n of m records, so this run publishes pending, not ready` and publishes
+`status: "pending"` with the real coverage of the slice. Records outside the slice are never
+enumerated, so publishing `ready` would claim complete coverage of a generation that does not have
+it. `assertSyntaxReady` treats a `pending` syntax state as not ready, so reads stay blocked until a
+full run accounts for every record. A `--limit` at or above the collection size is not truncated
+and still publishes `ready`.
+
+#### Configuration changes need a new generation
+
+A re-run in the same mode after a parser, model, abstraction, or encoder bump produces a new
+`configId` while the old `ready` state keeps being served and the stored vectors are overwritten in
+place. The run therefore compares `record.syntax?.configuration.configId` with the newly built
+`configId` and refuses on a difference with `SyntaxConfigurationChangeError`, which names the
+generation, the persisted fingerprint, and the requested one, and states that a configuration
+change needs a new generation rather than a backfill. The mode clash is checked first, because a
+mode difference also changes the fingerprint; the caller then gets the more specific error. A
+re-run with the same configuration, including a re-run that finishes a `pending` truncation, is
+accepted.
+
+#### Collection override and the state file are coupled
+
+`resolveCliTarget({ collection, statePath })` returns the schema and the state path of one CLI run.
+The generation state describes exactly one collection, so a run against another collection without
+its own state file would publish probe coverage into the real generation. When `--collection` names
+a collection other than the dataset default and `INDEX_STATE_PATH` is unset, blank, or **resolves to
+the default file**, the target resolver throws `CustomCollectionStateError`, whose message names the
+collection and tells the caller to set `INDEX_STATE_PATH`. The comparison is
+`resolve(statePath) === resolve(DEFAULT_INDEX_STATE_PATH)`, so `data/index-state.json`,
+`./data/index-state.json`, `data/../data/index-state.json`, and the absolute form of the default are
+all refused; a genuinely different path is accepted, and a default-collection run needs no path at
+all. Verified through the CLI as well as in the unit tests.
+
+#### Clearing stale syntax values
+
+`QdrantClient.deleteVectors(ids, vectors, options?)` is a generic transport operation: the vector
+names come from the caller, so it is not tied to `ast`. It calls the documented endpoint of
+Qdrant 1.19.1, `docs/Qdrant - 1.19.1/documentation/manage-data/points/index.md`, section
+"Delete Vectors" (available since v1.2.0):
+
+```http
+POST /collections/{collection_name}/points/vectors/delete?wait=true
+{ "points": [2], "vectors": ["ast"] }
+```
+
+Verified behaviour, on the local 1.19.1 server: the point keeps `dense`, keeps `bm25`, keeps its
+payload, and loses only `ast`; the point itself is never deleted. The operation is **idempotent** on
+an existing point: deleting `ast` twice succeeds again. Deleting `ast` for a point id that does not
+exist fails with `Not found: No point with id 99 found`.
+
+**Verified batch fact (1.19.1):** a batch that mixes a present and an absent point, such as
+`{"points": [1, 99]}`, returns the absent-point error **and still clears point 1**. The batch is
+applied partially, then the error is raised. A reviewer claim that a whole batch can be skipped does
+not hold for this version. Relying on that partial application is still undocumented behaviour, so
+`deleteVectors` treats it as a defensive boundary rather than a guarantee:
+
+1. the batch request runs first;
+2. if it answers an absent point, the same identifiers are retried **one at a time**; each
+   single-identifier request is unambiguous, so a success and an already-absent answer both count
+   as cleared, and anything else throws;
+3. any other failure on the first request (`5xx`, a missing collection) throws immediately, with no
+   retry.
+
+A vanished point is recognised by the documented message `No point with id`, not by status 404,
+because a missing collection also answers 404. The JSDoc of the method records the endpoint, the
+preservation guarantee, the idempotence, and the partial-application fact, so the per-identifier
+fallback is not mistaken for a correctness requirement. The signature is unchanged:
+`(ids, vectors, { wait?, log? })`.
+
+The backfill clears through `deleteVectors(ids, [ast.name])` in batches of `batchSize`. A batch
+whose clear throws is logged, and its records move to `failed` with the reason
+`clear failed: <message>`; they are never left counted as `unsupported` with a possibly stale
+vector. `cleared` counts the identifiers the run asked Qdrant to delete.
+
+#### Live probe (isolated collection through the CLI, deleted afterwards)
+
+Ran against `http://127.0.0.1:6333` on `t0004-task13-probe`, seeded with four points that carry a
+real 1024-dimension dense vector, a Qdrant BM25 vector, and a full payload. Point 4 holds a blank
+text and a **pre-existing** `ast` vector, so the run must clear it rather than write one. The run
+used `INDEX_STATE_PATH=.tmp/probe-state.json`.
+
+First the refusal, with no state path:
+
+```text
+$ bun run scripts/index-syntax.ts --collection t0004-task13-probe
+[index-syntax] failed: --collection t0004-task13-probe needs its own state file: set
+INDEX_STATE_PATH to a path other than the default, because the default state file describes the
+slogans collection
+```
+
+Then the real run:
+
+```text
+$ INDEX_STATE_PATH=.tmp/probe-state.json bun run scripts/index-syntax.ts --collection t0004-task13-probe
+[index-syntax] Generation a9791475-…: mode coarse, configuration ccd33e7a68f91bd7, encoder coarse-3
+[index-syntax] The ast vector definition already exists
+[index-syntax] Enumerated 4 eligible record(s)
+[index-syntax] Excluded 4 (unsupported): input text is blank
+[index-syntax] Published a9791475-… as ready: eligible 4, indexed 3, unsupported 1, failed 0, cleared 1
+```
+
+Before and after comparison:
+
+```text
+point 1: dense true, bm25 true, payload true, ast 1 row(s)
+point 2: dense true, bm25 true, payload true, ast 1 row(s)
+point 3: dense true, bm25 true, payload true, ast 1 row(s)
+point 4: dense true, bm25 true, payload true, ast absent
+preserved true
+syntax status ready
+syntax coverage {"eligible":4,"indexed":3,"unsupported":1,"failed":0}
+```
+
+Point 4 started with an `ast` vector and ended without one, which is the real clear. A second run
+with `--limit 2` on the same collection logged `Warning: --limit covered 2 of 4 records, so this
+run publishes pending, not ready` and published `as pending: eligible 2, indexed 2, unsupported 0,
+failed 0, cleared 0`, which is the truncation rule confirmed against the live server.
+
+The probe collection, `.tmp/probe-state.json`, the before-snapshot, and the seed script were
+deleted afterwards. `slogans` and `data/index-state.json` were never touched; `slogans` is again the
+only collection on the local server, and `git status` shows no change to `data/index-state.json`.
+
+#### Gate output
+
+```text
+$ bun fmt
+Formatted 0 files, 182 unchanged [11.35ms]
+
+$ bun fmt --check
+All 182 files are formatted.
+
+$ bun run lint
+$ biome lint .
+Checked 89 files in 52ms. No fixes applied.
+
+$ bun test
+bun test v1.4.4 (38afee6c8)
+
+ 435 pass
+ 0 fail
+ 4345 expect() calls
+Ran 435 tests across 26 files. [3.39s]
+
+$ bunx tsc --noEmit
+(no output)
+```
+
+#### Deliberately left to later tasks
+
+- Task 16c wires the backfill into the full indexer and passes the active configuration and the
+  generation lifecycle through.
+- Task 14 normalizes the raw `max_sim` score to `[0, 1]` and applies the unsupported-record
+  eligibility policy at query time.
