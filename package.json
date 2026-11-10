@@ -7,7 +7,7 @@
 		"dev": "bun --hot --dev src/server/index.ts",
 		"test": "bun test",
 		"build:citations": "bun run scripts/build-citations.ts",
-		"index": "bun run scripts/index-slogans.ts",
+		"index": "bun run scripts/index-dataset.ts",
 		"smoke": "bun run scripts/smoke-retrieval.ts",
 		"qdrant:start": "bun run scripts/qdrant.ts start",
 		"qdrant:stop": "bun run scripts/qdrant.ts stop",

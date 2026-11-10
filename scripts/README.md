@@ -3,11 +3,63 @@
 Command-line tools that build the local data and run the proof of concept. Git
 does not commit the data these scripts produce.
 
-## Slogans
+## Index
 
-- `index-slogans.ts` reads `datasets/slogans.txt` through the generic dataset
-  reader, embeds each slogan, and upserts dense and BM25 vectors to Qdrant.
-  Run it with `bun run scripts/index-slogans.ts`.
+- `index-dataset.ts` imports one configured dataset into its Qdrant collection.
+  It reads the corpus through the generic dataset reader, embeds the content
+  field, and upserts one dense vector and one BM25 vector per record. Run it
+  with:
+
+  ```sh
+  bun run index [--dataset slogans|citations] [--drop] [--limit N] [--batch-size N]
+  ```
+
+  Flags:
+
+  - `--dataset <name>`: the dataset to import. The names are the keys of
+    `datasetConfigurations`, `slogans` and `citations`. Defaults to `slogans`.
+    Every path, field name, collection name, vector name, payload index, and
+    dimension comes from that dataset configuration.
+  - `--drop`: delete the collection of the selected dataset before the run. Only
+    that collection is named.
+  - `--limit N`: index the next N records that are absent, so repeated runs
+    make progress through the corpus. A run that covers the whole corpus
+    publishes `ready`; a run that stops short publishes nothing.
+  - `--batch-size N`: records per embedding and upsert batch. Defaults to 256.
+  - `--help`: print the usage and exit with code 0.
+
+  The run is **non-destructive by default**. It creates the collection when it
+  is absent and never deletes a collection. Without `--drop`, it reads the
+  identifiers that the collection already holds with a scroll, then skips every
+  corpus record whose identifier is present: no embedding, no upsert. An
+  interrupted import therefore continues on the next run, and the second run
+  pays only for the records that are absent.
+
+  The run publishes a ready generation only when the corpus stream ends by
+  itself. A run stopped by `--limit` is truncated: it publishes nothing, and the
+  state stays `rebuilding`. A partial import must not serve queries.
+
+  Each dataset owns one state file. `slogans` keeps `data/index-state.json`,
+  because `scripts/index-syntax.ts` refuses a custom `--collection` whose state
+  path resolves to that default. Other datasets use
+  `data/index-state.<name>.json`, for example `data/index-state.citations.json`.
+  `INDEX_STATE_PATH` overrides the path for every dataset, but a path that
+  resolves to another dataset's state file is refused.
+
+  A run compares its configuration fingerprint, which covers the dataset, the
+  collection, the embedding provider and model, the token width, the vector
+  dimensions, and the BM25 options, with the persisted one. A difference is
+  refused before any write, because two embedding spaces in one collection
+  produce wrong scores without an error. `--drop` starts a new collection and
+  skips the comparison.
+
+  **Known limitation:** Qdrant applies one BM25 option set to a whole
+  collection, and `BM25_LANGUAGE` is one process-wide value. The citation corpus
+  holds French and English quotes, so one language stems the other badly. The
+  indexer keeps `bm25Options(process.env)` for every dataset. This is a known
+  limitation of the current indexer, not a property of Qdrant. A separate ticket
+  owns per-dataset BM25.
+
 - `smoke-retrieval.ts` runs a few example queries against the indexed collection
   for a quick manual check. Run it with `bun run scripts/smoke-retrieval.ts`.
 
@@ -144,10 +196,19 @@ The script is idempotent. It skips a component that is already present.
 ## Glossary
 
 - **BM25**: a ranking method that scores records by their matching words.
+- **collection**: the named set of points that Qdrant stores.
+- **dense vector**: the fixed-length vector that carries the meaning of a text.
 - **dump**: a compressed XML file that contains the pages of a Wikimedia wiki.
+- **fingerprint**: a short value computed from a configuration, used to compare
+  two configurations.
 - **model**: a trained data file that a parser loads.
+- **point**: one record in a collection.
 - **Qdrant**: the vector database that stores the hybrid index.
+- **resume**: continue an interrupted import by skipping the records that the
+  collection already holds.
 - **UDPipe**: a trainable pipeline for tokenization, tagging, lemmatization, and
   dependency parsing.
+- **upsert**: a write that inserts a point, or replaces the point with the same
+  identifier.
 - **Wikiquote**: a free compendium of sourced quotes, published by the Wikimedia Foundation.
 - **wikitext**: the source markup of a wiki page.

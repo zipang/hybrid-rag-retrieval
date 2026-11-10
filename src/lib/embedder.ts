@@ -36,7 +36,7 @@ export type EmbedderEnv = {
 const CLOUD_PROVIDERS = new Set(["openai", "voyage", "cohere", "mistral"]);
 
 /** Default local dense model alias. */
-const DEFAULT_DENSE_MODEL = "intfloat/multilingual-e5-large";
+export const DEFAULT_DENSE_MODEL = "intfloat/multilingual-e5-large";
 
 /**
  * Default dense model max token length.
