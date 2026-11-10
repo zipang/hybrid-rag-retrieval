@@ -1,6 +1,6 @@
 # Implementation Plan: [T0002] Schema-Driven Dataset Extraction
 
-Ticket: `T0002` — spec: `roadmap/T0002/spec.md`
+Ticket: `T0002` — spec: `tickets/done/T0002-schema-driven-dataset-extraction/spec.md`
 
 ## Overview
 
@@ -75,9 +75,9 @@ T0002 ends after it provides generic extraction and updates T0001's ticket conte
 ### Phase 3: Update the T0001 handoff
 
 - [x] **Task 5: Update the T0001 specification and plan**
-  - Acceptance: Update `roadmap/T0001/spec.md` and `roadmap/T0001/plan.md` to use the new `datasets/` path and the T0002 model, reader, and dataset configuration contracts. Keep Qdrant helpers and indexing implementation in T0001. Update the T0001 tasks that still describe the hard-coded slogan parser. Do not add Qdrant code to T0002.
+  - Acceptance: Update `tickets/done/T0001-hybrid-slogan-retrieval/spec.md` and `tickets/done/T0001-hybrid-slogan-retrieval/plan.md` to use the new `datasets/` path and the T0002 model, reader, and dataset configuration contracts. Keep Qdrant helpers and indexing implementation in T0001. Update the T0001 tasks that still describe the hard-coded slogan parser. Do not add Qdrant code to T0002.
   - Verify: Check that T0001 no longer plans a duplicate corpus parser. Confirm its Qdrant and indexing tasks depend on the T0002 extraction contract. Check all corpus paths and commands in both ticket documents.
-  - Files: `roadmap/T0001/spec.md`, `roadmap/T0001/plan.md`
+  - Files: `tickets/done/T0001-hybrid-slogan-retrieval/spec.md`, `tickets/done/T0001-hybrid-slogan-retrieval/plan.md`
   - Depends: Tasks 1–4
   - Scope: Small
 
@@ -99,7 +99,7 @@ T0002 ends after it provides generic extraction and updates T0001's ticket conte
 - [x] **Task 7: Document field roles and query-agent use**
   - Acceptance: Document the content, filter, and identifier roles for every field in both datasets. Explain how query agents use these descriptions as context. Update T0001's specification and chat task to use schema descriptions when it builds query context. Keep Qdrant implementation in T0001.
   - Verify: Compare every table entry in `datasets/README.md` with its schema description. Confirm T0001's chat task names the content and filter roles. Run `bun run lint`.
-  - Files: `datasets/README.md`, `roadmap/T0002/spec.md`, `roadmap/T0002/plan.md`, `roadmap/T0001/spec.md`, `roadmap/T0001/plan.md`
+  - Files: `datasets/README.md`, `tickets/done/T0002-schema-driven-dataset-extraction/spec.md`, `tickets/done/T0002-schema-driven-dataset-extraction/plan.md`, `tickets/done/T0001-hybrid-slogan-retrieval/spec.md`, `tickets/done/T0001-hybrid-slogan-retrieval/plan.md`
   - Depends: Task 6
   - Scope: Medium
 
@@ -122,14 +122,14 @@ T0002 ends after it provides generic extraction and updates T0001's ticket conte
 - [x] **Task 10: Document schema labels and order behavior**
   - Acceptance: Document that property keys are canonical, titles are fallback labels, and properties follow customary corpus order. State that the reader checks keys before titles and accepts lines in any order. Update the project glossary, dataset instructions, T0002 spec, and plan.
   - Verify: Compare the field table, schema titles, and parser behavior for both datasets.
-  - Files: `README.md`, `datasets/README.md`, `datasets/AGENTS.md`, `roadmap/T0002/spec.md`, `roadmap/T0002/plan.md`
+  - Files: `README.md`, `datasets/README.md`, `datasets/AGENTS.md`, `tickets/done/T0002-schema-driven-dataset-extraction/spec.md`, `tickets/done/T0002-schema-driven-dataset-extraction/plan.md`
   - Depends: Tasks 8, 9
   - Scope: Medium
 
 - [x] **Task 11: Update the T0001 schema handoff**
   - Acceptance: Update T0001's spec and plan to state that property keys are canonical labels and titles are fallback labels. State that the query agent uses schema descriptions for content and filter context. Keep Qdrant indexing in T0001.
   - Verify: Confirm both T0001 documents refer to schema titles and descriptions. Confirm no file-label map remains in the planned data flow.
-  - Files: `roadmap/T0001/spec.md`, `roadmap/T0001/plan.md`
+  - Files: `tickets/done/T0001-hybrid-slogan-retrieval/spec.md`, `tickets/done/T0001-hybrid-slogan-retrieval/plan.md`
   - Depends: Tasks 8–10
   - Scope: Small
 
@@ -138,20 +138,20 @@ T0002 ends after it provides generic extraction and updates T0001's ticket conte
 - [x] **Task 12: Include a reason in each rejected event**
   - Acceptance: Each rejected reader event includes its block number and a reason. Report missing separators, unknown labels, and TJS validation errors with useful field context. Keep logging outside the reader.
   - Verify: `bun test src/utils/data-utils.test.ts` checks each rejection reason and confirms the reader continues after an invalid block.
-  - Files: `src/utils/data-utils.ts`, `src/utils/data-utils.test.ts`, `datasets/README.md`, `roadmap/T0002/spec.md`, `roadmap/T0002/plan.md`
+  - Files: `src/utils/data-utils.ts`, `src/utils/data-utils.test.ts`, `datasets/README.md`, `tickets/done/T0002-schema-driven-dataset-extraction/spec.md`, `tickets/done/T0002-schema-driven-dataset-extraction/plan.md`
   - Depends: Task 9
   - Scope: Medium
 
 - [x] **Task 13: Require the T0001 importer to log rejections**
   - Acceptance: Update T0001's spec and plan. The importer logs each rejected record with its corpus path, block number, and reason. It continues to later blocks and reports accepted and rejected totals.
   - Verify: Confirm the T0001 indexing task includes a test with an invalid block followed by a valid block. Confirm the log includes the file, block, and reason.
-  - Files: `roadmap/T0001/spec.md`, `roadmap/T0001/plan.md`, `roadmap/T0002/plan.md`
+  - Files: `tickets/done/T0001-hybrid-slogan-retrieval/spec.md`, `tickets/done/T0001-hybrid-slogan-retrieval/plan.md`, `tickets/done/T0002-schema-driven-dataset-extraction/plan.md`
   - Depends: Task 12
   - Scope: Small
 
 ### Checkpoint: Complete
 
-- [x] All T0002 success criteria in `roadmap/T0002/spec.md` pass.
+- [x] All T0002 success criteria in `tickets/done/T0002-schema-driven-dataset-extraction/spec.md` pass.
 - [x] `bun test` and `bun run lint` pass.
 - [x] Biome reports no issues in edited source files.
 - [x] Ready for human review.

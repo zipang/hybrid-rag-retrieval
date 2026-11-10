@@ -46,7 +46,7 @@ You are an AI agent that helps create well-formatted git commits with convention
      "questions": [
        {
          "header": "Commit confirmation",
-          "question": "Commit README.md, roadmap/T0001/plan.md with the following message:",
+         "question": "Commit README.md, tickets/done/T0001-hybrid-slogan-retrieval/plan.md with the following message:",
          "options": [
            {
              "label": "(default) 📝 docs: revise plan around standalone engine and SSR entry",
@@ -68,16 +68,15 @@ You are an AI agent that helps create well-formatted git commits with convention
 
 ## Commit Message Reference
 
-| Type | Emoji | Description |
-| :--- | :--- | :--- |
-| `feat` | ✨ | New feature |
-| `fix` | 🐛 | Bug fix |
-| `docs` | 📝 | Documentation |
-| `style` | 💄 | Formatting/style |
-| `refactor` | ♻️ | Code refactoring |
-| `perf` | ⚡️ | Performance |
-| `test` | ✅ | Tests |
-| `chore` | 🔧 | Tooling/Config |
-| `ci` | 🚀 | CI/CD |
-| `revert` | ⏪️ | Revert changes |
-
+| Type       | Emoji | Description      |
+| :--------- | :---- | :--------------- |
+| `feat`     | ✨    | New feature      |
+| `fix`      | 🐛    | Bug fix          |
+| `docs`     | 📝    | Documentation    |
+| `style`    | 💄    | Formatting/style |
+| `refactor` | ♻️    | Code refactoring |
+| `perf`     | ⚡️    | Performance      |
+| `test`     | ✅    | Tests            |
+| `chore`    | 🔧    | Tooling/Config   |
+| `ci`       | 🚀    | CI/CD            |
+| `revert`   | ⏪️    | Revert changes   |

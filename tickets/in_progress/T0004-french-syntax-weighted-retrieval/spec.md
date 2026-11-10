@@ -1,7 +1,12 @@
 # Spec: [T0004] French Syntax Index and Weighted Threshold Retrieval
 
-Ticket: `T0004`  
-Status: Approved by the user. Implementation planning follows this specification.
+Ticket: `T0004`
+
+- **Status**: in_progress
+- **Owner**: coding sub-agent, supervised by CTO
+- **Started**: 2026-10-01
+- **Approved**: the user approved this specification. Tasks 1 to 11b are
+  delivered. Tasks 12 to 17b remain open.
 
 ## Scope note
 
@@ -66,13 +71,13 @@ The proposed code-representation workflow becomes: parse French grammar, abstrac
 
 Official documentation review identified these candidates. No runtime feasibility or accuracy experiment has run yet.
 
-| Candidate | Finding | Required follow-up |
-| --- | --- | --- |
-| NLP.js | Its documented features do not establish French dependency-tree output. | Do not select it based on French tokenization support alone. |
-| Transformers.js | Its supported tasks do not include a ready dependency-parsing pipeline. | Require an actual French model, head decoding, and grammatical output before selection. |
-| Third-party `udpipe-wasm` | Its documented JavaScript interface exposes dependency heads, labels, and word classes. It does not expose morphology. | Test Bun compatibility, French models, and access to grammatical features for detailed mode. |
-| Native UDPipe | Its documented output includes dependency heads, labels, word classes, and grammatical features. | Compare a locally invoked executable with other candidates. Check the selected model license. |
-| Local Stanza | Its official dependency-parser example uses French. Its word objects expose the required grammatical annotations. | Evaluate a local Python component if JavaScript candidates fail the selection gate. |
+| Candidate                 | Finding                                                                                                                | Required follow-up                                                                            |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| NLP.js                    | Its documented features do not establish French dependency-tree output.                                                | Do not select it based on French tokenization support alone.                                  |
+| Transformers.js           | Its supported tasks do not include a ready dependency-parsing pipeline.                                                | Require an actual French model, head decoding, and grammatical output before selection.       |
+| Third-party `udpipe-wasm` | Its documented JavaScript interface exposes dependency heads, labels, and word classes. It does not expose morphology. | Test Bun compatibility, French models, and access to grammatical features for detailed mode.  |
+| Native UDPipe             | Its documented output includes dependency heads, labels, word classes, and grammatical features.                       | Compare a locally invoked executable with other candidates. Check the selected model license. |
+| Local Stanza              | Its official dependency-parser example uses French. Its word objects expose the required grammatical annotations.      | Evaluate a local Python component if JavaScript candidates fail the selection gate.           |
 
 The selection gate must compare output completeness, test data set quality for French, runtime compatibility, model licensing, memory, and warm-query latency.
 Prefer JavaScript or TypeScript when it meets those requirements without substantial custom parser development.
@@ -95,15 +100,15 @@ One exception is a punctuation mark: the abstraction reads the punctuation lemma
 
 Modes have these proposed definitions:
 
-| Detail | `coarse` | `detailed` |
-| --- | --- | --- |
-| Dependency connections | Retain | Retain |
-| Universal word classes | Retain, with `PROPN` mapped to `NOUN` | Retain |
-| Relative word order | Retain | Retain |
-| Dependency labels | Retain base labels | Retain full labels, including subtypes |
-| Grammatical features | Remove | Retain an explicit allowlist |
-| Vocabulary and lemmas | Remove, except the punctuation mark | Remove, except the punctuation mark |
-| Punctuation nodes | Retain, in position and with their mark | Retain, in position and with their mark |
+| Detail                 | `coarse`                                | `detailed`                              |
+| ---------------------- | --------------------------------------- | --------------------------------------- |
+| Dependency connections | Retain                                  | Retain                                  |
+| Universal word classes | Retain, with `PROPN` mapped to `NOUN`   | Retain                                  |
+| Relative word order    | Retain                                  | Retain                                  |
+| Dependency labels      | Retain base labels                      | Retain full labels, including subtypes  |
+| Grammatical features   | Remove                                  | Retain an explicit allowlist            |
+| Vocabulary and lemmas  | Remove, except the punctuation mark     | Remove, except the punctuation mark     |
+| Punctuation nodes      | Retain, in position and with their mark | Retain, in position and with their mark |
 
 The proposed detailed allowlist is `Definite`, `Gender`, `Mood`, `Number`, `Person`, `Tense`, `VerbForm`, and `Voice`.
 Record missing features consistently. Do not infer missing features from lexical identity.
@@ -324,8 +329,8 @@ Proposed additions:
 src/lib/syntax/              Parser adapter, abstraction, encoder, and configuration
 scripts/index-syntax.ts      Syntax-only backfill and mode rebuild
 scripts/evaluate-syntax.ts   Reproducible French comparison bench
-roadmap/T0004/spec.md        Requirements and review decisions
-roadmap/T0004/plan.md        Implementation plan after specification approval
+tickets/in_progress/T0004-french-syntax-weighted-retrieval/spec.md        Requirements and review decisions
+tickets/in_progress/T0004-french-syntax-weighted-retrieval/plan.md        Implementation plan after specification approval
 ```
 
 Place tests beside the modules they verify. Store small, reviewed grammatical test data beside syntax tests.
@@ -341,13 +346,12 @@ Inject parser and database dependencies so encoder tests require neither service
 Illustrative configuration style:
 
 ```ts
-type SyntaxMode = "coarse" | "detailed"
+type SyntaxMode = "coarse" | "detailed";
 
 /** Return whether two syntax configurations use the same specificity. */
 const hasSameMode = (indexed: SyntaxMode, requested: SyntaxMode): boolean => {
-
-	return indexed === requested
-}
+  return indexed === requested;
+};
 ```
 
 ## Testing Strategy

@@ -1,6 +1,6 @@
 # Syntax trees — representation and encoding for the T0004 index
 
-Ticket: `T0004` — related spec: `roadmap/T0004/spec.md`
+Ticket: `T0004` — related spec: `tickets/in_progress/T0004-french-syntax-weighted-retrieval/spec.md`
 
 This memo records how the project represents and encodes the grammatical
 structure of an indexed text. The index needs a syntax vector. The vector must
@@ -464,7 +464,7 @@ commercial use.
 - The project must mirror the `udpipe-wasm` and UDPipe documentation before
   adoption, as the specification requires.
 - A copular clause and a verbal clause with the same frame score far apart
-  (section 14). The project opens the ticket `roadmap/T0005/spec.md` to
+  (section 14). The project opens the ticket `tickets/planned/T0005-investigate-copula-verb-syntax-gap/spec.md` to
   investigate a fix on the reviewed data set.
 
 ## 12. Parser behavior and failure modes
@@ -734,7 +734,7 @@ candidate rules exist:
 Both rules are guesses. The project did not measure them. The correct choice
 depends on real data, and the parser may itself be the cause (section 12 lists
 the parser errors). The project opens a ticket to investigate the options on the
-reviewed data set. The ticket is `roadmap/T0005/`.
+reviewed data set. The ticket is `tickets/planned/T0005-investigate-copula-verb-syntax-gap/`.
 
 The project defers this work until the end-to-end path exists (encode, store,
 retrieve). The score is a proof-of-concept signal, not a blocker.
@@ -769,7 +769,7 @@ The same code and the same weights score the pair
 their feature strings coincide (section 7 and section 9). The gap is a property
 of the strings, not of the weights. Weight tuning is the **second** step: after a
 tree rule makes the two shapes share a feature, weights decide how much that
-shared feature counts. The ticket `roadmap/T0005/spec.md` records the weight
+shared feature counts. The ticket `tickets/planned/T0005-investigate-copula-verb-syntax-gap/spec.md` records the weight
 tuning as a negative control.
 
 ## 15. The dependency roles of the reviewed trees
@@ -862,10 +862,10 @@ text before the first colon, so `obl:mod` becomes `obl` and `flat:name` becomes
 - [UD simple clauses overview](https://universaldependencies.org/u/overview/simple-syntax.html)
 - [UD relation index](https://universaldependencies.org/u/dep/index.html)
 - [Stanza project](https://github.com/stanfordnlp/stanza)
-- `roadmap/T0004/parser-decision.md`
+- `tickets/in_progress/T0004-french-syntax-weighted-retrieval/parser-decision.md`
 - The parser candidates and the local mirror rule are in
-  `roadmap/T0004/spec.md`.
-- The copula investigation ticket is `roadmap/T0005/spec.md`.
+  `tickets/in_progress/T0004-french-syntax-weighted-retrieval/spec.md`.
+- The copula investigation ticket is `tickets/planned/T0005-investigate-copula-verb-syntax-gap/spec.md`.
 
 ## Glossary
 

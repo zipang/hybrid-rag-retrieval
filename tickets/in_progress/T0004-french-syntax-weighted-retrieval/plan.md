@@ -172,14 +172,14 @@ can progress independently after their shared contracts stabilize.
   - Acceptance: At least 30 reviewed triplets cover vocabulary changes, morphological differences, connection changes, fragments, and multiple sentences.
   - Acceptance: Freeze judgments and separate development items from held-out evaluation items.
   - Verify: Human review of the test data trees and the expected mode relationships. Do not auto-generate expected parses from the selected parser.
-  - Files: `src/lib/syntax/test-data/french.json`, `roadmap/T0004/evaluation.md`.
+  - Files: `src/lib/syntax/test-data/french.json`, `tickets/in_progress/T0004-french-syntax-weighted-retrieval/evaluation.md`.
   - Depends: None. Scope: Small.
 
 - [x] **Task 2: Prove complete Qdrant score enumeration**
   - Acceptance: An isolated collection reproduces exact dense and BM25 scores across identifier batches, including sparse nonmatches and tied scores.
   - Acceptance: Compare the paginated union with exhaustive known identifiers. Verify batch filters do not change corpus IDF scores.
   - Verify: `bun test src/lib/qdrant-completeness.test.ts` against the isolated Qdrant collection. Remove only that test collection afterward.
-  - Files: `src/lib/qdrant-completeness.test.ts`, `roadmap/T0004/retrieval-feasibility.md`.
+  - Files: `src/lib/qdrant-completeness.test.ts`, `tickets/in_progress/T0004-french-syntax-weighted-retrieval/retrieval-feasibility.md`.
   - Depends: None. Scope: Small.
 
 ### Checkpoint A: Completeness feasibility
@@ -192,7 +192,7 @@ If the proposed batch approach fails, revise the transport design before continu
   - Acceptance: Test the JavaScript/WASM lead first against required heads, labels, word classes, morphology, and Bun execution.
   - Acceptance: Compare qualifying local alternatives. Record quality, versions, licenses, memory, and warm latency. Obtain dependency approval.
   - Verify: Reproducible parser experiment on the reviewed test data set. Mirror selected official documentation through the librarian workflow before adoption.
-  - Files: `roadmap/T0004/parser-decision.md`, `roadmap/T0004/evaluation.md`, root `AGENTS.md`, selected local documentation mirror.
+  - Files: `tickets/in_progress/T0004-french-syntax-weighted-retrieval/parser-decision.md`, `tickets/in_progress/T0004-french-syntax-weighted-retrieval/evaluation.md`, root `AGENTS.md`, selected local documentation mirror.
   - Depends: Task 1. Scope: Small decision artifact. Documentation acquisition is a bounded librarian operation.
 
 - [x] **Task 4: Define weighted score contracts**
@@ -200,7 +200,7 @@ If the proposed batch approach fails, revise the transport design before continu
   - Acceptance: Validate normalization, weight tolerance, inclusive thresholds, and deterministic identifier ordering with finite-value checks.
   - Acceptance: Normalize the raw Qdrant multivector score with `rawMaxSim / max(queryRows, recordRows)`, so the syntax component score stays in `[0, 1]`.
   - Verify: `bun test src/lib/scoring.test.ts`. Review and freeze the BM25 scale and caller defaults before API migration.
-  - Files: `src/lib/scoring.ts`, `src/lib/scoring.test.ts`, `src/lib/retrieval-contract.ts`, `roadmap/T0004/scoring-decision.md`.
+  - Files: `src/lib/scoring.ts`, `src/lib/scoring.test.ts`, `src/lib/retrieval-contract.ts`, `tickets/in_progress/T0004-french-syntax-weighted-retrieval/scoring-decision.md`.
   - Depends: Tasks 1–2. Scope: Medium.
 
 ### Checkpoint B: Research decisions
@@ -320,7 +320,7 @@ Status: passed. `bun test` covers a second collection with custom vector and fie
   - Acceptance: Weight features by grammatical role, not uniformly. Core-role edges (`root`, `nsubj`, `obj`) weigh more than modifier edges (`advmod`, `det`, `expl`). Checkpoint B measured that uniform weights over-weight a single missing node. See `memos/syntax-trees.md`, section 9. The exact weights and the risk of gap compression stay open for this task.
   - Acceptance: Move the reference scorer into the repository as a reproducible evaluation tool, and drive the frozen weights from it.
   - Verify: `bun test src/lib/syntax/abstraction.test.ts src/lib/syntax/encoder.test.ts`, plus `scripts/evaluate-syntax.ts --mode coarse` on the held-out split. Meet specification targets before database backfill.
-  - Files: `src/lib/syntax/abstraction.ts`, `src/lib/syntax/abstraction.test.ts`, `src/lib/syntax/encoder.ts`, `src/lib/syntax/encoder.test.ts`, `scripts/evaluate-syntax.ts`, `roadmap/T0004/evaluation.md`.
+  - Files: `src/lib/syntax/abstraction.ts`, `src/lib/syntax/abstraction.test.ts`, `src/lib/syntax/encoder.ts`, `src/lib/syntax/encoder.test.ts`, `scripts/evaluate-syntax.ts`, `tickets/in_progress/T0004-french-syntax-weighted-retrieval/evaluation.md`.
   - Notes: The `coarse` encoder, the role weights, and the reference scorer are committed. Tasks 11a and 11b change the feature set, so the final encoder identity freeze moves to Task 11b (encoder version `coarse-3`).
   - Depends: Tasks 1, 4, 10. Scope: Medium.
 
@@ -328,9 +328,9 @@ Status: passed. `bun test` covers a second collection with custom vector and fie
   - Acceptance: Build reviewed punctuation-only pairs that differ only by a mark. Cover the terminal marks `.`, `?`, and `!`, and an internal comma. Reuse existing texts, so the set adds no text.
   - Acceptance: Measure the current `coarse` score for every punctuation-only pair. Report each pair that scores equal although its marks differ.
   - Acceptance: Confirm the parser attaches each mark to the head of the clause or phrase it belongs to, following the UD `punct` rules.
-  - Acceptance: Decide, with the user, that the punctuation marks enter the syntax vector. Record the decision in `memos/syntax-trees.md` and `roadmap/T0004/evaluation.md`.
+  - Acceptance: Decide, with the user, that the punctuation marks enter the syntax vector. Record the decision in `memos/syntax-trees.md` and `tickets/in_progress/T0004-french-syntax-weighted-retrieval/evaluation.md`.
   - Verify: `bun test src/lib/syntax/test-data.test.ts` and `scripts/evaluate-syntax.ts --mode coarse` on the pairs. Human review of the expected relations.
-  - Files: `src/lib/syntax/test-data/french.json`, `src/lib/syntax/test-data.test.ts`, `scripts/evaluate-syntax.ts`, `roadmap/T0004/evaluation.md`, `memos/syntax-trees.md`.
+  - Files: `src/lib/syntax/test-data/french.json`, `src/lib/syntax/test-data.test.ts`, `scripts/evaluate-syntax.ts`, `tickets/in_progress/T0004-french-syntax-weighted-retrieval/evaluation.md`, `memos/syntax-trees.md`.
   - Notes: `scripts/evaluate-syntax.ts` derives the variants from `Quelle belle journée !` (terminal marks) and `Voir, c'est croire` (internal comma). Before the change, every cross-mark pair scored `1.000000`.
   - Depends: Tasks 1, 10–11. Scope: Small.
 
@@ -341,7 +341,7 @@ Status: passed. `bun test` covers a second collection with custom vector and fie
   - Acceptance: Revise the mode table and the functional requirement in `spec.md`. Record the punctuation-mark exception and its source.
   - Acceptance: Freeze a new encoder version (`coarse-3`) and re-evaluate the held-out split. Meet the specification target before the syntax backfill.
   - Verify: `bun test src/lib/syntax/abstraction.test.ts src/lib/syntax/encoder.test.ts` and `scripts/evaluate-syntax.ts --mode coarse` on the held-out split. Update `bun test src/lib/syntax/test-data.test.ts`.
-  - Files: `src/lib/syntax/abstraction.ts`, `src/lib/syntax/abstraction.test.ts`, `src/lib/syntax/encoder.ts`, `src/lib/syntax/encoder.test.ts`, `src/lib/syntax/test-data/french.json`, `roadmap/T0004/spec.md`, `roadmap/T0004/evaluation.md`, `memos/syntax-trees.md`.
+  - Files: `src/lib/syntax/abstraction.ts`, `src/lib/syntax/abstraction.test.ts`, `src/lib/syntax/encoder.ts`, `src/lib/syntax/encoder.test.ts`, `src/lib/syntax/test-data/french.json`, `tickets/in_progress/T0004-french-syntax-weighted-retrieval/spec.md`, `tickets/in_progress/T0004-french-syntax-weighted-retrieval/evaluation.md`, `memos/syntax-trees.md`.
   - Depends: Task 11a. Scope: Medium.
 
 ### Checkpoint E: Syntax quality
@@ -424,14 +424,14 @@ Run the API, chat, retrieval panel, and smoke flows before final evaluation.
   - Acceptance: Implement the `coarse` mode evaluation command and report grammar quality, ranking, full-result equality, and runtime measurements.
   - Acceptance: Include corpus size, vector dimensions, normalization parameters, memory, page cost, and component timings in reports.
   - Verify: Run `evaluate-syntax.ts --mode coarse` against an isolated collection. Compare all results with the exhaustive reference.
-  - Files: `scripts/evaluate-syntax.ts`, `scripts/evaluate-syntax.test.ts`, `roadmap/T0004/evaluation.md`.
+  - Files: `scripts/evaluate-syntax.ts`, `scripts/evaluate-syntax.test.ts`, `tickets/in_progress/T0004-french-syntax-weighted-retrieval/evaluation.md`.
   - Depends: Tasks 11, 14, 16c. Scope: Medium.
 
 - [ ] **Task 17b: Document migration and close verification**
   - Acceptance: Document parser setup, syntax backfill, weighted API requests, continuation handling, cursor bounds, and API migration.
   - Acceptance: Record approved operational targets and all specification success criteria, including explicit exclusions and complete matching.
   - Verify: `bun test`, `bun run lint`, `bun run smoke`, and both specification curl examples. Format edited source files with Biome.
-  - Files: root `README.md`, `scripts/README.md`, `roadmap/T0004/spec.md`, `roadmap/T0004/evaluation.md`, `roadmap/T0004/plan.md`.
+  - Files: root `README.md`, `scripts/README.md`, `tickets/in_progress/T0004-french-syntax-weighted-retrieval/spec.md`, `tickets/in_progress/T0004-french-syntax-weighted-retrieval/evaluation.md`, `tickets/in_progress/T0004-french-syntax-weighted-retrieval/plan.md`.
   - Depends: Tasks 16a–16c, 17a. Scope: Medium.
 
 ### Checkpoint H: Release review

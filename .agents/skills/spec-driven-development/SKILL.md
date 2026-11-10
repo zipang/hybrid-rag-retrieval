@@ -9,7 +9,7 @@ description: Creates specs before coding. Use when starting a new project, featu
 
 Write a structured specification before writing any code. The spec is the shared source of truth between you and the human engineer — it defines what we're building, why, and how we'll know it's done. Code without a spec is guessing.
 
-Every spec belongs to a **Ticket**: an isolated unit of planned work identified by a sequential ID (`T0001`–`T9999`) and stored in its own directory under `roadmap/`. See the Glossary in the root `README.md`.
+Every spec belongs to a **Ticket**: an isolated unit of planned work identified by a sequential ID (`T0001`–`T9999`) and stored in its own directory under `tickets/`. The status folder (`planned/`, `in_progress/`, `review/`, `done/`) tells where the ticket stands. See the Glossary in the root `README.md` and the board in `tickets/README.md`.
 
 ## When to Use
 
@@ -39,16 +39,18 @@ SPECIFY ──→ PLAN ──→ TASKS ──→ IMPLEMENT
 
 Before writing any spec content, allocate the Ticket ID:
 
-1. List `roadmap/` for existing ticket directories matching `T\d{4}`.
-2. Take the next sequential ID (`T0001`–`T9999`); create `roadmap/TXXXX/`.
+1. List `tickets/` for existing ticket directories matching `T\d{4}` in every
+   status folder.
+2. Take the next sequential ID (`T0001`–`T9999`); create
+   `tickets/planned/TXXXX-short-kebab-title/`.
 3. State the Ticket ID and title at the top of every artifact produced for this feature.
 
 If the user provided a Ticket ID, reuse it — never renumber or skip IDs.
 
 All spec artifacts live inside the ticket directory:
 
-```
-roadmap/TXXXX/
+```text
+tickets/planned/TXXXX-short-kebab-title/
 ├── spec.md   ← this phase
 └── plan.md   ← phase 2 (plan + task checklist)
 ```
@@ -66,13 +68,14 @@ ASSUMPTIONS I'M MAKING:
 → Correct me now or I'll proceed with these.
 ```
 
-Don't silently fill in ambiguous requirements. The spec's entire purpose is to surface misunderstandings *before* code gets written — assumptions are the most dangerous form of misunderstanding.
+Don't silently fill in ambiguous requirements. The spec's entire purpose is to surface misunderstandings _before_ code gets written — assumptions are the most dangerous form of misunderstanding.
 
 **Write a spec document covering these six core areas:**
 
 1. **Objective** — What are we building and why? Who is the user? What does success look like?
 
 2. **Commands** — Full executable commands with flags, not just tool names.
+
    ```
    Build: bun run build
    Test: bun test -- --coverage
@@ -81,6 +84,7 @@ Don't silently fill in ambiguous requirements. The spec's entire purpose is to s
    ```
 
 3. **Project Structure** — Where source code lives, where tests go, where docs belong.
+
    ```
    src/           → Application source code
    src/components → React components
@@ -103,32 +107,41 @@ Don't silently fill in ambiguous requirements. The spec's entire purpose is to s
 # Spec: [TXXXX] [Project/Feature Name]
 
 ## Objective
+
 [What we're building and why. User stories or acceptance criteria.]
 
 ## Tech Stack
+
 [Framework, language, key dependencies with versions]
 
 ## Commands
+
 [Build, test, lint, dev — full commands]
 
 ## Project Structure
+
 [Directory layout with descriptions]
 
 ## Code Style
+
 [Example snippet + key conventions]
 
 ## Testing Strategy
+
 [Framework, test locations, coverage requirements, test levels]
 
 ## Boundaries
+
 - Always: [...]
 - Ask first: [...]
 - Never: [...]
 
 ## Success Criteria
+
 [How we'll know this is done — specific, testable conditions]
 
 ## Open Questions
+
 [Anything unresolved that needs human input]
 ```
 
@@ -158,7 +171,7 @@ With the validated spec, generate a technical implementation plan:
 
 > Follow `planning-and-task-breakdown` for the dependency-graph mapping and vertical-slicing mechanics behind these steps; it is the canonical source. The bullets above are a lightweight summary; if they ever diverge, `planning-and-task-breakdown` takes precedence.
 >
-> **Output convention:** Save the plan and its task checklist to `roadmap/TXXXX/plan.md`, inside the feature's Ticket directory. Create the ticket directory if it does not exist. Downstream commands (`/implement`, etc.) load context from this path.
+> **Output convention:** Save the plan and its task checklist to `plan.md`, inside the feature's Ticket directory under `tickets/`. Create the ticket directory if it does not exist. Downstream commands (`/implement`, etc.) load context from this path.
 
 The plan should be reviewable: the human should be able to read it and say "yes, that's the right approach" or "no, change X."
 
@@ -175,6 +188,7 @@ Break the plan into discrete, implementable tasks:
 > Follow `planning-and-task-breakdown` for the full task-sizing and dependency-ordering mechanics; it is the canonical source. The template below is a lightweight inline form; if they ever diverge, `planning-and-task-breakdown` takes precedence.
 
 **Task template:**
+
 ```markdown
 - [ ] Task: [Description]
   - Acceptance: [What must be true when done]
@@ -197,13 +211,13 @@ The spec is a living document, not a one-time artifact:
 
 ## Common Rationalizations
 
-| Rationalization | Reality |
-|---|---|
-| "This is simple, I don't need a spec" | Simple tasks don't need *long* specs, but they still need acceptance criteria. A two-line spec is fine. |
-| "I'll write the spec after I code it" | That's documentation, not specification. The spec's value is in forcing clarity *before* code. |
-| "The spec will slow us down" | A 15-minute spec prevents hours of rework. Waterfall in 15 minutes beats debugging in 15 hours. |
-| "Requirements will change anyway" | That's why the spec is a living document. An outdated spec is still better than no spec. |
-| "The user knows what they want" | Even clear requests have implicit assumptions. The spec surfaces those assumptions. |
+| Rationalization                       | Reality                                                                                                 |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| "This is simple, I don't need a spec" | Simple tasks don't need _long_ specs, but they still need acceptance criteria. A two-line spec is fine. |
+| "I'll write the spec after I code it" | That's documentation, not specification. The spec's value is in forcing clarity _before_ code.          |
+| "The spec will slow us down"          | A 15-minute spec prevents hours of rework. Waterfall in 15 minutes beats debugging in 15 hours.         |
+| "Requirements will change anyway"     | That's why the spec is a living document. An outdated spec is still better than no spec.                |
+| "The user knows what they want"       | Even clear requests have implicit assumptions. The spec surfaces those assumptions.                     |
 
 ## Red Flags
 
@@ -221,4 +235,4 @@ Before proceeding to implementation, confirm:
 - [ ] The human has reviewed and approved the spec
 - [ ] Success criteria are specific and testable
 - [ ] Boundaries (Always/Ask First/Never) are defined
-- [ ] The spec is saved to `roadmap/TXXXX/spec.md` inside the Ticket directory
+- [ ] The spec is saved to `spec.md` inside the ticket directory under `tickets/`

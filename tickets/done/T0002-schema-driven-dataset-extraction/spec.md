@@ -1,6 +1,9 @@
 # Spec: [T0002] Schema-Driven Dataset Extraction
 
-Ticket: `T0002` — spec: `roadmap/T0002/spec.md`
+Ticket: `T0002` — spec: `tickets/done/T0002-schema-driven-dataset-extraction/spec.md`
+
+- **Status**: done
+- **Validated**: delivered and merged
 
 ## Objective
 
@@ -63,26 +66,44 @@ Schema property keys define canonical field labels. Property titles provide fall
 Use TypeScript, tabs, arrow functions, and JSDoc for every function. Add a blank line before control statements and `return` statements. Use the project Biome configuration.
 
 ```ts
-import { schema } from "tjs"
-import type { DescribedRecordSchema } from "./schema"
+import { schema } from "tjs";
+import type { DescribedRecordSchema } from "./schema";
 
 export const sloganJsonSchema = {
-	description: "A slogan record. Use the slogan as content and metadata fields as filters.",
-	type: "object",
-	properties: {
-		id: { title: "Id", type: "integer", description: "Record identifier: The source ID for this record." },
-		annee: { title: "Année", type: "integer", description: "Filter field: Use for year filters. Do not index as content." },
-		slogan: { title: "Slogan", type: "string", minLength: 1, description: "Content field: Use for semantic and lexical indexing." },
-	},
-	required: ["id", "annee", "slogan"],
-} as const satisfies DescribedRecordSchema
+  description:
+    "A slogan record. Use the slogan as content and metadata fields as filters.",
+  type: "object",
+  properties: {
+    id: {
+      title: "Id",
+      type: "integer",
+      description: "Record identifier: The source ID for this record."
+    },
+    annee: {
+      title: "Année",
+      type: "integer",
+      description:
+        "Filter field: Use for year filters. Do not index as content."
+    },
+    slogan: {
+      title: "Slogan",
+      type: "string",
+      minLength: 1,
+      description: "Content field: Use for semantic and lexical indexing."
+    }
+  },
+  required: ["id", "annee", "slogan"]
+} as const satisfies DescribedRecordSchema;
 
-export const sloganValidator = schema(sloganJsonSchema, { coerce: { integer: true } })
+export const sloganValidator = schema(sloganJsonSchema, {
+  coerce: { integer: true }
+});
 
-export type Slogan = typeof sloganValidator.type
+export type Slogan = typeof sloganValidator.type;
 
 /** Validate a value against the slogan JSON Schema. */
-export const validateSlogan = (value: unknown) => sloganValidator.validate(value)
+export const validateSlogan = (value: unknown) =>
+  sloganValidator.validate(value);
 ```
 
 Each model exports its JSON Schema definition, inferred record type, and validator function. Dataset configuration holds corpus paths and selected fields. Schema property keys and titles define text labels. Do not hard-code record fields in the generic reader.

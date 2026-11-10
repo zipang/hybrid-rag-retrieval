@@ -1,6 +1,9 @@
 # Spec: [T0003] React UI on an Applied Design System
 
-Ticket: `T0003` — spec: `roadmap/T0003/spec.md`
+Ticket: `T0003` — spec: `tickets/done/T0003-react-ui-design-system/spec.md`
+
+- **Status**: done
+- **Validated**: delivered and merged
 
 ## Objective
 
@@ -124,19 +127,19 @@ import type { Slogan } from "../../models/slogan";
 import style from "./RetrievalHit.css";
 
 export interface RetrievalHitProps {
-	/** The retrieved slogan shown in the panel. */
-	slogan: Slogan;
+  /** The retrieved slogan shown in the panel. */
+  slogan: Slogan;
 }
 
 /** Renders one retrieved slogan with its brand and year. */
 export const RetrievalHit: FC<RetrievalHitProps> = ({ slogan }) => (
-	<HStack gap="sm" alignItems="baseline">
-		<Text size="sm" tone="muted">
-			{slogan.marque} ({slogan.annee})
-		</Text>
-		<Text size="sm">{slogan.slogan}</Text>
-	</HStack>
-)
+  <HStack gap="sm" alignItems="baseline">
+    <Text size="sm" tone="muted">
+      {slogan.marque} ({slogan.annee})
+    </Text>
+    <Text size="sm">{slogan.slogan}</Text>
+  </HStack>
+);
 ```
 
 Layout primitives take token props, never raw CSS. A raw `div` or `span` used for layout in `pages/` or `app/` is forbidden. `src/components/AGENTS.md` states these component rules in full and takes precedence over the root `AGENTS.md` inside that directory.
@@ -149,11 +152,11 @@ Stylesheets reference tokens only:
 
 ```css
 .retrieval-panel {
-	background: var(--color-surface-card);
-	border: var(--border-sm) solid var(--color-surface-alt);
-	border-radius: var(--rounded-md);
-	padding: var(--space-md);
-	gap: var(--space-sm);
+  background: var(--color-surface-card);
+  border: var(--border-sm) solid var(--color-surface-alt);
+  border-radius: var(--rounded-md);
+  padding: var(--space-md);
+  gap: var(--space-sm);
 }
 ```
 

@@ -1,6 +1,9 @@
 # Spec: [T0001] Qdrant RAG Demo — Hybrid Slogan Retrieval + LLM Chat
 
-Ticket: `T0001` — see `roadmap/T0001/`
+Ticket: `T0001` — see `tickets/done/T0001-hybrid-slogan-retrieval/`
+
+- **Status**: done
+- **Validated**: delivered and merged
 
 ## Objective
 
@@ -115,13 +118,13 @@ Biome + tabs, JSDoc on every function, arrow functions, blank line before
 control flow. Example:
 
 ```ts
-import { datasetConfigurations } from "../config/datasets"
-import { parseDataset } from "../utils/data-utils"
+import { datasetConfigurations } from "../config/datasets";
+import { parseDataset } from "../utils/data-utils";
 
-const text = "Id: 1\nAnnée: 2004\nMarque: Danone\nSlogan: Example\n---"
-const sloganDataset = datasetConfigurations.slogans
-const result = parseDataset(text, sloganDataset)
-const records = result.events.filter((event) => event.type === "record")
+const text = "Id: 1\nAnnée: 2004\nMarque: Danone\nSlogan: Example\n---";
+const sloganDataset = datasetConfigurations.slogans;
+const result = parseDataset(text, sloganDataset);
+const records = result.events.filter((event) => event.type === "record");
 
 // `records` contains values typed from the slogan JSON Schema.
 ```

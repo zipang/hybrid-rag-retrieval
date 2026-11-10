@@ -3,7 +3,10 @@
 Ticket: `T0005` — investigation. Related context: `T0004`, memo
 `memos/syntax-trees.md`, section 14.
 
-Status: Proposed. No implementation yet. This ticket produces evidence and a
+- **Status**: planned
+- **Depends on**: T0004
+
+No implementation has started. This ticket produces evidence and a
 recommendation, not production code.
 
 ## Objective

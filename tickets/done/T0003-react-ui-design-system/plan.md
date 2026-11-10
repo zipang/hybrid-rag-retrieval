@@ -1,6 +1,6 @@
 # Implementation Plan: [T0003] React UI on an Applied Design System
 
-Ticket: `T0003` — spec: `roadmap/T0003/spec.md`
+Ticket: `T0003` — spec: `tickets/done/T0003-react-ui-design-system/spec.md`
 
 ## Overview
 

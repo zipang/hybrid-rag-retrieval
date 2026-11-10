@@ -123,7 +123,7 @@ These differences are label and segmentation choices, not parse failures.
 ## References
 
 - `src/lib/syntax/test-data/french.json`
-- `roadmap/T0004/evaluation.md`
+- `tickets/in_progress/T0004-french-syntax-weighted-retrieval/evaluation.md`
 - `memos/syntax-trees.md`
 - [udpipe-wasm package](https://github.com/exp-ouroborous/udpipe-wasm)
 - [UDPipe project](https://github.com/ufal/udpipe)

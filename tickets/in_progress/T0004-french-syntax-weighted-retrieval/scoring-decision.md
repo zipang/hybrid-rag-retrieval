@@ -449,8 +449,8 @@ not select syntax must work without a parser.
 - `src/lib/scoring.ts`
 - `src/lib/scoring.test.ts`
 - `src/lib/retrieval-contract.ts`
-- `roadmap/T0004/retrieval-feasibility.md`
-- `roadmap/T0004/spec.md`
+- `tickets/in_progress/T0004-french-syntax-weighted-retrieval/retrieval-feasibility.md`
+- `tickets/in_progress/T0004-french-syntax-weighted-retrieval/spec.md`
 - `memos/syntax-trees.md`, section 9
 - [Local Qdrant multivectors](../../docs/Qdrant%20-%201.19.1/documentation/manage-data/vectors/index.md)
 

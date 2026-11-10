@@ -1,6 +1,6 @@
 # Qdrant review — hybrid index, embedding models, and REST vs gRPC
 
-Ticket: `T0001` — related spec: `roadmap/T0001/spec.md`
+Ticket: `T0001` — related spec: `tickets/done/T0001-hybrid-slogan-retrieval/spec.md`
 
 This memo records the Qdrant decisions and the measurements for the POC. The
 project pins Qdrant `1.19.1`. All behavior below is checked against the local

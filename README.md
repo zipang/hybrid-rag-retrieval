@@ -128,7 +128,7 @@ datasets/   datasets (not committed)
 docs/       local documentation mirrors (not committed)
 memos/      technical review memos
 presets/    elevation and border-width presets
-roadmap/    tickets: spec and plan
+tickets/    kanban board: ticket specs and plans, sorted by status
 scripts/    setup and indexing scripts
 src/        application source
 DESIGN.md   design tokens and component rules
@@ -181,6 +181,8 @@ These memos record our findings
 - **hybrid search**: a search that combines a keyword search and a semantic
   search.
 - **index**: the data structure that makes a search fast.
+- **Kanban board**: the set of status folders under `tickets/` and their
+  index. It shows where each ticket stands.
 - **layout primitive**: one of `VStack`, `HStack`, or `Grid`. They are the only
   way to arrange content in this project.
 - **LLM (Large Language Model)**: a model that reads and writes natural
@@ -208,6 +210,8 @@ These memos record our findings
   "fixture" for the test runner only.
 - **test environment**: the isolated services, parser, and model that one test
   run uses. A test builds the test environment from the test data set.
+- **ticket**: one unit of planned work with an ID, a specification, a plan, and
+  acceptance criteria. Every ticket lives in `tickets/`.
 - **vector database**: a database that stores vectors and finds the nearest
   vectors to a query vector.
 - **weighted retrieval**: retrieval that combines normalized index scores with

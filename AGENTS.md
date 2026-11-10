@@ -50,7 +50,7 @@ license to remove necessary detail.
 - Define every specialized term in the glossary. Do not rely on the reader's
   memory.
 - Do not use a ticket name, such as `T0004`, to describe a feature in a
-  `README.md` or an `AGENTS.md`. Ticket names belong in the `roadmap/`
+  `README.md` or an `AGENTS.md`. Ticket names belong in the `tickets/`
   directory. A reader does not know the ticket.
 - Do not write down to the reader. Skip baby talk, jokes, and filler. Keep the
   tone plain and respectful.
