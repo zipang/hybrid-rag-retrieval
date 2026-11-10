@@ -242,8 +242,10 @@ cat <<EOF
 
 Setup complete.
 
-Start Qdrant:
-  (cd qdrant && ./qdrant --config-path config/config.yaml)
+Start Qdrant (prints the admin dashboard URL):
+  bun run qdrant:start
+Stop Qdrant:
+  bun run qdrant:stop
 
 Point the app and the tests at the model:
   UDPIPE_MODEL_PATH=${UDPIPE_MODEL_PATH}

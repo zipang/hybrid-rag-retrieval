@@ -11,6 +11,20 @@ does not commit the data these scripts produce.
 - `smoke-retrieval.ts` runs a few example queries against the indexed collection
   for a quick manual check. Run it with `bun run scripts/smoke-retrieval.ts`.
 
+## Qdrant
+
+- `qdrant.ts` starts and stops the local Qdrant server. It reads the host and
+  the HTTP port from `qdrant/config/config.yaml`, writes a PID file and a log
+  file under `.tmp/`, and prints the admin dashboard URL.
+  - `bun run qdrant:start` starts Qdrant in the background.
+  - `bun run qdrant:stop` stops Qdrant with a clean termination signal.
+
+  The script is safe to run twice. A start against a running server reports the
+  existing URL. A stop against a stopped server reports that Qdrant is not
+  running. If the server does not become healthy, read `.tmp/qdrant.log`. Each
+  message starts with an icon and a color. Colors turn off when the output is
+  not a terminal.
+
 ## Syntax
 
 - `show-syntax-tree.ts` parses one sentence with the configured UDPipe model and

@@ -9,6 +9,8 @@
 		"build:citations": "bun run scripts/build-citations.ts",
 		"index": "bun run scripts/index-slogans.ts",
 		"smoke": "bun run scripts/smoke-retrieval.ts",
+		"qdrant:start": "bun run scripts/qdrant.ts start",
+		"qdrant:stop": "bun run scripts/qdrant.ts stop",
 		"show-syntax-tree": "bun run scripts/show-syntax-tree.ts",
 		"compare-syntax": "bun run scripts/compare-syntax.ts",
 		"init": "bash scripts/init.sh",

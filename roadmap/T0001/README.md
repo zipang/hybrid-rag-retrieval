@@ -33,13 +33,19 @@ combines a dense (semantic) vector and a BM25 (keyword) vector.
    cp .env.sample .env
    ```
 
-4. Start Qdrant. Keep this terminal open.
+4. Start Qdrant. The script prints the admin dashboard URL.
 
    ```bash
-   (cd qdrant && ./qdrant --config-path config/config.yaml)
+   bun run qdrant:start
    ```
 
 5. Open http://localhost:6333/dashboard to check the server.
+
+Stop Qdrant when you finish working.
+
+```bash
+bun run qdrant:stop
+```
 
 ## Index the corpus
 
