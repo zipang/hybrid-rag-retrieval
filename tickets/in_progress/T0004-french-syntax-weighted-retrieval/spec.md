@@ -23,7 +23,7 @@ pipeline: parse, abstract, encode, store, and query.
 
 ## Objective
 
-Add a syntax vector to indexed Qdrant records. Let developers combine syntax, semantic, and keyword scores through a weighted retrieval API.
+Add an `ast` vector to indexed Qdrant records. Let developers combine syntax, semantic, and keyword scores through a weighted retrieval API.
 
 The syntax score must use grammatical structure alone. Vocabulary and semantic embeddings must not enter the syntax encoder or syntax score.
 Other selected indexes contribute through explicit weights. Developers can select syntax alone or combine all available indexes.
@@ -164,11 +164,12 @@ The plan must choose feature families, weights, dimensionality, and any hash see
 Freeze these choices in a versioned encoder configuration before corpus indexing.
 Do not train a Tree-LSTM or graph neural network in this ticket.
 
-### 3. Store and rebuild syntax vectors
+### 3. Store and rebuild `ast` vectors
 
-Add one named dense vector, `syntax`, to the same collection and point identifiers as existing records.
+Add one named dense vector, `ast`, to the same collection and point identifiers as existing records.
 Use Qdrant cosine distance and its native vector indexing.
-Store the syntax vector as a multivector with the `max_sim` comparator.
+The vector name and the public index name differ on purpose: the vector `ast` stores the encoded abstract tree, and it backs the public index `syntax`. Section 4 fixes the public index names.
+Store the `ast` vector as a multivector with the `max_sim` comparator.
 Each row of the matrix is one sentence of the text.
 `max_sim` scores a query row against the best matching row of the record.
 This shape matches the grammatical forest and keeps one point per record.
@@ -179,7 +180,7 @@ Populate existing points through vector updates. Adding a definition alone does 
 
 Provide a syntax-only backfill path over the indexed records.
 It must preserve existing semantic vectors, BM25 vectors, record identifiers, and business payload fields.
-Also populate syntax vectors during subsequent full indexing runs when syntax indexing is enabled.
+Also populate `ast` vectors during subsequent full indexing runs when syntax indexing is enabled.
 The current full indexer deletes its collection. The syntax-only path must not reuse that deletion behavior.
 
 Persist the mode, language, parser version, model revision, abstraction version, and encoder configuration identifier.
@@ -190,7 +191,7 @@ Prevent queries from mixing vectors from different configurations during a rebui
 Publish a ready state only after the run accounts for every record.
 Report totals for eligible, indexed, unsupported, and failed records.
 Give every excluded record an identifier and reason. Never claim full coverage after silent exclusions.
-Parser failures must not create zero vectors or leave stale syntax vectors searchable.
+Parser failures must not create zero vectors or leave stale `ast` vectors searchable.
 
 ### 4. Define bounded index scores
 
@@ -396,7 +397,7 @@ The following numerical targets are proposed for specification review:
 4. Every reviewed connection-change test case receives a lower score than its identical-tree counterpart.
 5. At least 90% of the reviewed French triplets rank the structural positive above the negative in each mode.
 6. Qdrant exact search reproduces local cosine ordering within floating-point tolerance. Treat equal-score ties as unordered.
-7. All indexed records have either a compatible syntax vector or an explicit exclusion reason in the indexing report.
+7. All indexed records have either a compatible `ast` vector or an explicit exclusion reason in the indexing report.
 8. Reindexing specificity never exposes mixed-mode vectors to syntax queries.
 9. Syntax-only requests honor filters and do not call semantic embedding or hybrid fusion.
 10. Each supported index can operate alone or contribute to a weighted combined score.
@@ -472,7 +473,7 @@ Parser sources are feasibility references. A versioned local mirror is required 
 ## Glossary
 
 - **Abstraction:** Removal of words and selected grammatical details from a parse while retaining its structural connections.
-- **Backfill:** Addition of syntax vectors to records that already exist in the database.
+- **Backfill:** Addition of `ast` vectors to records that already exist in the database.
 - **Canonical tree:** A grammatical tree written in a consistent form, without vocabulary or irrelevant annotation ordering.
 - **Cosine similarity:** A comparison of vector directions. Identical nonzero vectors have a score of one.
 - **Cursor:** An opaque token that continues a paginated query with the same scoring and index generation.

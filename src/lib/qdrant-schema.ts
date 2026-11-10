@@ -26,6 +26,18 @@ export type DenseVectorSchema = {
 	distance: DenseDistance;
 };
 
+/** One named dense multivector, scored with one comparator. */
+export type MultiVectorSchema = {
+	/** Vector name, for example `ast`. */
+	name: string;
+	/** Number of dimensions of each row. */
+	size: number;
+	/** Distance function. */
+	distance: DenseDistance;
+	/** Qdrant multivector comparator. Only `max_sim` is supported. */
+	comparator: "max_sim";
+};
+
 /** One sparse named vector. */
 export type SparseVectorSchema = {
 	/** Vector name, for example `bm25`. */
@@ -50,6 +62,14 @@ export type CollectionSchema = {
 	dense: DenseVectorSchema;
 	/** Sparse named vector. */
 	sparse: SparseVectorSchema;
+	/**
+	 * Optional abstract-tree multivector, scored with the `max_sim` comparator.
+	 *
+	 * This is the Qdrant vector that backs the public `syntax` index. The two names differ on
+	 * purpose: `syntax` names the search kind that the API exposes, and `ast` names the storage key
+	 * that holds the encoded abstract tree.
+	 */
+	ast?: MultiVectorSchema;
 	/** Payload fields to index. */
 	payloadIndexes?: PayloadIndexField[];
 };
@@ -102,6 +122,24 @@ export const validateSchema = (schema: CollectionSchema): CollectionSchema => {
 		throw new InvalidSchemaError("sparse.name", "must differ from dense.name");
 	}
 
+	if (schema.ast !== undefined) {
+		requireName(schema.ast.name, "ast.name");
+		requirePositiveInteger(schema.ast.size, "ast.size");
+		requireName(schema.ast.comparator, "ast.comparator");
+
+		if (schema.ast.comparator !== "max_sim") {
+			throw new InvalidSchemaError("ast.comparator", "must be max_sim");
+		}
+
+		if (schema.ast.name === schema.dense.name) {
+			throw new InvalidSchemaError("ast.name", "must differ from dense.name");
+		}
+
+		if (schema.ast.name === schema.sparse.name) {
+			throw new InvalidSchemaError("ast.name", "must differ from sparse.name");
+		}
+	}
+
 	for (const [index, field] of (schema.payloadIndexes ?? []).entries()) {
 		requireName(field.name, `payloadIndexes[${index}].name`);
 	}
@@ -109,13 +147,36 @@ export const validateSchema = (schema: CollectionSchema): CollectionSchema => {
 	return schema;
 };
 
-/** Qdrant vector description for the dense vector. */
-export type DenseVectorConfig = {
+/** Qdrant vector description, for a plain dense vector or a multivector. */
+export type VectorDescription = {
 	/** Dimensions. */
 	size: number;
 	/** Distance function. */
 	distance: DenseDistance;
+	/** Optional multivector configuration. */
+	multivector_config?: MultiVectorConfig;
 };
+
+/** Qdrant multivector configuration. */
+export type MultiVectorConfig = {
+	/** Comparator used to score two matrices. */
+	comparator: "max_sim";
+};
+
+/**
+ * Build the Qdrant vector description of one abstract-tree multivector.
+ *
+ * This helper is the single writer of the `multivector_config` shape. Both collection creation and
+ * the later vector-schema update read it, so the two call sites cannot drift.
+ *
+ * @param ast Abstract-tree multivector declared by a schema.
+ * @returns The Qdrant vector description of that multivector.
+ */
+export const multiVectorConfig = (ast: MultiVectorSchema): VectorDescription => ({
+	size: ast.size,
+	distance: ast.distance,
+	multivector_config: { comparator: ast.comparator }
+});
 
 /** Qdrant sparse vector description. */
 export type SparseVectorConfig = {
@@ -127,17 +188,25 @@ export type SparseVectorConfig = {
 export const vectorConfig = (
 	schema: CollectionSchema
 ): {
-	vectors: Record<string, DenseVectorConfig>;
+	vectors: Record<string, VectorDescription>;
 	sparse_vectors: Record<string, SparseVectorConfig>;
-} => ({
-	vectors: {
+} => {
+	const vectors: Record<string, VectorDescription> = {
 		[schema.dense.name]: {
 			size: schema.dense.size,
 			distance: schema.dense.distance
 		}
-	},
-	sparse_vectors: {
-		[schema.sparse.name]:
-			schema.sparse.modifier === undefined ? {} : { modifier: schema.sparse.modifier }
+	};
+
+	if (schema.ast !== undefined) {
+		vectors[schema.ast.name] = multiVectorConfig(schema.ast);
 	}
-});
+
+	return {
+		vectors,
+		sparse_vectors: {
+			[schema.sparse.name]:
+				schema.sparse.modifier === undefined ? {} : { modifier: schema.sparse.modifier }
+		}
+	};
+};

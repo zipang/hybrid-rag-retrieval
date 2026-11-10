@@ -156,6 +156,9 @@ These memos record our findings
 
 ## Glossary
 
+- **ast vector**: the Qdrant multivector that stores one encoded abstract tree
+  per record, with one row per sentence. It backs the `syntax` search index, so
+  the storage name is `ast` and the public index name is `syntax`.
 - **Atomic Design**: the folder rule that places generic components low and
   product components high, so imports flow in one direction only.
 - **color literal**: a raw color value written in a stylesheet instead of read
@@ -187,7 +190,7 @@ These memos record our findings
   way to arrange content in this project.
 - **LLM (Large Language Model)**: a model that reads and writes natural
   language. The chat application uses it to answer a question.
-- **mode**: the syntax setting that chooses the grammatical detail in the syntax
+- **mode**: the syntax setting that chooses the grammatical detail in the `ast`
   vector. The `coarse` mode keeps the structure only, and the `detailed` mode
   also keeps an allowlist of features.
 - **RAG (Retrieval-Augmented Generation)**: a method. The application first

@@ -87,7 +87,7 @@ T0002 dataset extraction
                  └→ T0005 copula-versus-verb investigation
 ```
 
-`T0004` is not finished. Tasks 12 to 17b are open: syntax vector storage,
+`T0004` is not finished. Tasks 12 to 17b are open: `ast` vector storage,
 syntax backfill, syntax-weighted retrieval, the weighted API, the caller
 migration, and the release documentation. `T0005` must not start before
 `T0004` closes, because it measures the `coarse` encoder that `T0004`

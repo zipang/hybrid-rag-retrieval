@@ -2,7 +2,7 @@
 
 Ticket: `T0004`  
 Specification: [spec.md](spec.md), approved by the user.  
-Plan status: Ready for review. Application implementation has not started.
+Plan status: Implementation in progress. Task 12 is delivered and under review. Tasks 13 to 17b are open.
 
 ## Overview
 
@@ -328,7 +328,7 @@ Status: passed. `bun test` covers a second collection with custom vector and fie
   - Acceptance: Build reviewed punctuation-only pairs that differ only by a mark. Cover the terminal marks `.`, `?`, and `!`, and an internal comma. Reuse existing texts, so the set adds no text.
   - Acceptance: Measure the current `coarse` score for every punctuation-only pair. Report each pair that scores equal although its marks differ.
   - Acceptance: Confirm the parser attaches each mark to the head of the clause or phrase it belongs to, following the UD `punct` rules.
-  - Acceptance: Decide, with the user, that the punctuation marks enter the syntax vector. Record the decision in `memos/syntax-trees.md` and `tickets/in_progress/T0004-french-syntax-weighted-retrieval/evaluation.md`.
+  - Acceptance: Decide, with the user, that the punctuation marks enter the `ast` vector. Record the decision in `memos/syntax-trees.md` and `tickets/in_progress/T0004-french-syntax-weighted-retrieval/evaluation.md`.
   - Verify: `bun test src/lib/syntax/test-data.test.ts` and `scripts/evaluate-syntax.ts --mode coarse` on the pairs. Human review of the expected relations.
   - Files: `src/lib/syntax/test-data/french.json`, `src/lib/syntax/test-data.test.ts`, `scripts/evaluate-syntax.ts`, `tickets/in_progress/T0004-french-syntax-weighted-retrieval/evaluation.md`, `memos/syntax-trees.md`.
   - Notes: `scripts/evaluate-syntax.ts` derives the variants from `Quelle belle journée !` (terminal marks) and `Voir, c'est croire` (internal comma). Before the change, every cross-mark pair scored `1.000000`.
@@ -354,7 +354,7 @@ Review the punctuation evaluation (Task 11a) and the punctuation-mark feature (T
 Confirm that `Il vient`, `Il vient ?`, and `Il vient !` no longer score `1.0`, and that two texts with the same mark stay identical.
 Status: passed. The `coarse` mode reaches `100%` ranking and structural accuracy on the expected trees. Every different-mark pair scores below one, and two texts with the same mark stay identical. The encoder identity is frozen at version `coarse-3`.
 
-- [ ] **Task 12: Add syntax schema and vector updates**
+- [x] **Task 12: Add syntax schema and vector updates**
   - Acceptance: Create the named multivector with the `max_sim` comparator through documented Qdrant operations. Validate dimension, comparator, and configuration compatibility.
   - Acceptance: Update syntax values without replacing existing dense vectors, BM25 vectors, or business payload fields.
   - Acceptance: Store one matrix row per sentence and keep one point per record. Keep the row count within the Qdrant limit `rows * size < 1,048,576`.
@@ -462,7 +462,7 @@ Plan approval is required before application implementation. A commit requires a
 Tasks 1 and 2 are independent research units.
 After Task 4, parser and encoder work can progress independently from pagination and semantic/keyword retrieval.
 Qdrant transport, generation state, and indexing changes share files and must proceed sequentially.
-Track A changes `qdrant.ts` and `retrieval.ts`. Schedule Track A before Phase 3 changes that add the syntax vector to the same transport.
+Track A changes `qdrant.ts` and `retrieval.ts`. Schedule Track A before Phase 3 changes that add the `ast` vector to the same transport.
 Caller migrations can proceed independently after the final API contract is stable.
 These are scheduling opportunities, not instructions to spawn implementation agents.
 
@@ -475,7 +475,7 @@ a rewrite.
 ### Detailed syntax mode
 
 The `coarse` mode is enough to prove the end-to-end system. The `detailed`
-mode adds the grammatical features to the syntax vector.
+mode adds the grammatical features to the `ast` vector.
 
 - The `detailed` mode retains an allowlist of features: `Definite`, `Gender`,
   `Mood`, `Number`, `Person`, `Tense`, `VerbForm`, and `Voice`.
@@ -505,7 +505,7 @@ Every research decision must produce an artifact. Stop for review when a decisio
 
 ## Glossary
 
-- **Backfill:** Addition of syntax vectors to existing indexed records.
+- **Backfill:** Addition of `ast` vectors to existing indexed records.
 - **Collection schema:** The typed description of one Qdrant collection: its name, its vectors, and its payload index fields.
 - **Component score:** A normalized matching score from one selected index.
 - **Dataset coupling:** A transport that knows the field names of one dataset. The project removes it in Track A.
@@ -513,7 +513,7 @@ Every research decision must produce an artifact. Stop for review when a decisio
 - **Generation:** A fixed version of indexed data and scoring configuration.
 - **Held-out item:** A test data set entry reserved from parameter tuning.
 - **IDF:** A keyword weight based on how frequently a term occurs across the corpus.
-- **Mode:** The indexing setting that chooses which grammatical details the syntax vector keeps. The `coarse` mode keeps the structure only. The `detailed` mode also keeps an allowlist of features. Both modes keep the punctuation marks.
+- **Mode:** The indexing setting that chooses which grammatical details the `ast` vector keeps. The `coarse` mode keeps the structure only. The `detailed` mode also keeps an allowlist of features. Both modes keep the punctuation marks.
 - **Query snapshot:** The complete ordered results and metadata retained for stable page delivery.
 - **Punctuation mark:** The symbol of a punctuation node, for example `?`, `!`, `.`, or `,`. Both modes keep it in position with the parser governor, and the encoder weights it. Tasks 11a and 11b evaluate and encode it.
 - **Sparse nonmatch:** A record without overlapping keyword-vector entries. Its keyword score is zero.
@@ -521,3 +521,154 @@ Every research decision must produce an artifact. Stop for review when a decisio
 - **Track A:** The task group that makes the Qdrant transport dataset-agnostic.
 - **Vertical slice:** A small working retrieval path from query input through scoring to results.
 - **Weighted score:** The sum of component scores multiplied by their selected contribution weights.
+
+## Implementation Notes
+
+### Task 12 — Syntax schema, vector storage, and publication state
+
+#### Design decisions
+
+- `CollectionSchema` gains an optional `ast` multivector. `validateSchema` checks the name,
+  the row size, the `max_sim` comparator, and the name clash with `dense.name` and `sparse.name`.
+  `multiVectorConfig(schema)` is the single writer of the `multivector_config` shape, and both
+  `vectorConfig` (collection creation) and the transport's vector-schema update read it, so the
+  two call sites cannot drift.
+- The transport exposes three operations, and `Point`/`PointVectors` stay unchanged. A point
+  upsert writes the dense and BM25 vectors only. Task 12 stores the abstract tree through
+  `updateAstVectors`, which sends the `ast` key alone, so the dense vector, the BM25 vector,
+  and the business payload are never rewritten.
+- `ensureAstVector` reads `GET /collections/{name}` and inspects `config.params.vectors`. The
+  helper accepts the single unnamed description, the map keyed by vector name, and a list of
+  named descriptions, so a shape change cannot silently return "absent". An existing definition is
+  then validated against `schema.ast` before the method reports it as compatible.
+- `queryAstExact` reuses `withIds`, `params: { exact: true }`, and the `onMissing` policy of
+  `queryDenseExact`. It returns the raw score and never clamps it.
+- `MULTIVECTOR_SUBVECTOR_LIMIT` (`1_048_576`) and `maxMultiVectorRows(size)` are exported.
+  `MultiVectorLimitError` names the record, the row count, the row size, and the limit. Every
+  matrix is checked before the request, on both the write and the query path, and rows are never
+  truncated. With the frozen 256-dimension encoder the maximum is 4095 rows.
+- `index-state.ts` adds `syntax?: SyntaxIndexState` to the generation record plus `publishSyntax`
+  and `assertSyntaxReady`. `publishSyntax` refuses a foreign writer token, a changed generation,
+  a `ready` state whose `indexed + unsupported + failed` differs from `eligible`, a `ready` state
+  whose exclusion list length differs from `unsupported + failed`, a duplicate exclusion
+  identifier, and any exclusion with no identifier or a blank reason. Publishing the syntax state
+  does not publish the generation: the record stays `rebuilding` until `publish` runs, and
+  `publish` keeps the nested syntax state.
+- `assertSyntaxReady` throws `StaleGenerationError` for a changed generation and
+  `SyntaxNotReadyError` with a `reason` of `missing`, `pending`, or `config-mismatch` otherwise.
+  The `configId` check is the "reject incompatible runtime configuration" rule of the spec.
+  `assertReady` is unchanged.
+
+#### Review fixes (independent audit)
+
+**B1 — silent exclusions.** `validateSyntaxCoverage` now requires
+`exclusions.length === coverage.unsupported + coverage.failed` in addition to the sum check, and
+rejects a duplicate exclusion identifier. A `ready` state that reports five unsupported records and
+lists none is refused with `InvalidSyntaxCoverageError`. The `SyntaxIndexState.exclusions` JSDoc now
+states the real rule instead of the contradictory "never empty without a reason list".
+
+**B2 — stored definition validation.** The collection-info reader now returns a
+`Map<string, StoredVectorDescription>` (`size`, `multivector_config.comparator`) instead of a set of
+names. When the `ast` name already exists, `ensureAstVector` compares the stored `size` and
+comparator with `schema.ast` and raises `IncompatibleAstVectorError` with the vector name and
+both shapes. A `size: 128` definition and a plain dense vector with no `multivector_config` both
+fail fast instead of failing on the first query. The reader still accepts the three documented
+shapes, including an array of named descriptions.
+
+**Quality items.** A matrix with no row now raises `MultiVectorValueError` before any request, on
+both `updateAstVectors` and `queryAstExact`, so an empty parse never leaves a record
+searchable. `maxMultiVectorRows` rejects a non-positive or non-integer size. `jsonVectorValue` uses
+`Number.isSafeInteger` for the decimal-point path, so `1e21` keeps its valid exponent form. A
+non-finite value raises the typed `MultiVectorValueError`, which carries the offending value, so a
+backfill can record the record as failed. `DenseVectorConfig` is renamed `VectorDescription`,
+`multiVectorConfig` takes a `MultiVectorSchema` and `vectorConfig` guards once, the collection-info
+reader uses `in`/`typeof` for both branches, `request` has a JSDoc block, and
+`ExactDenseQuery.ids` and `ExactAstQuery.ids` document that the identifiers must already satisfy
+`filter` (the `missing` computation is unchanged).
+
+Deliberately not implemented: `publishSyntax` still accepts a published generation, because a
+syntax-only backfill never rewrites the dense, BM25, or payload data. The generation lifecycle
+belongs to Task 13.
+
+#### Naming of the index and the stored vector
+
+The public index name and the Qdrant vector name differ on purpose, and the mapping lives in one
+place: the JSDoc of `CollectionSchema.ast`.
+
+```text
+public index name  : syntax   (API weights, IndexName, spec §4)
+Qdrant vector name : ast      (CollectionSchema.ast, storage, queries)
+```
+
+The vector stores the encoded abstract tree, so `ast` names what is stored. The index names the
+search kind, so `syntax` stays parallel to `semantic` and `keyword`. The rename changed the storage
+names only: `CollectionSchema.ast`, `multiVectorConfig()`, `ensureAstVector`, `updateAstVectors`,
+`queryAstExact`, `ExactAstQuery`, and `IncompatibleAstVectorError`. Every public index-state name
+(`SyntaxIndexState`, `publishSyntax`, `assertSyntaxReady`, and the rest) keeps the word `syntax`,
+because those types describe the index. `spec.md` §3 was updated to name the vector `ast` and to
+state the mapping; §4 keeps the public index names unchanged. The `ast vector` glossary entry in
+`README.md` records the same mapping for readers.
+
+#### Verified documentation gaps and server behavior (local Qdrant 1.19.1)
+
+- The prose of "Adding and Removing Named Vectors" says the body accepts only `size` and
+  `distance`. The server also accepts `multivector_config` in that body. After the call,
+  `GET /collections/{name}` reports `config.params.vectors.<name>.multivector_config.comparator`.
+- The documented body key `"dense"` is a vector **type** discriminator, not the vector name:
+  the vector name comes from the path. Sending the vector name as the body key fails with
+  `Format error in JSON body: data did not match any variant of untagged enum VectorNameConfig`.
+  The transport keeps the documented `dense` key and records this in a code comment.
+- A JSON matrix whose rows are all integers is parsed as the legacy sparse-vector form
+  `[[indices], [values]]` and is rejected with `indices: must be unique`. The transport therefore
+  serializes every matrix value with a decimal point (`1.0`, not `1`). The numeric value does not
+  change. A unit test asserts the raw request text.
+- `max_sim` is unbounded above: two identical query rows against a two-row record score `2.0`.
+  A record with an `ast` vector but no matching row scores `0.0` and is still returned; a record
+  with no `ast` vector is absent from the response, which is the `MissingVectorError` signal.
+- Records without an `ast` vector are never returned by the ast query, so the missing-vector
+  detection needs no extra request.
+
+#### Isolated integration probe (deleted afterwards)
+
+Ran against `http://127.0.0.1:6333` on collection `t0004-task12-probe`, then deleted it. The
+`slogans` collection was never touched. Observed: `ensureAstVector` returned `true`, then
+`false`; `updateAstVectors` stored two rows on point 1 while the dense vector, the BM25 vector,
+and the payload stayed byte-identical; `queryAstExact` returned the raw `2.0`; the collection
+info reported the `max_sim` configuration; a 4096-row matrix raised `MultiVectorLimitError`
+without a request.
+
+A second probe recreated `t0004-task12-probe` with a plain dense `syntax` vector of size 128 and
+confirmed that `ensureAstVector` raises `IncompatibleAstVectorError` with
+`found = { size: 128 }`. The collection was deleted afterwards, so `slogans` is the only
+collection left on the local server.
+
+#### Deliberately left to later tasks
+
+- Task 13 adds `syntax` to the dataset schema in `src/config/datasets.ts`, implements the backfill
+  script, and decides the exclusion reasons and the coverage numbers it publishes.
+- Task 16c decides whether the full indexer also passes syntax through `upsert`, and wires
+  `publishSyntax` and `assertSyntaxReady` into the generation lifecycle.
+- Task 14 normalizes the raw `max_sim` score to `[0, 1]` with
+  `rawMaxSim / max(queryRows, recordRows)`.
+
+#### Gate output
+
+```text
+$ bun fmt
+Formatted 0 files, 180 unchanged [11.34ms]
+
+$ bun fmt --check
+All 180 files are formatted.
+
+$ bun run lint
+$ biome lint .
+Checked 87 files in 74ms. No fixes applied.
+
+$ bun test
+bun test v1.4.4 (38afee6c8)
+
+ 375 pass
+ 0 fail
+ 4208 expect() calls
+Ran 375 tests across 25 files. [4.22s]
+```

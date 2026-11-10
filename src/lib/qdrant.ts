@@ -1,5 +1,10 @@
-import type { CollectionSchema } from "./qdrant-schema";
-import { validateSchema, vectorConfig } from "./qdrant-schema";
+import type { CollectionSchema, MultiVectorSchema } from "./qdrant-schema";
+import {
+	InvalidSchemaError,
+	multiVectorConfig,
+	validateSchema,
+	vectorConfig
+} from "./qdrant-schema";
 
 /** Environment variables that configure the Qdrant connection. */
 export type QdrantEnv = {
@@ -27,7 +32,13 @@ export type PointVectors = {
 	bm25: Bm25Inference;
 };
 
-/** One point to upsert into the collection. */
+/**
+ * One point to upsert into the collection.
+ *
+ * An upsert writes the dense and BM25 vectors only. The ast multivector is stored after the point
+ * exists, through {@link QdrantClient.updateAstVectors}, so a syntax rebuild never rewrites the
+ * other vectors or the payload.
+ */
 export type Point = {
 	/** Unsigned integer point id. */
 	id: number;
@@ -90,7 +101,13 @@ export type DenseMissingPolicy = "throw" | "skip";
 export type ExactDenseQuery = {
 	/** Dense query vector. */
 	vector: number[];
-	/** Identifiers to score. The query returns only these. */
+	/**
+	 * Identifiers to score. The query returns only these.
+	 *
+	 * The identifiers must already satisfy `filter`. The transport reports every identifier that
+	 * Qdrant does not return as `missing`, so an identifier that `filter` removes looks like a
+	 * record without a dense vector.
+	 */
 	ids: Array<number | string>;
 	/** Payload filter applied on top of the identifier set. */
 	filter?: PayloadFilter;
@@ -108,6 +125,29 @@ export type ExactSparseQuery = {
 	ids: Array<number | string>;
 	/** Payload filter applied on top of the identifier set. */
 	filter?: PayloadFilter;
+};
+
+/**
+ * Parameters of an exact ast score query.
+ *
+ * `rows` is the query matrix. Each row is one sentence of the query text, encoded with the same
+ * frozen encoder configuration as the stored records.
+ */
+export type ExactAstQuery = {
+	/** Query matrix, one row per sentence. */
+	rows: number[][];
+	/**
+	 * Identifiers to score. The query returns only these.
+	 *
+	 * The identifiers must already satisfy `filter`. The transport reports every identifier that
+	 * Qdrant does not return as `missing`, so an identifier that `filter` removes looks like a
+	 * record without an ast vector.
+	 */
+	ids: Array<number | string>;
+	/** Payload filter applied on top of the identifier set. */
+	filter?: PayloadFilter;
+	/** What to do when an identifier has no ast vector. Defaults to `throw`. */
+	onMissing?: DenseMissingPolicy;
 };
 
 /** Parameters of a hybrid dense + BM25 query. */
@@ -155,6 +195,43 @@ export type QdrantClient = {
 	queryDenseExact: (query: ExactDenseQuery) => Promise<ExactScoreResult>;
 	/** Score one identifier batch with a sparse BM25 search. */
 	querySparseExact: (query: ExactSparseQuery) => Promise<ExactScoreResult>;
+	/**
+	 * Add the ast multivector definition to an existing collection.
+	 *
+	 * @returns `true` when the definition was added, `false` when a compatible definition already
+	 *   existed.
+	 */
+	ensureAstVector: () => Promise<boolean>;
+	/** Replace the ast vector value of existing points, and keep every other vector. */
+	updateAstVectors: (
+		points: Array<{ id: number | string; rows: number[][] }>,
+		options?: { wait?: boolean }
+	) => Promise<void>;
+	/** Score one identifier batch with an exact ast multivector search. */
+	queryAstExact: (query: ExactAstQuery) => Promise<ExactScoreResult>;
+};
+
+/**
+ * Qdrant hard limit on the sub-vector count of one multivector.
+ *
+ * The documented rule is `number_of_sub_vectors * vector_size < 1,048,576`. The limit is not
+ * configurable. The transport checks it before every request and never truncates rows.
+ */
+export const MULTIVECTOR_SUBVECTOR_LIMIT = 1_048_576;
+
+/**
+ * Maximum number of rows that one ast matrix may hold for a row size.
+ *
+ * @param size Dimensions of one row. Must be a positive safe integer.
+ * @returns The largest row count that satisfies `rows * size < 1,048,576`.
+ * @throws {RangeError} When `size` is not a positive safe integer.
+ */
+export const maxMultiVectorRows = (size: number): number => {
+	if (!Number.isSafeInteger(size) || size <= 0) {
+		throw new RangeError(`vector size must be a positive safe integer, got ${String(size)}`);
+	}
+
+	return Math.floor((MULTIVECTOR_SUBVECTOR_LIMIT - 1) / size);
 };
 
 /** Error raised when an expected vector is absent from a scored record. */
@@ -173,8 +250,158 @@ export class MissingVectorError extends Error {
 	}
 }
 
+/**
+ * Error raised when a stored ast vector definition does not match the schema.
+ *
+ * The transport compares the definition reported by Qdrant with `schema.ast`. A different size, a
+ * missing multivector configuration, or a different comparator becomes this error instead of an
+ * opaque failure on the first query.
+ */
+export class IncompatibleAstVectorError extends Error {
+	/** Vector name with the incompatible definition. */
+	readonly vector: string;
+	/** Shape that the schema requires. */
+	readonly expected: { size: number; comparator: string };
+	/** Shape that the collection reports. */
+	readonly found: { size?: number; comparator?: string };
+
+	/** Create the error with the vector name and both shapes. */
+	constructor(
+		vector: string,
+		expected: { size: number; comparator: string },
+		found: { size?: number; comparator?: string }
+	) {
+		super(
+			`the stored ${vector} vector is incompatible with the schema: expected size ` +
+				`${expected.size} and comparator ${expected.comparator}, found size ` +
+				`${String(found.size)} and comparator ${String(found.comparator)}`
+		);
+		this.name = "IncompatibleAstVectorError";
+		this.vector = vector;
+		this.expected = expected;
+		this.found = found;
+	}
+}
+
+/**
+ * Error raised when an ast matrix value cannot be serialized.
+ *
+ * A non-finite value or an empty matrix is a data error of one record. The transport raises this
+ * typed error so a backfill can record the record as failed instead of aborting the whole run.
+ */
+export class MultiVectorValueError extends Error {
+	/** Record identifier, or `"query"` for a query matrix. */
+	readonly id: number | string;
+	/** Offending value, or `undefined` when the matrix carries no row at all. */
+	readonly value: number | undefined;
+
+	/** Create the error for one record and one offending value. */
+	constructor(id: number | string, value: number | undefined, reason: string) {
+		super(`invalid ast vector for ${id}: ${reason}`);
+		this.name = "MultiVectorValueError";
+		this.id = id;
+		this.value = value;
+	}
+}
+
 /** Default base URL of a locally started Qdrant instance. */
 const DEFAULT_URL = "http://127.0.0.1:6333";
+
+/**
+ * Error raised when an ast matrix has more rows than Qdrant accepts.
+ *
+ * The transport raises this error before it sends a request. It never truncates the matrix, because
+ * a truncated matrix would silently change the score.
+ */
+export class MultiVectorLimitError extends Error {
+	/** Record identifier whose matrix is too large. */
+	readonly id: number | string;
+	/** Row count of the rejected matrix. */
+	readonly rows: number;
+	/** Dimensions of one row. */
+	readonly size: number;
+	/** Qdrant sub-vector element limit, `rows * size < limit`. */
+	readonly limit: number;
+
+	/** Create the error for one record and one matrix shape. */
+	constructor(id: number | string, rows: number, size: number, limit: number) {
+		super(
+			`ast matrix for ${id} has ${rows} rows of ${size} dimensions, which exceeds the ` +
+				`Qdrant limit of ${limit} sub-vector elements (rows * size < ${limit})`
+		);
+		this.name = "MultiVectorLimitError";
+		this.id = id;
+		this.rows = rows;
+		this.size = size;
+		this.limit = limit;
+	}
+}
+
+/**
+ * Serialize one vector value as JSON, always with a decimal point.
+ *
+ * Qdrant reads a JSON matrix whose rows are all integers as its legacy sparse-vector form
+ * (`[[indices], [values]]`) and rejects it with `Validation error ... indices: must be unique`. A
+ * float keeps the documented multivector shape unambiguous, and the numeric value does not change.
+ * The encoder produces floats, so this guard costs nothing and removes the edge case.
+ *
+ * Only a safe integer gets the decimal suffix. A larger integer such as `1e21` is already written
+ * in exponent form by `JSON.stringify`, and `1e+21.0` would not be valid JSON.
+ */
+const jsonVectorValue = (id: number | string, value: number): string => {
+	if (!Number.isFinite(value)) {
+		throw new MultiVectorValueError(id, value, "every value must be finite");
+	}
+
+	if (Number.isSafeInteger(value)) {
+		return `${value}.0`;
+	}
+
+	return JSON.stringify(value);
+};
+
+/** Serialize one ast matrix as JSON with float values. */
+const jsonMatrix = (id: number | string, rows: number[][]): string =>
+	`[${rows.map((row) => `[${row.map((value) => jsonVectorValue(id, value)).join(",")}]`).join(",")}]`;
+
+/** Serialize one `update vectors` entry, which carries the ast vector only. */
+const jsonVectorUpdate = (id: number | string, name: string, rows: number[][]): string =>
+	`{"id":${JSON.stringify(id)},"vector":{${JSON.stringify(name)}:${jsonMatrix(id, rows)}}}`;
+
+/** Vector shape that Qdrant reports for one stored vector, as far as this transport reads it. */
+export type StoredVectorDescription = {
+	/** Dimensions, when the description reports one. */
+	size?: number;
+	/** Multivector configuration, when the description reports one. */
+	multivector_config?: { comparator?: string };
+};
+
+/** Read a stored vector description from an unknown Qdrant value. */
+const toStoredDescription = (entry: unknown): StoredVectorDescription => {
+	if (typeof entry !== "object" || entry === null) {
+		return {};
+	}
+
+	const description: StoredVectorDescription = {};
+	const { size, multivector_config } = entry as {
+		size?: unknown;
+		multivector_config?: unknown;
+	};
+
+	if (typeof size === "number") {
+		description.size = size;
+	}
+
+	if (typeof multivector_config === "object" && multivector_config !== null) {
+		const { comparator } = multivector_config as { comparator?: unknown };
+
+		description.multivector_config = {
+			...(typeof comparator === "string" ? { comparator } : {})
+		};
+	}
+
+	return description;
+};
 
 /** Read the error message from a Qdrant error body. */
 const extractErrorMessage = (body: unknown): string => {
@@ -217,11 +444,32 @@ export const createQdrantClient = (
 	const denseName = schema.dense.name;
 	const sparseName = schema.sparse.name;
 
-	const request = async <T>(method: string, path: string, body?: unknown): Promise<T> => {
+	/** Read the schema ast vector, or raise when the schema has none. */
+	const requireAstVector = (): MultiVectorSchema => {
+		if (schema.ast === undefined) {
+			throw new InvalidSchemaError("ast", "is required for the ast vector operations");
+		}
+
+		return schema.ast;
+	};
+
+	/** Reject an empty matrix or one that Qdrant cannot store, before any request is sent. */
+	const assertRows = (id: number | string, rows: number[][], size: number): void => {
+		if (rows.length === 0) {
+			throw new MultiVectorValueError(id, undefined, "the matrix must have at least one row");
+		}
+
+		if (rows.length * size >= MULTIVECTOR_SUBVECTOR_LIMIT) {
+			throw new MultiVectorLimitError(id, rows.length, size, MULTIVECTOR_SUBVECTOR_LIMIT);
+		}
+	};
+
+	/** Send one request with an already serialized body, and unwrap the Qdrant envelope. */
+	const send = async <T>(method: string, path: string, body?: string): Promise<T> => {
 		const response = await fetchImpl(`${url}${path}`, {
 			method,
 			headers: { "content-type": "application/json" },
-			body: body === undefined ? undefined : JSON.stringify(body)
+			body
 		});
 		const text = await response.text();
 		const parsed: unknown = text.length === 0 ? {} : JSON.parse(text);
@@ -235,10 +483,65 @@ export const createQdrantClient = (
 		return (parsed as { result: T }).result;
 	};
 
+	/**
+	 * Send one request with a JSON body, and unwrap the Qdrant `result` field.
+	 *
+	 * @param method HTTP method.
+	 * @param path Path relative to the configured base URL.
+	 * @param body Value to serialize as JSON, or `undefined` for no body.
+	 */
+	const request = async <T>(method: string, path: string, body?: unknown): Promise<T> => {
+		return send<T>(method, path, body === undefined ? undefined : JSON.stringify(body));
+	};
+
 	const collectionExists = async (): Promise<boolean> => {
 		const result = await request<{ exists: boolean }>("GET", `${base}/exists`);
 
 		return result.exists;
+	};
+
+	/**
+	 * Read the vector descriptions of the collection, keyed by vector name.
+	 *
+	 * Qdrant reports `config.params.vectors` in one of three shapes: a single vector description
+	 * for an unnamed vector, a map keyed by vector name, or a list of named descriptions. The
+	 * helper accepts all three, so a schema change in a future version cannot break detection. An
+	 * unnamed vector has no name, so it contributes no entry.
+	 */
+	const collectionVectors = async (): Promise<Map<string, StoredVectorDescription>> => {
+		const result = await request<{ config?: { params?: { vectors?: unknown } } }>("GET", base);
+		const vectors = result.config?.params?.vectors;
+		const descriptions = new Map<string, StoredVectorDescription>();
+
+		if (Array.isArray(vectors)) {
+			for (const entry of vectors) {
+				if (typeof entry !== "object" || entry === null || !("name" in entry)) {
+					continue;
+				}
+
+				const { name } = entry as { name?: unknown };
+
+				if (typeof name === "string") {
+					descriptions.set(name, toStoredDescription(entry));
+				}
+			}
+
+			return descriptions;
+		}
+
+		if (typeof vectors !== "object" || vectors === null) {
+			return descriptions;
+		}
+
+		if ("size" in vectors) {
+			return descriptions;
+		}
+
+		for (const [name, entry] of Object.entries(vectors)) {
+			descriptions.set(name, toStoredDescription(entry));
+		}
+
+		return descriptions;
 	};
 
 	const ensureCollection = async (): Promise<boolean> => {
@@ -445,6 +748,120 @@ export const createQdrantClient = (
 		return { scores, missing };
 	};
 
+	/**
+	 * Add the ast multivector definition to an existing collection.
+	 *
+	 * The operation follows the documented vector-schema update, `PUT
+	 * /collections/{collection_name}/vectors/{vector_name}`. The body key `dense` names the vector
+	 * _type_, not the vector: Qdrant takes the vector name from the path. The name of the body key
+	 * must stay `dense` even when the schema names the vector `ast`.
+	 *
+	 * The definition is added asynchronously. Existing points gain no value until
+	 * {@link updateAstVectors} writes one.
+	 *
+	 * When the collection already lists the vector, the method compares its `size` and its
+	 * `multivector_config.comparator` with the schema. A different shape raises
+	 * {@link IncompatibleAstVectorError} instead of failing later on the first query.
+	 *
+	 * @returns `true` when this call added the definition, `false` when a compatible definition
+	 *   already existed.
+	 */
+	const ensureAstVector = async (): Promise<boolean> => {
+		const ast = requireAstVector();
+		const vectors = await collectionVectors();
+		const existing = vectors.get(ast.name);
+
+		if (existing !== undefined) {
+			const found = {
+				...(existing.size === undefined ? {} : { size: existing.size }),
+				...(existing.multivector_config?.comparator === undefined
+					? {}
+					: { comparator: existing.multivector_config.comparator })
+			};
+			const expected = { size: ast.size, comparator: ast.comparator };
+
+			if (found.size !== expected.size || found.comparator !== expected.comparator) {
+				throw new IncompatibleAstVectorError(ast.name, expected, found);
+			}
+
+			return false;
+		}
+
+		await request("PUT", `${base}/vectors/${encodeURIComponent(ast.name)}`, {
+			dense: multiVectorConfig(ast)
+		});
+
+		return true;
+	};
+
+	/**
+	 * Write the ast vector of existing points and keep every other vector and payload.
+	 *
+	 * The request sends only the `ast` key, so Qdrant leaves the dense vector, the BM25 vector, and
+	 * the business payload unchanged. Every listed point must already exist.
+	 */
+	const updateAstVectors = async (
+		points: Array<{ id: number | string; rows: number[][] }>,
+		options: { wait?: boolean } = {}
+	): Promise<void> => {
+		const { name, size } = requireAstVector();
+
+		for (const point of points) {
+			assertRows(point.id, point.rows, size);
+		}
+
+		if (points.length === 0) {
+			return;
+		}
+
+		const wait = options.wait ?? true;
+		const entries = points.map((point) => jsonVectorUpdate(point.id, name, point.rows));
+
+		await send(
+			"PUT",
+			`${base}/points/vectors?wait=${wait}`,
+			`{"points":[${entries.join(",")}]}`
+		);
+	};
+
+	/**
+	 * Score one identifier batch with an exact ast multivector search.
+	 *
+	 * Qdrant computes `score = Σᵢ maxⱼ Sim(Aᵢ, Bⱼ)`, so the raw score is not bounded by one: two
+	 * identical rows score `2.0`. This method returns the raw score unchanged. Normalization to
+	 * `[0, 1]` belongs to the retrieval layer, so do not clamp here.
+	 */
+	const queryAstExact = async (query: ExactAstQuery): Promise<ExactScoreResult> => {
+		const { name, size } = requireAstVector();
+
+		assertRows("query", query.rows, size);
+
+		if (query.ids.length === 0) {
+			return { scores: [], missing: [] };
+		}
+
+		const result = await send<{ points: QueryHit[] }>(
+			"POST",
+			`${base}/points/query`,
+			`{"query":${jsonMatrix("query", query.rows)},"using":${JSON.stringify(
+				name
+			)},"filter":${JSON.stringify(withIds(query.filter, query.ids))},"params":{"exact":true},"limit":${query.ids.length},"with_payload":false}`
+		);
+
+		const scores: IndexScore[] = result.points.map((point) => ({
+			id: point.id,
+			score: point.score
+		}));
+		const returned = new Set(scores.map((entry) => entry.id));
+		const missing = query.ids.filter((id) => !returned.has(id));
+
+		if (missing.length > 0 && (query.onMissing ?? "throw") === "throw") {
+			throw new MissingVectorError(name, missing);
+		}
+
+		return { scores, missing };
+	};
+
 	return {
 		url,
 		collection,
@@ -456,6 +873,9 @@ export const createQdrantClient = (
 		scrollIds,
 		fetchPayloads,
 		queryDenseExact,
-		querySparseExact
+		querySparseExact,
+		ensureAstVector,
+		updateAstVectors,
+		queryAstExact
 	};
 };

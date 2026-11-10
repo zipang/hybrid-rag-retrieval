@@ -3,13 +3,13 @@
 Ticket: `T0004` — related spec: `tickets/in_progress/T0004-french-syntax-weighted-retrieval/spec.md`
 
 This memo records how the project represents and encodes the grammatical
-structure of an indexed text. The index needs a syntax vector. The vector must
+structure of an indexed text. The index needs an `ast` vector. The vector must
 capture grammar alone. Vocabulary, lemmas, and meaning stay out. The project
 compared two tree formalisms and several encodings. The project selected
 dependency trees in the CoNLL-U format. The evaluation in Task 1 and Task 11
 will confirm the choice on the reviewed test data set.
 
-## 1. What the syntax vector must capture
+## 1. What the `ast` vector must capture
 
 The specification states the goal. The syntax score "must use grammatical
 structure alone." The specification gives one example pair:

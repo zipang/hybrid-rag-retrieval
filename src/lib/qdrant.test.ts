@@ -1,5 +1,13 @@
 import { describe, expect, test } from "bun:test";
-import { createQdrantClient, type Point } from "./qdrant";
+import {
+	createQdrantClient,
+	IncompatibleAstVectorError,
+	maxMultiVectorRows,
+	MULTIVECTOR_SUBVECTOR_LIMIT,
+	MultiVectorLimitError,
+	MultiVectorValueError,
+	type Point
+} from "./qdrant";
 import type { CollectionSchema } from "./qdrant-schema";
 
 /** Test collection schema with no dataset-specific constant. */
@@ -542,6 +550,568 @@ describe("querySparseExact", () => {
 			missing: []
 		});
 		expect(calls).toHaveLength(0);
+	});
+});
+
+describe("ast vector storage", () => {
+	/** Schema with the optional ast multivector, mirroring the dataset wiring of Task 13. */
+	const AST_SCHEMA: CollectionSchema = {
+		...SCHEMA,
+		ast: { name: "ast", size: 256, distance: "Cosine", comparator: "max_sim" }
+	};
+
+	/** Qdrant vector description reported by `GET /collections/{name}`. */
+	const AST_DESCRIPTION = {
+		size: 256,
+		distance: "Cosine",
+		multivector_config: { comparator: "max_sim" }
+	};
+
+	/** Create a client for one schema whose fetch records calls and defers replies. */
+	const createClientFor = (schema: CollectionSchema, handler: (call: StubCall) => Response) => {
+		const calls: StubCall[] = [];
+		const fetchImpl = (async (input: string | URL | Request, init?: RequestInit) => {
+			const url =
+				typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+			const call: StubCall = {
+				method: init?.method ?? "GET",
+				url,
+				body: init?.body === undefined ? undefined : JSON.parse(String(init.body))
+			};
+			calls.push(call);
+
+			return handler(call);
+		}) as unknown as typeof fetch;
+		const client = createQdrantClient(
+			schema,
+			{ QDRANT_URL: "http://qdrant.test:6333" },
+			fetchImpl
+		);
+
+		return { client, calls };
+	};
+
+	/** Build a collection info body that lists the given named vectors. */
+	const collectionInfo = (vectors: Record<string, unknown>): Response =>
+		jsonResponse({ result: { config: { params: { vectors } } } });
+
+	/** Build `count` rows of `size` dimensions without materialising the values. */
+	const emptyRows = (count: number, size: number): number[][] =>
+		Array.from({ length: count }, () => new Array<number>(size));
+
+	describe("ensureAstVector", () => {
+		test("adds the named multivector through the documented operation", async () => {
+			const { client, calls } = createClientFor(AST_SCHEMA, (call) =>
+				call.method === "GET"
+					? collectionInfo({ dense: { size: 1024, distance: "Cosine" } })
+					: jsonResponse({ result: { operation_id: 1, status: "acknowledged" } })
+			);
+
+			expect(await client.ensureAstVector()).toBe(true);
+			expect(calls).toHaveLength(2);
+			expect(calls[0]).toEqual({ method: "GET", url: BASE, body: undefined });
+			expect(calls[1]).toEqual({
+				method: "PUT",
+				url: `${BASE}/vectors/ast`,
+				body: {
+					// The body key names the vector *type*, not the vector. The path names the vector.
+					dense: {
+						size: 256,
+						distance: "Cosine",
+						multivector_config: { comparator: "max_sim" }
+					}
+				}
+			});
+		});
+
+		test("returns false when the collection info already lists the ast vector", async () => {
+			const { client, calls } = createClientFor(AST_SCHEMA, () =>
+				collectionInfo({
+					dense: { size: 1024, distance: "Cosine" },
+					ast: AST_DESCRIPTION
+				})
+			);
+
+			expect(await client.ensureAstVector()).toBe(false);
+			expect(calls).toHaveLength(1);
+		});
+
+		test("reads an array of named vector descriptions", async () => {
+			const { client, calls } = createClientFor(AST_SCHEMA, () =>
+				jsonResponse({
+					result: {
+						config: {
+							params: {
+								vectors: [
+									{ name: "dense", size: 1024, distance: "Cosine" },
+									{ name: "ast", ...AST_DESCRIPTION }
+								]
+							}
+						}
+					}
+				})
+			);
+
+			expect(await client.ensureAstVector()).toBe(false);
+			expect(calls).toHaveLength(1);
+		});
+
+		test("rejects an existing ast vector with a different size", async () => {
+			const { client, calls } = createClientFor(AST_SCHEMA, () =>
+				collectionInfo({
+					dense: { size: 1024, distance: "Cosine" },
+					ast: {
+						size: 128,
+						distance: "Cosine",
+						multivector_config: { comparator: "max_sim" }
+					}
+				})
+			);
+
+			await expect(client.ensureAstVector()).rejects.toBeInstanceOf(
+				IncompatibleAstVectorError
+			);
+			expect(calls).toHaveLength(1);
+		});
+
+		test("rejects an existing plain dense vector with no multivector configuration", async () => {
+			const { client, calls } = createClientFor(AST_SCHEMA, () =>
+				collectionInfo({
+					dense: { size: 1024, distance: "Cosine" },
+					ast: { size: 256, distance: "Cosine" }
+				})
+			);
+
+			await expect(client.ensureAstVector()).rejects.toBeInstanceOf(
+				IncompatibleAstVectorError
+			);
+			expect(calls).toHaveLength(1);
+		});
+
+		test("rejects an existing ast vector with a different comparator", async () => {
+			const { client } = createClientFor(AST_SCHEMA, () =>
+				collectionInfo({
+					ast: {
+						size: 256,
+						distance: "Cosine",
+						multivector_config: { comparator: "other" }
+					}
+				})
+			);
+
+			await expect(client.ensureAstVector()).rejects.toBeInstanceOf(
+				IncompatibleAstVectorError
+			);
+		});
+
+		test("names the vector and both shapes in the incompatibility error", async () => {
+			const { client } = createClientFor(AST_SCHEMA, () =>
+				collectionInfo({
+					ast: {
+						size: 128,
+						distance: "Cosine",
+						multivector_config: { comparator: "max_sim" }
+					}
+				})
+			);
+
+			try {
+				await client.ensureAstVector();
+				throw new Error("expected IncompatibleAstVectorError");
+			} catch (error) {
+				expect(error).toBeInstanceOf(IncompatibleAstVectorError);
+
+				const incompatible = error as IncompatibleAstVectorError;
+
+				expect(incompatible.vector).toBe("ast");
+				expect(incompatible.expected).toEqual({
+					size: 256,
+					comparator: "max_sim"
+				});
+				expect(incompatible.found).toEqual({ size: 128, comparator: "max_sim" });
+			}
+		});
+
+		test("handles an unnamed single vector description defensively", async () => {
+			const { client, calls } = createClientFor(AST_SCHEMA, () =>
+				collectionInfo({ size: 1024, distance: "Cosine" })
+			);
+
+			expect(await client.ensureAstVector()).toBe(true);
+			expect(calls).toHaveLength(2);
+			expect(calls[1]?.url).toBe(`${BASE}/vectors/ast`);
+		});
+
+		test("uses the schema vector name in the path", async () => {
+			const custom: CollectionSchema = {
+				...AST_SCHEMA,
+				collection: "poems",
+				ast: { name: "grammar", size: 128, distance: "Dot", comparator: "max_sim" }
+			};
+			const { client, calls } = createClientFor(custom, (call) =>
+				call.method === "GET" ? collectionInfo({ dense: {} }) : jsonResponse()
+			);
+
+			await client.ensureAstVector();
+
+			expect(calls[1]?.url).toBe("http://qdrant.test:6333/collections/poems/vectors/grammar");
+			expect(calls[1]?.body).toEqual({
+				dense: {
+					size: 128,
+					distance: "Dot",
+					multivector_config: { comparator: "max_sim" }
+				}
+			});
+		});
+
+		test("throws a clear error when the schema has no ast vector", async () => {
+			const { client, calls } = createClientFor(SCHEMA, () => jsonResponse());
+
+			await expect(client.ensureAstVector()).rejects.toThrow(/ast/);
+			expect(calls).toHaveLength(0);
+		});
+	});
+
+	describe("updateAstVectors", () => {
+		test("updates only the ast vector and waits by default", async () => {
+			const { client, calls } = createClientFor(AST_SCHEMA, () => jsonResponse());
+
+			await client.updateAstVectors([
+				{
+					id: 1,
+					rows: [
+						[0.1, 0.2],
+						[0.3, 0.4]
+					]
+				},
+				{ id: 2, rows: [[0.5, 0.6]] }
+			]);
+
+			expect(calls[0]?.method).toBe("PUT");
+			expect(calls[0]?.url).toBe(`${BASE}/points/vectors?wait=true`);
+			expect(calls[0]?.body).toEqual({
+				points: [
+					{
+						id: 1,
+						vector: {
+							ast: [
+								[0.1, 0.2],
+								[0.3, 0.4]
+							]
+						}
+					},
+					{ id: 2, vector: { ast: [[0.5, 0.6]] } }
+				]
+			});
+		});
+
+		test("never sends the dense or the sparse vector", async () => {
+			const { client, calls } = createClientFor(AST_SCHEMA, () => jsonResponse());
+
+			await client.updateAstVectors([{ id: 7, rows: [[1, 0]] }]);
+
+			const body = calls[0]?.body as { points: Array<{ vector: Record<string, unknown> }> };
+			const vector = body.points[0]?.vector ?? {};
+
+			expect(Object.keys(vector)).toEqual(["ast"]);
+			expect(vector).not.toHaveProperty("dense");
+			expect(vector).not.toHaveProperty("bm25");
+		});
+
+		test("honors wait:false", async () => {
+			const { client, calls } = createClientFor(AST_SCHEMA, () => jsonResponse());
+
+			await client.updateAstVectors([{ id: 1, rows: [[1, 0]] }], { wait: false });
+
+			expect(calls[0]?.url).toBe(`${BASE}/points/vectors?wait=false`);
+		});
+
+		test("sends nothing for an empty update batch", async () => {
+			const { client, calls } = createClientFor(AST_SCHEMA, () => jsonResponse());
+
+			await client.updateAstVectors([]);
+
+			expect(calls).toHaveLength(0);
+		});
+
+		test("throws when the schema has no ast vector", async () => {
+			const { client, calls } = createClientFor(SCHEMA, () => jsonResponse());
+
+			await expect(client.updateAstVectors([{ id: 1, rows: [[1]] }])).rejects.toThrow(/ast/);
+			expect(calls).toHaveLength(0);
+		});
+
+		test("rejects a row count above the multivector limit without any HTTP call", async () => {
+			const { client, calls } = createClientFor(AST_SCHEMA, () => jsonResponse());
+
+			await expect(
+				client.updateAstVectors([{ id: 9, rows: emptyRows(4096, 256) }])
+			).rejects.toBeInstanceOf(MultiVectorLimitError);
+			expect(calls).toHaveLength(0);
+		});
+
+		test("names the record, the row count, and the limit in the limit error", async () => {
+			const { client } = createClientFor(AST_SCHEMA, () => jsonResponse());
+
+			try {
+				await client.updateAstVectors([{ id: 9, rows: emptyRows(4096, 256) }]);
+				throw new Error("expected MultiVectorLimitError");
+			} catch (error) {
+				expect(error).toBeInstanceOf(MultiVectorLimitError);
+
+				const limitError = error as MultiVectorLimitError;
+
+				expect(limitError.id).toBe(9);
+				expect(limitError.rows).toBe(4096);
+				expect(limitError.size).toBe(256);
+				expect(limitError.limit).toBe(MULTIVECTOR_SUBVECTOR_LIMIT);
+				expect(limitError.message).toContain("9");
+				expect(limitError.message).toContain("4096");
+				expect(limitError.message).toContain("1048576");
+			}
+		});
+
+		test("rejects an empty matrix without any HTTP call", async () => {
+			const { client, calls } = createClientFor(AST_SCHEMA, () => jsonResponse());
+
+			await expect(client.updateAstVectors([{ id: 4, rows: [] }])).rejects.toBeInstanceOf(
+				MultiVectorValueError
+			);
+			expect(calls).toHaveLength(0);
+		});
+	});
+
+	describe("multivector row limit", () => {
+		test("exports the documented hard limit", () => {
+			expect(MULTIVECTOR_SUBVECTOR_LIMIT).toBe(1_048_576);
+		});
+
+		test("computes the maximum row count for one vector size", () => {
+			expect(maxMultiVectorRows(256)).toBe(4095);
+			expect(maxMultiVectorRows(1024)).toBe(1023);
+			expect(maxMultiVectorRows(1)).toBe(1_048_575);
+		});
+
+		test("rejects a non-positive row size", () => {
+			expect(() => maxMultiVectorRows(0)).toThrow();
+			expect(() => maxMultiVectorRows(-256)).toThrow();
+			expect(() => maxMultiVectorRows(2.5)).toThrow();
+		});
+
+		test("rejects a product equal to the limit", async () => {
+			const custom: CollectionSchema = {
+				...SCHEMA,
+				ast: { name: "ast", size: 524_288, distance: "Cosine", comparator: "max_sim" }
+			};
+			const { client, calls } = createClientFor(custom, () => jsonResponse());
+
+			await expect(
+				client.queryAstExact({ rows: emptyRows(2, 524_288), ids: [1] })
+			).rejects.toBeInstanceOf(MultiVectorLimitError);
+			expect(calls).toHaveLength(0);
+		});
+	});
+
+	describe("matrix serialization", () => {
+		/** Capture the raw request body text of one call. */
+		const rawBodyOf = async (
+			call: (client: ReturnType<typeof createQdrantClient>) => Promise<void>
+		) => {
+			let raw = "";
+			const fetchImpl = (async (_input: string | URL | Request, init?: RequestInit) => {
+				raw = String(init?.body ?? "");
+
+				return jsonResponse({ result: { points: [] } });
+			}) as unknown as typeof fetch;
+			const client = createQdrantClient(
+				AST_SCHEMA,
+				{ QDRANT_URL: "http://qdrant.test:6333" },
+				fetchImpl
+			);
+
+			await call(client);
+
+			return raw;
+		};
+
+		test("writes vector values with a decimal point", async () => {
+			const raw = await rawBodyOf((client) =>
+				client.updateAstVectors([{ id: 1, rows: [[1, 0]] }])
+			);
+
+			// Integer-only rows are ambiguous with the legacy sparse form for Qdrant.
+			expect(raw).toContain('"ast":[[1.0,0.0]]');
+		});
+
+		test("writes the query matrix with a decimal point", async () => {
+			const raw = await rawBodyOf((client) =>
+				client.queryAstExact({ rows: [[1, 0]], ids: [1], onMissing: "skip" })
+			);
+
+			expect(raw).toContain('"query":[[1.0,0.0]]');
+		});
+
+		test("rejects a non-finite value before the request", async () => {
+			await expect(
+				rawBodyOf((client) => client.updateAstVectors([{ id: 1, rows: [[Number.NaN]] }]))
+			).rejects.toThrow(/finite/);
+		});
+
+		test("raises a typed value error that carries the offending value", async () => {
+			try {
+				await rawBodyOf((client) =>
+					client.updateAstVectors([{ id: 1, rows: [[Number.POSITIVE_INFINITY]] }])
+				);
+				throw new Error("expected MultiVectorValueError");
+			} catch (error) {
+				expect(error).toBeInstanceOf(MultiVectorValueError);
+				expect((error as MultiVectorValueError).value).toBe(Number.POSITIVE_INFINITY);
+			}
+		});
+
+		test("serializes a huge finite integer as valid JSON", async () => {
+			const raw = await rawBodyOf((client) =>
+				client.updateAstVectors([{ id: 1, rows: [[1e21]] }])
+			);
+
+			// `Number.isInteger(1e21)` is true but `1e+21.0` is not valid JSON.
+			expect(() => JSON.parse(raw)).not.toThrow();
+			expect(raw).not.toContain("e+21.0");
+		});
+	});
+
+	describe("queryAstExact", () => {
+		test("sends an exact ast query restricted to the identifiers", async () => {
+			const { client, calls } = createClientFor(AST_SCHEMA, () =>
+				jsonResponse({
+					result: {
+						points: [
+							{ id: 1, score: 2.0 },
+							{ id: 5, score: 0.25 }
+						]
+					}
+				})
+			);
+
+			const result = await client.queryAstExact({
+				rows: [
+					[1, 0],
+					[0, 1]
+				],
+				ids: [1, 5],
+				onMissing: "skip"
+			});
+
+			expect(result.scores).toEqual([
+				{ id: 1, score: 2.0 },
+				{ id: 5, score: 0.25 }
+			]);
+			expect(result.missing).toEqual([]);
+			expect(calls[0]?.method).toBe("POST");
+			expect(calls[0]?.url).toBe(`${BASE}/points/query`);
+			expect(calls[0]?.body).toEqual({
+				query: [
+					[1, 0],
+					[0, 1]
+				],
+				using: "ast",
+				filter: { must: [{ has_id: [1, 5] }] },
+				params: { exact: true },
+				limit: 2,
+				with_payload: false
+			});
+		});
+
+		test("returns the raw unbounded max_sim score", async () => {
+			const { client } = createClientFor(AST_SCHEMA, () =>
+				jsonResponse({ result: { points: [{ id: 1, score: 2.0 }] } })
+			);
+
+			const result = await client.queryAstExact({
+				rows: [
+					[1, 0],
+					[0, 1]
+				],
+				ids: [1]
+			});
+
+			expect(result.scores[0]?.score).toBe(2.0);
+		});
+
+		test("combines a payload filter with the identifier set", async () => {
+			const { client, calls } = createClientFor(AST_SCHEMA, () =>
+				jsonResponse({ result: { points: [] } })
+			);
+			const filter = { must: [{ key: "annee", range: { gte: 2004 } }] };
+
+			await client.queryAstExact({
+				rows: [[1, 0]],
+				ids: [1, 2],
+				filter,
+				onMissing: "skip"
+			});
+
+			expect(calls[0]?.body).toMatchObject({
+				filter: {
+					must: [{ key: "annee", range: { gte: 2004 } }, { has_id: [1, 2] }]
+				}
+			});
+		});
+
+		test("throws on a missing ast vector by default", async () => {
+			const { client } = createClientFor(AST_SCHEMA, () =>
+				jsonResponse({ result: { points: [{ id: 1, score: 1 }] } })
+			);
+
+			await expect(client.queryAstExact({ rows: [[1, 0]], ids: [1, 9] })).rejects.toThrow(
+				/no ast vector/s
+			);
+		});
+
+		test("reports a missing ast vector with the vector name when the policy is skip", async () => {
+			const { client } = createClientFor(AST_SCHEMA, () =>
+				jsonResponse({ result: { points: [{ id: 1, score: 1 }] } })
+			);
+
+			const result = await client.queryAstExact({
+				rows: [[1, 0]],
+				ids: [1, 9],
+				onMissing: "skip"
+			});
+
+			expect(result.missing).toEqual([9]);
+			await expect(
+				client.queryAstExact({ rows: [[1, 0]], ids: [1, 9] })
+			).rejects.toMatchObject({ name: "MissingVectorError", vector: "ast" });
+		});
+
+		test("rejects a row count above the multivector limit without any HTTP call", async () => {
+			const { client, calls } = createClientFor(AST_SCHEMA, () => jsonResponse());
+
+			await expect(
+				client.queryAstExact({ rows: emptyRows(4096, 256), ids: [1] })
+			).rejects.toBeInstanceOf(MultiVectorLimitError);
+			expect(calls).toHaveLength(0);
+		});
+
+		test("rejects an empty query matrix without any HTTP call", async () => {
+			const { client, calls } = createClientFor(AST_SCHEMA, () => jsonResponse());
+
+			await expect(client.queryAstExact({ rows: [], ids: [1] })).rejects.toBeInstanceOf(
+				MultiVectorValueError
+			);
+			expect(calls).toHaveLength(0);
+		});
+
+		test("returns an empty result for an empty identifier batch", async () => {
+			const { client, calls } = createClientFor(AST_SCHEMA, () => jsonResponse());
+
+			expect(await client.queryAstExact({ rows: [[1, 0]], ids: [] })).toEqual({
+				scores: [],
+				missing: []
+			});
+			expect(calls).toHaveLength(0);
+		});
 	});
 });
 

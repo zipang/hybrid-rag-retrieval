@@ -59,7 +59,7 @@ keys:
 A text holds a `sentences` array. Each sentence is an array of tokens. A token
 is a tuple. The tuple order is:
 
-The project stores the syntax vector as a multivector. Each sentence is one row
+The project stores the `ast` vector as a multivector. Each sentence is one row
 of the matrix. Qdrant `max_sim` scores a query row against the best matching row
 of a record. See `memos/syntax-trees.md` and the plan section "Use one active
 syntax mode per collection generation".

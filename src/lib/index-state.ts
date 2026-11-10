@@ -23,6 +23,57 @@ import { dirname } from "node:path";
 /** Status of one index generation. */
 export type GenerationStatus = "rebuilding" | "ready";
 
+/** Reproducible configuration of the syntax index. */
+export type SyntaxIndexConfiguration = {
+	/** Active syntax mode. */
+	mode: "coarse" | "detailed";
+	/** Text language, for example `fr`. */
+	language: string;
+	/** Parser version that produced the trees. */
+	parserVersion: string;
+	/** Pinned parser model revision. */
+	modelRevision: string;
+	/** Abstraction version that removed the vocabulary. */
+	abstractionVersion: string;
+	/** Encoder version, for example `coarse-3`. */
+	encoderVersion: string;
+	/** Encoded vector dimensions. */
+	dimensions: number;
+	/** Stable fingerprint of the whole configuration. */
+	configId: string;
+};
+
+/** Coverage accounting of one syntax indexing run. */
+export type SyntaxIndexCoverage = {
+	/** Records that the run had to cover. */
+	eligible: number;
+	/** Records with a stored ast vector. */
+	indexed: number;
+	/** Records the parser could not represent. */
+	unsupported: number;
+	/** Records that failed through a temporary error. */
+	failed: number;
+};
+
+/** Publication state of the syntax index for one generation. */
+export type SyntaxIndexState = {
+	/** Configuration that produced the stored ast vectors. */
+	configuration: SyntaxIndexConfiguration;
+	/** `pending` while a run is in progress, `ready` when the run is complete. */
+	status: "pending" | "ready";
+	/** Coverage accounting of the run. */
+	coverage: SyntaxIndexCoverage;
+	/** ISO-8601 timestamp of the last syntax state change. */
+	updatedAt: string;
+	/**
+	 * One entry per `unsupported` or `failed` record, with its identifier and a nonblank reason.
+	 *
+	 * A `ready` state requires exactly `unsupported + failed` entries with unique identifiers. The
+	 * `unsupported` and `failed` counts alone are not proof of coverage.
+	 */
+	exclusions?: Array<{ id: number | string; reason: string }>;
+};
+
 /** One persisted index generation record. */
 export type GenerationRecord = {
 	/** Opaque generation identifier. Unique for each rebuild. */
@@ -41,6 +92,8 @@ export type GenerationRecord = {
 	configId?: string;
 	/** Record count from the completed run. */
 	recordCount?: number;
+	/** Syntax index state of this generation, when a syntax run published one. */
+	syntax?: SyntaxIndexState;
 };
 
 /** State file contents. */
@@ -80,6 +133,40 @@ export class StaleGenerationError extends Error {
 	}
 }
 
+/** Why the syntax index cannot serve reads. */
+export type SyntaxNotReadyReason = "missing" | "pending" | "config-mismatch";
+
+/** Error raised when a read cannot use the syntax index of a generation. */
+export class SyntaxNotReadyError extends Error {
+	/** Generation that the caller asked for. */
+	readonly generation: string;
+	/** Cause of the refusal. */
+	readonly reason: SyntaxNotReadyReason;
+
+	/** Create the error with the generation and the cause. */
+	constructor(generation: string, reason: SyntaxNotReadyReason, detail = "") {
+		const suffix = detail === "" ? "" : `: ${detail}`;
+
+		super(`syntax index for generation ${generation} is not ready (${reason})${suffix}`);
+		this.name = "SyntaxNotReadyError";
+		this.generation = generation;
+		this.reason = reason;
+	}
+}
+
+/** Error raised when a syntax run claims coverage that its record list does not support. */
+export class InvalidSyntaxCoverageError extends Error {
+	/** Short explanation of the refused state. */
+	readonly reason: string;
+
+	/** Create the error with the explanation. */
+	constructor(reason: string) {
+		super(`invalid syntax coverage: ${reason}`);
+		this.name = "InvalidSyntaxCoverageError";
+		this.reason = reason;
+	}
+}
+
 /** Dependencies of the index state store. Tests inject a fake file layer. */
 export type IndexStateDependencies = {
 	/** Read a UTF-8 file, or throw when it does not exist. */
@@ -109,6 +196,20 @@ export type IndexStateStore = {
 	}) => Promise<GenerationRecord>;
 	/** Confirm that a generation is still current and ready. */
 	assertReady: (generation: string) => Promise<GenerationRecord>;
+	/** Publish the syntax state of the current generation after coverage validation. */
+	publishSyntax: (options: PublishSyntaxOptions) => Promise<GenerationRecord>;
+	/** Read the ready syntax state of a generation, or refuse an incompatible one. */
+	assertSyntaxReady: (generation: string, expectedConfigId?: string) => Promise<SyntaxIndexState>;
+};
+
+/** Options of a syntax publication. */
+export type PublishSyntaxOptions = {
+	/** Writer token that owns the rebuild. */
+	writer: string;
+	/** Generation that the caller approved. */
+	expectedGeneration: string;
+	/** Syntax state to persist. */
+	syntax: SyntaxIndexState;
 };
 
 /** Schema version of the state file. */
@@ -265,7 +366,128 @@ export const createIndexStateStore = (
 		return current;
 	};
 
-	return { read, beginRebuild, publish, assertReady };
+	/**
+	 * Check that a syntax state accounts for every record.
+	 *
+	 * A `ready` state must satisfy `indexed + unsupported + failed === eligible`. It must also list
+	 * exactly one exclusion per `unsupported` or `failed` record, with a unique identifier and a
+	 * nonblank reason. A state that excludes a record without listing it can therefore never pass
+	 * the check.
+	 */
+	const validateSyntaxCoverage = (syntax: SyntaxIndexState): void => {
+		const { eligible, indexed, unsupported, failed } = syntax.coverage;
+		const total = indexed + unsupported + failed;
+
+		if (total !== eligible) {
+			throw new InvalidSyntaxCoverageError(
+				`indexed + unsupported + failed is ${total}, but eligible is ${eligible}`
+			);
+		}
+
+		const exclusions = syntax.exclusions ?? [];
+		const excluded = unsupported + failed;
+
+		if (exclusions.length !== excluded) {
+			throw new InvalidSyntaxCoverageError(
+				`the exclusion list has ${exclusions.length} entries, but ${excluded} records are ` +
+					"unsupported or failed"
+			);
+		}
+
+		const seen = new Set<number | string>();
+
+		for (const exclusion of exclusions) {
+			if (
+				(typeof exclusion.id !== "number" && typeof exclusion.id !== "string") ||
+				exclusion.id === ""
+			) {
+				throw new InvalidSyntaxCoverageError("every exclusion needs an identifier");
+			}
+
+			if (typeof exclusion.reason !== "string" || exclusion.reason.trim() === "") {
+				throw new InvalidSyntaxCoverageError(
+					`exclusion ${exclusion.id} needs a nonblank reason`
+				);
+			}
+
+			if (seen.has(exclusion.id)) {
+				throw new InvalidSyntaxCoverageError(
+					`exclusion ${exclusion.id} appears more than once`
+				);
+			}
+
+			seen.add(exclusion.id);
+		}
+	};
+
+	const publishSyntax = async (options: PublishSyntaxOptions): Promise<GenerationRecord> => {
+		const state = await read();
+		const current = state.current;
+
+		if (current === undefined) {
+			throw new StaleGenerationError(options.expectedGeneration, "");
+		}
+
+		if (current.writer !== options.writer) {
+			throw new ConcurrentWriteError(current.writer);
+		}
+
+		if (current.generation !== options.expectedGeneration) {
+			throw new StaleGenerationError(options.expectedGeneration, current.generation);
+		}
+
+		if (options.syntax.status === "ready") {
+			validateSyntaxCoverage(options.syntax);
+		}
+
+		const record: GenerationRecord = {
+			...current,
+			updatedAt: dependencies.now(),
+			syntax: options.syntax
+		};
+
+		await write({ version: STATE_VERSION, current: record });
+
+		return record;
+	};
+
+	const assertSyntaxReady = async (
+		generation: string,
+		expectedConfigId?: string
+	): Promise<SyntaxIndexState> => {
+		const state = await read();
+		const current = state.current;
+
+		if (current === undefined || current.generation !== generation) {
+			throw new StaleGenerationError(generation, current?.generation ?? "");
+		}
+
+		const syntax = current.syntax;
+
+		if (syntax === undefined) {
+			throw new SyntaxNotReadyError(generation, "missing");
+		}
+
+		if (current.status !== "ready" || syntax.status !== "ready") {
+			throw new SyntaxNotReadyError(
+				generation,
+				"pending",
+				`generation status ${current.status}, syntax status ${syntax.status}`
+			);
+		}
+
+		if (expectedConfigId !== undefined && syntax.configuration.configId !== expectedConfigId) {
+			throw new SyntaxNotReadyError(
+				generation,
+				"config-mismatch",
+				`expected ${expectedConfigId}, persisted ${syntax.configuration.configId}`
+			);
+		}
+
+		return syntax;
+	};
+
+	return { read, beginRebuild, publish, assertReady, publishSyntax, assertSyntaxReady };
 };
 
 /** Default state file path for the slogan index. */
