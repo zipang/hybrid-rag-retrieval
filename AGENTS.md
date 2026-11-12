@@ -194,9 +194,14 @@ Just tell the user the values to insert into if they need to be edited.
 
 ## LOCAL DOCUMENTATION FOR TOOLS
 
-- [Qdrant - 1.19.1](./docs/Qdrant%20-%201.19.1/index.md) Open-source vector search engine used for the hybrid dense+sparse retrieval index.
-  Anytime you must generate code or instructions to use these tools in the
-  project, you **MUST** refer to this local documentation first. This will
-  ensure efficiency, low latency, and conformance to the version of the tool
-  actually used inside the project. Preload the `index.md` content of each
-  available documentation to keep this in your context for rapid access.
+The project runs two Qdrant deployments, pinned to two versions. Read the
+mirror of the deployment you work on.
+
+- [Qdrant - 1.20.0](./docs/Qdrant%20-%201.20.0/index.md) Open-source vector search engine used for the hybrid dense+sparse retrieval index. **Development machine** and every local run. This is the default mirror.
+- [Qdrant - 1.19.1](./docs/Qdrant%20-%201.19.1/index.md) The same engine at the version that the **NixOS server** still runs, and the version of the measurements recorded in `memos/qdrant-review.md` and `memos/qdrant-multivector-behavior.md` before the upgrade.
+
+Anytime you must generate code or instructions to use these tools in the
+project, you **MUST** refer to this local documentation first. This will
+ensure efficiency, low latency, and conformance to the version of the tool
+actually used inside the project. Preload the `index.md` content of each
+available documentation to keep this in your context for rapid access.

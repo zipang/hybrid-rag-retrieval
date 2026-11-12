@@ -10,7 +10,7 @@ search.
 - One directory per tool and version: `docs/<tool> - <version>/`.
 - Every mirror has an `index.md` entry point that lists all pages.
 - The mirror keeps the upstream file paths (for example
-  `docs/Qdrant - 1.19.1/documentation/search/index.md`).
+  `docs/Qdrant - 1.20.0/documentation/search/index.md`).
 
 ## Source of truth
 

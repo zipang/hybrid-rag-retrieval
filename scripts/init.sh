@@ -21,7 +21,10 @@ set -euo pipefail
 #   bun run init -- --force
 #
 # Environment overrides:
-#   QDRANT_VERSION          Qdrant release tag, or "latest".
+#   QDRANT_VERSION          Qdrant release tag (default 1.20.0), or "latest".
+#   QDRANT_SHA256           Expected SHA-256 of the Qdrant tarball. The default is
+#                           the hash of 1.20.0. An empty value disables the check,
+#                           and a user who sets QDRANT_VERSION=latest must clear it.
 #   QDRANT_WEB_UI_VERSION   Qdrant Web UI release tag, or "latest".
 #   UDPIPE_MODEL_NAME       UDPipe model treebank stem (default `french-gsd`).
 #   UDPIPE_MODEL_RELEASE    UDPipe model release tag (default `ud-2.5-191206`).
@@ -32,7 +35,11 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # Qdrant settings.
-QDRANT_VERSION="${QDRANT_VERSION:-latest}"
+# The version and the hash move together: change both lines in one place.
+# `QDRANT_SHA256` uses `-` and not `:-`, so an explicit empty value stays empty
+# and disables the check, as the help text promises.
+QDRANT_VERSION="${QDRANT_VERSION:-1.20.0}"
+QDRANT_SHA256="${QDRANT_SHA256-2361f3df0dedfef31f5444f9f15bd15d6b4a6cba6ad952daecc5fbe3867c5ee6}"
 QDRANT_WEB_UI_VERSION="${QDRANT_WEB_UI_VERSION:-latest}"
 QDRANT_DEST_DIR="${QDRANT_DEST_DIR:-${ROOT_DIR}/qdrant}"
 QDRANT_CONFIG_DIR="${QDRANT_DEST_DIR}/config"
@@ -63,7 +70,7 @@ cleanup() {
 trap cleanup EXIT
 
 usage() {
-	sed -n '3,30p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+	sed -n '4,33p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
 }
 
 # Parse the command-line flags.
@@ -151,10 +158,37 @@ YAML
 		if [[ "${QDRANT_VERSION}" == "latest" ]]; then
 			QDRANT_URL="https://github.com/qdrant/qdrant/releases/latest/download/qdrant-x86_64-unknown-linux-gnu.tar.gz"
 		else
-			QDRANT_URL="https://github.com/qdrant/qdrant/releases/download/${QDRANT_VERSION}/qdrant-x86_64-unknown-linux-gnu.tar.gz"
+			# The release tag carries a `v` prefix; a bare version such as `1.20.0` must gain it.
+			QDRANT_TAG="${QDRANT_VERSION}"
+			if [[ "${QDRANT_TAG}" != v* ]]; then
+				QDRANT_TAG="v${QDRANT_TAG}"
+			fi
+			QDRANT_URL="https://github.com/qdrant/qdrant/releases/download/${QDRANT_TAG}/qdrant-x86_64-unknown-linux-gnu.tar.gz"
 		fi
 
 		download "${QDRANT_URL}" "${QDRANT_DEST_DIR}/qdrant.tar.gz"
+
+		if [[ -n "${QDRANT_SHA256}" ]]; then
+			local actual
+			actual="$(sha256_of "${QDRANT_DEST_DIR}/qdrant.tar.gz")"
+
+			if [[ -z "${actual}" ]]; then
+				echo "ERROR: no SHA-256 tool found (sha256sum or shasum)." >&2
+				echo "Set QDRANT_SHA256= to skip the check." >&2
+				rm -f "${QDRANT_DEST_DIR}/qdrant.tar.gz"
+				exit 1
+			fi
+
+			if [[ "${actual}" != "${QDRANT_SHA256}" ]]; then
+				echo "ERROR: checksum mismatch for ${QDRANT_DEST_DIR}/qdrant.tar.gz." >&2
+				echo "  expected ${QDRANT_SHA256}" >&2
+				echo "  got      ${actual}" >&2
+				echo "Set QDRANT_SHA256 to the hash of another release, or set QDRANT_SHA256= to skip the check." >&2
+				rm -f "${QDRANT_DEST_DIR}/qdrant.tar.gz"
+				exit 1
+			fi
+		fi
+
 		tar -xzf "${QDRANT_DEST_DIR}/qdrant.tar.gz" -C "${QDRANT_DEST_DIR}" qdrant
 		chmod +x "${QDRANT_DEST_DIR}/qdrant"
 		rm -f "${QDRANT_DEST_DIR}/qdrant.tar.gz"

@@ -63,6 +63,30 @@ does not commit the data these scripts produce.
 - `smoke-retrieval.ts` runs a few example queries against the indexed collection
   for a quick manual check. Run it with `bun run scripts/smoke-retrieval.ts`.
 
+- `qdrant-baseline.ts` captures the answers of one collection and compares two
+  captures. The comparison proves that an upgrade kept the points and the exact
+  scores. Run it with:
+
+  ```sh
+  bun run scripts/qdrant-baseline.ts capture --collection slogans --out .tmp/qdrant-baseline-1.19.1.json
+  bun run scripts/qdrant-baseline.ts compare --before .tmp/qdrant-baseline-1.19.1.json --after .tmp/qdrant-baseline-1.20.0.json
+  ```
+
+  `capture` reads `QDRANT_URL` and the collection schema from
+  `src/config/datasets.ts`. It scrolls every identifier, runs the three queries
+  of `smoke-retrieval.ts` with the configured embedder, and writes pretty JSON.
+  The JSON records the server version, the point count, the query texts, the
+  exact dense and sparse scores, and the hybrid identifier order. The script
+  never writes to the collection.
+
+  `compare` prints the diff as pretty JSON and exits `1` when a blocker exists,
+  `0` otherwise. A blocker is data loss or score drift: a different collection,
+  a different point count, a different query set, a lost identifier, or an exact
+  score that moved by more than `1e-6`. Exact scores compare by identifier, so a
+  reorder is not a finding. A version change and a hybrid reorder are warnings,
+  because the approximate search may return the same points in another order.
+  An unknown subcommand, a missing flag, or an unreadable file exits `2`.
+
 ## Qdrant
 
 - `qdrant.ts` starts and stops the local Qdrant server. It reads the host and
@@ -183,6 +207,18 @@ License.
   downloads the Qdrant binary and Web UI into `qdrant/`, and the pinned French
   parser model into `models/`. Run it with `bun run init`.
 
+  The Qdrant server version defaults to `1.20.0`. After the download and before
+  the extraction, the script computes the SHA-256 of the release tarball and
+  compares it with the pinned value. A mismatch removes the tarball, prints the
+  expected and the actual hash, and exits `1`. The pinned version and the pinned
+  hash move together, so one upgrade changes both lines in `scripts/init.sh`.
+
+  Set `QDRANT_VERSION` and `QDRANT_SHA256` to install another release. An empty
+  `QDRANT_SHA256` skips the check; a user who sets `QDRANT_VERSION=latest` must
+  clear the hash too, because the pinned hash describes one release only. An
+  empty value is written `QDRANT_SHA256=`, with nothing after the equal sign. A
+  host with neither `sha256sum` nor `shasum` is an error, not a silent skip.
+
 Useful flags:
 
 - `--skip-qdrant` installs only the parser model.
@@ -195,7 +231,11 @@ The script is idempotent. It skips a component that is already present.
 
 ## Glossary
 
+- **baseline**: a JSON record of what a running server answers for a fixed query
+  set, used to compare two versions.
 - **BM25**: a ranking method that scores records by their matching words.
+- **blocker**: a comparison finding that proves data loss or score drift, and
+  that stops an upgrade.
 - **collection**: the named set of points that Qdrant stores.
 - **dense vector**: the fixed-length vector that carries the meaning of a text.
 - **dump**: a compressed XML file that contains the pages of a Wikimedia wiki.
@@ -210,5 +250,7 @@ The script is idempotent. It skips a component that is already present.
   dependency parsing.
 - **upsert**: a write that inserts a point, or replaces the point with the same
   identifier.
+- **warning**: a comparison finding that an upgrade may cause, and that a human
+  must read before validation.
 - **Wikiquote**: a free compendium of sourced quotes, published by the Wikimedia Foundation.
 - **wikitext**: the source markup of a wiki page.
