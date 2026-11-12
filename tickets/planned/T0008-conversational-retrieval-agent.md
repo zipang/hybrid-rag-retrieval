@@ -12,11 +12,18 @@
   - `src/lib/result-pages.ts` — the cursor and snapshot patterns to follow.
   - `src/components/app/ChatPanel.tsx` — the current hand-rolled chat surface.
   - `DESIGN.md` and `src/components/AGENTS.md` — the UI rules.
+  - `.agents/skills/ai-sdk/SKILL.md` — the installed tool skill for the AI SDK.
+    Load it before you write AI SDK code.
+  - `node_modules/ai/docs/**` — the version-matched documentation that `ai@7.0.124`
+    ships inside the package. This is the primary source for this ticket. It is
+    the only `node_modules/` path the project allows; `node_modules/ai/src/**` is
+    off limits.
   - Vercel AI SDK, `ai@7.0.124` and `@ai-sdk/react@4.0.127`:
-    - <https://ai-sdk.dev/docs/reference/ai-sdk-core/stream-text>
+    - <https://ai-sdk.dev/docs/getting-started/coding-agents>
+    - <https://ai-sdk.dev/docs/reference/ai-sdk-core/tool-loop-agent>
+    - <https://ai-sdk.dev/docs/reference/ai-sdk-core/create-agent-ui-stream-response>
     - <https://ai-sdk.dev/docs/reference/ai-sdk-core/tool>
     - <https://ai-sdk.dev/docs/reference/ai-sdk-core/json-schema>
-    - <https://ai-sdk.dev/docs/reference/ai-sdk-core/convert-to-model-messages>
     - <https://ai-sdk.dev/docs/agents/loop-control>
     - <https://ai-sdk.dev/docs/ai-sdk-core/tools-and-tool-calling>
     - <https://ai-sdk.dev/docs/ai-sdk-ui/stream-protocol>
@@ -83,6 +90,8 @@ Create or modify **only** these paths.
     snapshot store.
   - `tools.ts`, `tools.test.ts` — `searchRecords` and `fetchNextPage`.
   - `prompt.ts`, `prompt.test.ts` — the system prompt builder.
+  - `agent.ts`, `agent.test.ts` — the `ToolLoopAgent` factory and its exported
+    UI message type.
 - `src/components/app/SourcesPanel.tsx` and `SourcesPanel.css` — the source list.
 - `src/components/app/ToolActivity.tsx` and `ToolActivity.css` — optional, a
   one-line notice when the agent runs another search.
@@ -107,9 +116,11 @@ Create or modify **only** these paths.
   new design token** and no ad-hoc style.
 - `src/components/base/**`, `src/components/layout/**`, `src/components/ui/**`.
   The new components compose these primitives; they never change them.
-- `docs/Qdrant - 1.19.1/` and `docs/Qdrant - 1.20.0/`.
-- The root `AGENTS.md` and `docs/README.md`. The CTO updates them for the AI SDK
-  documentation mirror (T8.0 below).
+- `.agents/skills/**` and `skills-lock.json`. The CTO installs and updates the
+  tool skills.
+- `node_modules/**`, except the documented `node_modules/ai/docs/**` tree. Never
+  read `node_modules/ai/src/**` or the source of any other dependency.
+- The root `AGENTS.md`. The CTO updates it for the tool-skill registry.
 
 ### Append-only shared files
 
@@ -369,42 +380,54 @@ Behavior:
 
 - The tools are created once per request, bound to the retriever, the session
   store, and the session identifier from the body.
-- `streamText` is called with:
-  - `system: buildSystemPrompt()`;
-  - `messages: await convertToModelMessages(body.messages, { tools })`;
+- A `ToolLoopAgent` is built once per request:
+  - `model` from `createModel(env, identity)`;
+  - `instructions: buildSystemPrompt()`;
   - `tools`;
-  - `stopWhen` set to the step budget;
+  - `stopWhen: stepCountIs(maxSteps)`;
   - `onError` that logs the stream error and never logs a secret.
 - The handler returns the **UI message stream**:
-  `result.toUIMessageStreamResponse()`.
+  `createAgentUIStreamResponse({ agent, uiMessages: body.messages, abortSignal: request.signal })`.
+- The handler does not call `convertToModelMessages` itself. The agent and
+  `createAgentUIStreamResponse` validate the UI messages and convert them to
+  model messages.
 - The existing request body shape and the error status codes do not change, so a
   current client keeps working for the text.
 
 ### 8. Documented AI SDK surface
 
 These are the only AI SDK calls the ticket uses. Each row quotes the documented
-signature and its source.
+signature and its source. The bundled documentation is the primary source; it
+matches the installed `ai@7.0.124`.
 
-| Call                     | Documented signature                                                                                                                       | Source                                                                    |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
-| `streamText`             | `streamText({ model, system, messages, tools, stopWhen, onError })` returns a result with a `.stream` and a response helper.               | <https://ai-sdk.dev/docs/reference/ai-sdk-core/stream-text>               |
-| `tool`                   | `tool({ description, inputSchema, execute })`. `execute: (input, { toolCallId, messages, abortSignal }) => RESULT`.                        | <https://ai-sdk.dev/docs/reference/ai-sdk-core/tool>                      |
-| `jsonSchema`             | `jsonSchema<T>(schema)` builds the `inputSchema` from a JSON Schema object.                                                                | <https://ai-sdk.dev/docs/reference/ai-sdk-core/json-schema>               |
-| `convertToModelMessages` | `convertToModelMessages(messages, { tools })` converts `UIMessage[]` to `ModelMessage[]`.                                                  | <https://ai-sdk.dev/docs/reference/ai-sdk-core/convert-to-model-messages> |
-| `stopWhen`               | `stopWhen: <step condition>` stops the tool loop. The live docs show `isStepCount(n)`.                                                     | <https://ai-sdk.dev/docs/agents/loop-control>                             |
-| UI message stream        | `result.toUIMessageStreamResponse()`. Fallback: `createUIMessageStreamResponse({ stream: toUIMessageStream({ stream: result.stream }) })`. | <https://ai-sdk.dev/docs/ai-sdk-ui/stream-protocol>                       |
-| `useChat`                | `useChat({ transport })` returns `{ messages, status, error, sendMessage, stop }`.                                                         | <https://ai-sdk.dev/docs/reference/ai-sdk-ui/use-chat>                    |
-| `DefaultChatTransport`   | `new DefaultChatTransport({ api: "/api/chat" })`.                                                                                          | <https://ai-sdk.dev/docs/reference/ai-sdk-ui/use-chat>                    |
+| Call                          | Documented signature                                                                                                                                                                                                                                                                                                                                            | Source                                                                                                                                                                             |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `new ToolLoopAgent({...})`    | `new ToolLoopAgent({ model, instructions, tools, stopWhen, onError })`. `model: LanguageModel` (required); `instructions: Instructions` (optional); `tools: Record<string, Tool>` (optional); `stopWhen: StopCondition \| StopCondition[]` (optional, default `isStepCount(20)`). The class "accepts all the same settings as `generateText` and `streamText`". | bundled `node_modules/ai/docs/07-reference/01-ai-sdk-core/16-tool-loop-agent.mdx`; <https://ai-sdk.dev/docs/reference/ai-sdk-core/tool-loop-agent>                                 |
+| `createAgentUIStreamResponse` | `createAgentUIStreamResponse({ agent, uiMessages, abortSignal, ...UIMessageStreamOptions }) => Promise<Response>`. `agent: Agent` (required; must implement `.stream()` and define `tools`); `uiMessages: unknown[]` (required).                                                                                                                                | bundled `node_modules/ai/docs/07-reference/01-ai-sdk-core/18-create-agent-ui-stream-response.mdx`; <https://ai-sdk.dev/docs/reference/ai-sdk-core/create-agent-ui-stream-response> |
+| `InferAgentUIMessage`         | `InferAgentUIMessage<typeof agent>` infers the UI message type of an agent instance.                                                                                                                                                                                                                                                                            | bundled `node_modules/ai/docs/07-reference/01-ai-sdk-core/16-tool-loop-agent.mdx`, section `Types`                                                                                 |
+| `tool`                        | `tool({ description, inputSchema, execute })`. `execute: (input, { toolCallId, messages, abortSignal }) => RESULT`.                                                                                                                                                                                                                                             | bundled `node_modules/ai/docs/07-reference/01-ai-sdk-core/20-tool.mdx`; <https://ai-sdk.dev/docs/reference/ai-sdk-core/tool>                                                       |
+| `jsonSchema`                  | `jsonSchema<T>(schema)` builds the `inputSchema` from a JSON Schema object.                                                                                                                                                                                                                                                                                     | bundled `node_modules/ai/docs/07-reference/01-ai-sdk-core/25-json-schema.mdx`; <https://ai-sdk.dev/docs/reference/ai-sdk-core/json-schema>                                         |
+| `onError`                     | `onError: (event: { error: unknown }) => void`. Called when an error occurs during streaming.                                                                                                                                                                                                                                                                   | bundled `node_modules/ai/docs/07-reference/01-ai-sdk-core/02-stream-text.mdx`, section `onError`                                                                                   |
+| `stepCountIs`                 | `stepCountIs(n)` returns a `StopCondition`. The bundled docs name the same function `isStepCount`; the installed package exports it as `stepCountIs`.                                                                                                                                                                                                           | bundled `node_modules/ai/docs/07-reference/01-ai-sdk-core/16-tool-loop-agent.mdx`; <https://ai-sdk.dev/docs/agents/loop-control>                                                   |
+| `useChat`                     | `useChat({ transport })` returns `{ messages, status, error, sendMessage, stop }`.                                                                                                                                                                                                                                                                              | <https://ai-sdk.dev/docs/reference/ai-sdk-ui/use-chat>                                                                                                                             |
+| `DefaultChatTransport`        | `new DefaultChatTransport({ api: "/api/chat" })`.                                                                                                                                                                                                                                                                                                               | <https://ai-sdk.dev/docs/reference/ai-sdk-ui/use-chat>                                                                                                                             |
 
-**Version note, and it is important.** The documentation site is not versioned.
-It shows `isStepCount`, while the installed `ai@7.0.124` exports `stepCountIs`,
-which the current `src/server/chat.ts` already uses and which the current tests
+**Version note, and it is important.** The documentation is not written against
+one version. Both the online pages and the bundled docs call the stop condition
+`isStepCount`, but the installed `ai@7.0.124` exports that function as
+`stepCountIs`. The current `src/server/chat.ts` uses `stepCountIs` and its tests
 pass. The rule for this ticket is:
 
 - Use the export name that the **pinned** version provides.
 - `bunx tsc --noEmit` is the authority on the name. It proves the export exists.
 - Do not rename working code without that proof.
 - Record the discrepancy in the Implementation Notes.
+
+**Documentation rule for this ticket.** Read the version-matched documentation in
+`node_modules/ai/docs/**` first; the `ai-sdk` tool skill points at it. Use the
+online pages only for a topic the bundled docs do not cover. Never read
+`node_modules/ai/src/**` or the source of any other dependency. When neither
+source documents a capability the ticket needs, stop and report to the CTO.
 
 ### 9. Client
 
@@ -414,6 +437,8 @@ pass. The rule for this ticket is:
   would install a second copy of `ai`.
 - `ChatPanel` uses
   `useChat({ transport: new DefaultChatTransport({ api: "/api/chat" }) })`.
+- The message type on the client is `InferAgentUIMessage<typeof agent>`, so the
+  tool parts are typed. Export the agent type from `src/server/agent/`.
 - The panel renders `message.parts`:
   - `text` renders in a `MessageBubble`;
   - `tool-searchRecords` and `tool-fetchNextPage` with
@@ -444,12 +469,11 @@ pass. The rule for this ticket is:
 
 ## TDD Tasks
 
-- [ ] **T8.0 — AI SDK documentation mirror (CTO-owned)**: mirror the Vercel AI
-      SDK documentation with the `librarian` agent and the `index-tool-docs`
-      skill into `docs/ai - 7.0.124/`. Verify the mirror contains the
-      `streamText`, `tool`, `stream-protocol`, and `use-chat` pages. Then update
-      the root `AGENTS.md` `LOCAL DOCUMENTATION FOR TOOLS` section and
-      `docs/README.md`. A coding sub-agent must not do this task.
+- [x] **T8.0 — AI SDK tool skill (CTO-owned)**: install the official `ai-sdk`
+      skill into `.agents/skills/` and record it in `skills-lock.json`. It
+      replaces the former documentation mirror. **Done**: `bunx skills add
+vercel/ai -s ai-sdk -a opencode -y`, and the `TOOL SKILLS` section of the
+      root `AGENTS.md` lists it.
 - [ ] **T8.1 — Agent source and source collection**: write failing tests for
       `collectSources(messages)` — deduplication by `id`, ordering by `score`
       then `id`, ignoring non-tool parts and tool errors — then implement it.
@@ -479,10 +503,13 @@ pass. The rule for this ticket is:
 - [ ] **T8.6 — Chat handler**: write failing tests with a fake model and a fake
       retriever — `OPTIONS` `204`, `405`, `400`, `500` before any model call, the
       tool set, the step budget, the UI-message-stream response — then implement
-      the handler. Apply the version note of section 8: use the `stopWhen` export
-      name that `bunx tsc --noEmit` accepts for `ai@7.0.124`. Files:
-      `src/server/chat.ts`, `src/server/chat.test.ts`, `src/server/index.ts`.
-      Verify: `bun test src/server/chat.test.ts`. Depends on: T8.5.
+      the handler with `ToolLoopAgent` and `createAgentUIStreamResponse` as
+      section 7 describes. Apply the version note of section 8: use the stop
+      condition export name that `bunx tsc --noEmit` accepts for `ai@7.0.124`.
+      Files: `src/server/chat.ts`, `src/server/chat.test.ts`,
+      `src/server/agent/agent.ts`, `src/server/agent/agent.test.ts`,
+      `src/server/index.ts`. Verify: `bun test src/server/chat.test.ts`. Depends
+      on: T8.5.
 - [ ] **T8.7 — Chat surface**: add `@ai-sdk/react@4.0.127`, move `ChatPanel` to
       `useChat`, add `SourcesPanel`, and follow `src/components/AGENTS.md`: no raw
       layout element, no ad-hoc style, CSS scoped under an id, no
@@ -546,13 +573,14 @@ The tool surface the model sees does not change.
 
 ## Risks and mitigations
 
-| Risk                                                             | Impact                       | Mitigation                                                                                                    |
-| ---------------------------------------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| The live AI SDK docs and `ai@7.0.124` disagree on an export name | Build failure                | `bunx tsc --noEmit` is the authority; keep the working name and record the discrepancy                        |
-| `@ai-sdk/react` installs a second copy of `ai`                   | Duplicate state, subtle bugs | Pin `@ai-sdk/react@4.0.127`, whose `ai` dependency is `7.0.124`; check the tree after install                 |
-| A prompt rule is present but the model ignores it                | Weak answers                 | The workflow and tool rules are explicit and numbered; a manual browser check covers one weak-result question |
-| The model loops without a bound                                  | Cost and latency             | `AGENT_MAX_STEPS` bounds the tool loop                                                                        |
-| New UI components drift from the Design System                   | Visual regression            | Compose existing primitives only; no new token; `src/components/AGENTS.md` review                             |
+| Risk                                                         | Impact                       | Mitigation                                                                                                    |
+| ------------------------------------------------------------ | ---------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| The bundled docs and `ai@7.0.124` disagree on an export name | Build failure                | `bunx tsc --noEmit` is the authority; keep the working name and record the discrepancy                        |
+| `@ai-sdk/react` installs a second copy of `ai`               | Duplicate state, subtle bugs | Pin `@ai-sdk/react@4.0.127`, whose `ai` dependency is `7.0.124`; check the tree after install                 |
+| `ToolLoopAgent` lacks an option the ticket needs             | Blocked task                 | Stop and report to the CTO with the bundled path consulted; do not read `node_modules/ai/src/**`              |
+| A prompt rule is present but the model ignores it            | Weak answers                 | The workflow and tool rules are explicit and numbered; a manual browser check covers one weak-result question |
+| The model loops without a bound                              | Cost and latency             | `AGENT_MAX_STEPS` bounds the tool loop                                                                        |
+| New UI components drift from the Design System               | Visual regression            | Compose existing primitives only; no new token; `src/components/AGENTS.md` review                             |
 
 ## Glossary
 
@@ -568,6 +596,12 @@ The tool surface the model sees does not change.
 - **Step**: one model generation plus the tool calls it requested.
 - **Tool**: a function that the model may call. This ticket gives the model two:
   `searchRecords` and `fetchNextPage`.
+- **Tool skill**: a Markdown skill in `.agents/skills/` that tells an agent when
+  and why to use a third-party tool, and where its official documentation lives.
+- **Tool loop**: the repeat of model step, tool call, and tool result that runs
+  until a stop condition is met.
+- **`ToolLoopAgent`**: the AI SDK class that runs the tool loop. The ticket
+  builds one per request and streams it with `createAgentUIStreamResponse`.
 - **UI message stream**: the AI SDK response format that carries text, tool
   calls, tool results, and data parts to the browser as Server-Sent Events.
 - **`useChat`**: the React hook from `@ai-sdk/react` that reads a UI message
