@@ -57,10 +57,9 @@ A ticket moves forward one folder at a time. A ticket returns to
 
 ### In progress
 
-| ID                                                           | Title                                                | Owner                               | Depends on          | Blocks  |
-| ------------------------------------------------------------ | ---------------------------------------------------- | ----------------------------------- | ------------------- | ------- |
-| [T0004](in_progress/T0004-french-syntax-weighted-retrieval/) | French syntax index and weighted threshold retrieval | coding sub-agent, supervised by CTO | T0001, T0002, T0003 | T0005   |
-| [T0007](in_progress/T0007-upgrade-local-qdrant-1-20/)        | Upgrade the development Qdrant to 1.20.0             | coding sub-agent, supervised by CTO | nothing             | nothing |
+| ID                                                           | Title                                                | Owner                               | Depends on          | Blocks |
+| ------------------------------------------------------------ | ---------------------------------------------------- | ----------------------------------- | ------------------- | ------ |
+| [T0004](in_progress/T0004-french-syntax-weighted-retrieval/) | French syntax index and weighted threshold retrieval | coding sub-agent, supervised by CTO | T0001, T0002, T0003 | T0005  |
 
 ### Review
 
@@ -70,12 +69,13 @@ A ticket moves forward one folder at a time. A ticket returns to
 
 ### Done
 
-| ID                                                    | Title                                 | Delivered                                                  |
-| ----------------------------------------------------- | ------------------------------------- | ---------------------------------------------------------- |
-| [T0001](done/T0001-hybrid-slogan-retrieval/)          | Hybrid slogan retrieval and chat demo | Qdrant hybrid index, retrieval API, and streaming chat     |
-| [T0002](done/T0002-schema-driven-dataset-extraction/) | Schema-driven dataset extraction      | Record models, dataset configuration, and generic readers  |
-| [T0003](done/T0003-react-ui-design-system/)           | React UI on an Applied Design System  | Design System, component kit, and the rebuilt chat surface |
-| [T0006](done/T0006-resumable-dataset-import/)         | Resumable dataset import              | Dataset-agnostic, non-destructive, resumable dense import  |
+| ID                                                    | Title                                    | Delivered                                                          |
+| ----------------------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------ |
+| [T0001](done/T0001-hybrid-slogan-retrieval/)          | Hybrid slogan retrieval and chat demo    | Qdrant hybrid index, retrieval API, and streaming chat             |
+| [T0002](done/T0002-schema-driven-dataset-extraction/) | Schema-driven dataset extraction         | Record models, dataset configuration, and generic readers          |
+| [T0003](done/T0003-react-ui-design-system/)           | React UI on an Applied Design System     | Design System, component kit, and the rebuilt chat surface         |
+| [T0006](done/T0006-resumable-dataset-import/)         | Resumable dataset import                 | Dataset-agnostic, non-destructive, resumable dense import          |
+| [T0007](done/T0007-upgrade-local-qdrant-1-20/)        | Upgrade the development Qdrant to 1.20.0 | Pinned 1.20.0 install, verified in-place upgrade, baseline harness |
 
 ## Delivery order
 
@@ -93,6 +93,9 @@ T0002 dataset extraction
 
 T0007 Qdrant 1.20.0 upgrade (independent, development runtime only)
 ```
+
+`T0007` is closed. The development machine runs Qdrant `1.20.0`; the NixOS
+server still runs `1.19.1` and needs its own ticket.
 
 `T0004` is not finished. Tasks 12 to 17b are open: `ast` vector storage,
 syntax backfill, syntax-weighted retrieval, the weighted API, the caller
