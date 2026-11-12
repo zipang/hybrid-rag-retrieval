@@ -64,16 +64,18 @@ A ticket moves forward one folder at a time. A ticket returns to
 
 ### Planned
 
-| ID                                                         | Title                                         | Depends on | Blocks  |
-| ---------------------------------------------------------- | --------------------------------------------- | ---------- | ------- |
-| [T0005](planned/T0005-investigate-copula-verb-syntax-gap/) | Investigate the copula-versus-verb syntax gap | T0004      | nothing |
-| [T0008](planned/T0008-conversational-retrieval-agent.md)   | Conversational retrieval agent on the AI SDK  | nothing    | nothing |
+| ID                                                         | Title                                                          | Depends on   | Blocks       |
+| ---------------------------------------------------------- | -------------------------------------------------------------- | ------------ | ------------ |
+| [T0005](planned/T0005-investigate-copula-verb-syntax-gap/) | Investigate the copula-versus-verb syntax gap                  | nothing      | nothing      |
+| [T0008](planned/T0008-conversational-retrieval-agent.md)   | Conversational retrieval agent on the AI SDK                   | T0009        | T0010        |
+| [T0009](planned/T0009-weighted-retrieval-api.md)           | Weighted multi-vector retrieval API and HTTP surface           | nothing      | T0008, T0010 |
+| [T0010](planned/T0010-migrate-callers-and-evaluate.md)     | Migrate the callers, evaluate, and document weighted retrieval | T0009, T0008 | nothing      |
 
 ### In progress
 
-| ID                                                           | Title                                                | Owner                               | Depends on          | Blocks |
-| ------------------------------------------------------------ | ---------------------------------------------------- | ----------------------------------- | ------------------- | ------ |
-| [T0004](in_progress/T0004-french-syntax-weighted-retrieval/) | French syntax index and weighted threshold retrieval | coding sub-agent, supervised by CTO | T0001, T0002, T0003 | T0005  |
+| ID  | Title                     | Owner | Depends on | Blocks |
+| --- | ------------------------- | ----- | ---------- | ------ |
+| —   | No ticket is in progress. | —     | —          | —      |
 
 ### Review
 
@@ -83,46 +85,55 @@ A ticket moves forward one folder at a time. A ticket returns to
 
 ### Done
 
-| ID                                                    | Title                                    | Delivered                                                          |
-| ----------------------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------ |
-| [T0001](done/T0001-hybrid-slogan-retrieval/)          | Hybrid slogan retrieval and chat demo    | Qdrant hybrid index, retrieval API, and streaming chat             |
-| [T0002](done/T0002-schema-driven-dataset-extraction/) | Schema-driven dataset extraction         | Record models, dataset configuration, and generic readers          |
-| [T0003](done/T0003-react-ui-design-system/)           | React UI on an Applied Design System     | Design System, component kit, and the rebuilt chat surface         |
-| [T0006](done/T0006-resumable-dataset-import/)         | Resumable dataset import                 | Dataset-agnostic, non-destructive, resumable dense import          |
-| [T0007](done/T0007-upgrade-local-qdrant-1-20/)        | Upgrade the development Qdrant to 1.20.0 | Pinned 1.20.0 install, verified in-place upgrade, baseline harness |
+| ID                                                    | Title                                      | Delivered                                                                                                                                                                         |
+| ----------------------------------------------------- | ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [T0001](done/T0001-hybrid-slogan-retrieval/)          | Hybrid slogan retrieval and chat demo      | Qdrant hybrid index, retrieval API, and streaming chat                                                                                                                            |
+| [T0002](done/T0002-schema-driven-dataset-extraction/) | Schema-driven dataset extraction           | Record models, dataset configuration, and generic readers                                                                                                                         |
+| [T0003](done/T0003-react-ui-design-system/)           | React UI on an Applied Design System       | Design System, component kit, and the rebuilt chat surface                                                                                                                        |
+| [T0004](done/T0004-french-syntax-weighted-retrieval/) | French syntax index and weighted retrieval | UDPipe parser, coarse encoder, `ast` multivector, syntax backfill, and weighted semantic+keyword retrieval with pagination. Closed early; the remainder moved to T0009 and T0010. |
+| [T0006](done/T0006-resumable-dataset-import/)         | Resumable dataset import                   | Dataset-agnostic, non-destructive, resumable dense import                                                                                                                         |
+| [T0007](done/T0007-upgrade-local-qdrant-1-20/)        | Upgrade the development Qdrant to 1.20.0   | Pinned 1.20.0 install, verified in-place upgrade, baseline harness                                                                                                                |
 
 ## Delivery order
 
-The dependency chain below records why the tickets ran in this order.
+The dependency chain below records why the tickets run in this order.
 
 ```text
 T0002 dataset extraction
   └→ T0001 hybrid retrieval and chat
        └→ T0003 React UI and Design System
-            └→ T0004 syntax index and weighted retrieval
+            └→ T0004 syntax index and weighted retrieval (closed early)
+                 ├→ T0009 weighted multi-vector retrieval API and HTTP surface
+                 │    └→ T0008 conversational retrieval agent
+                 │         └→ T0010 migrate the callers, evaluate, and document
                  └→ T0005 copula-versus-verb investigation
 
 T0002 dataset extraction
   └→ T0006 resumable dataset import
 
 T0007 Qdrant 1.20.0 upgrade (independent, development runtime only)
-
-T0008 conversational retrieval agent (independent, current retrieveHybrid)
 ```
 
 `T0007` is closed. The development machine runs Qdrant `1.20.0`; the NixOS
 server still runs `1.19.1` and needs its own ticket.
 
-`T0008` is independent. It builds on the current `retrieveHybrid` contract and
-does not wait for `T0004`. A later ticket replaces the agent tool backend with
-the weighted cursor API that `T0004` delivers, without changing the tool surface
-the model sees.
+`T0004` closed early. Tasks 1 to 13 delivered the parser, the coarse encoder, the
+`ast` multivector, the syntax backfill, and the weighted semantic+keyword
+retrieval with pagination. The remainder moved to `T0009` (the uniform weighted
+multi-vector query and the HTTP surface) and `T0010` (the caller migration, the
+evaluation, and the documentation). The chat tool migration is carried by
+`T0008`.
 
-`T0004` is not finished. Tasks 12 to 17b are open: `ast` vector storage,
-syntax backfill, syntax-weighted retrieval, the weighted API, the caller
-migration, and the release documentation. `T0005` must not start before
-`T0004` closes, because it measures the `coarse` encoder that `T0004`
-delivers.
+`T0009` is the bridge. It adds the `syntax` index to the weighted query and
+publishes the HTTP surface. `T0008` and `T0010` wait for it. A caller selects any
+subset of the three indexes by weight; to query one index, its weight is `1` and
+the others are `0`.
+
+`T0008` is the conversational agent. It builds its tools on the weighted API that
+`T0009` delivers, so it does not start on the obsolete `topK` path.
+
+`T0005` is independent now. It measures the `coarse` encoder that `T0004`
+delivered, so it no longer waits for a retrieval ticket.
 
 ## Ticket rules
 

@@ -1,15 +1,20 @@
 # T0008 — Conversational retrieval agent on the Vercel AI SDK
 
 - **Track**: Chat agent and retrieval application
-- **Wave**: 1 (independent)
+- **Wave**: 2 (integration — builds on the weighted retrieval API)
 - **Status**: planned
-- **Depends on**: nothing
-- **Blocks**: nothing
+- **Depends on**: T0009
+- **Blocks**: T0010
 - **References**:
+  - `tickets/planned/T0009-weighted-retrieval-api.md` — the weighted query and
+    the HTTP surface that this ticket builds on. T0009 must be in `review/` or
+    `done/` before this ticket starts.
+  - `src/lib/retrieval.ts` — `WeightedRetriever`, `retrieveWeighted`.
+  - `src/lib/retrieval-contract.ts` — `WeightedQuery`, `WeightedHit`,
+    `WeightedResultPage`.
   - `src/server/chat.ts` — the current single-tool chat handler that this ticket replaces.
   - `src/server/chat.test.ts` — the current chat tests.
-  - `src/lib/slogan-retrieval.ts` — `Retriever`, `RetrievalOptions`, `SloganHit`.
-  - `src/lib/result-pages.ts` — the cursor and snapshot patterns to follow.
+  - `src/lib/result-pages.ts` — the cursor and snapshot store behind `retrieveWeighted`.
   - `src/components/app/ChatPanel.tsx` — the current hand-rolled chat surface.
   - `DESIGN.md` and `src/components/AGENTS.md` — the UI rules.
   - `.agents/skills/ai-sdk/SKILL.md` — the installed tool skill for the AI SDK.
@@ -34,17 +39,17 @@
 ## Context & Goal
 
 Today `POST /api/chat` is a thin wrapper. It defines one tool, `searchSlogans`,
-that runs a single hybrid query with `topK`. The system prompt tells the model to
-call the tool once and to answer in plain text. The handler streams plain text
-back with `toTextStreamResponse()`, and the browser appends that text to a
-bubble.
+that runs a single legacy hybrid query with `topK`. The system prompt tells the
+model to call the tool once and to answer in plain text. The handler streams
+plain text back with `toTextStreamResponse()`, and the browser appends that text
+to a bubble.
 
 That shape cannot do four things the product needs:
 
 1. **It cannot show its sources.** The answer is text. The records behind it
    never reach the user interface as data.
-2. **It cannot page.** `retrieveHybrid` returns one `topK`-bounded list. There is
-   no way to ask for the next records.
+2. **It cannot page.** The legacy retriever returns one `topK`-bounded list.
+   There is no way to ask for the next records.
 3. **It cannot search again.** A single tool call is the whole strategy. When the
    first results are weak, the model has no instruction and no budget to refine.
 4. **It cannot say "I found nothing".** The prompt has no rule for an empty or
@@ -60,15 +65,15 @@ a record that a tool returned, the interface shows the sources under the answer,
 and a question with no matching record produces a plain statement instead of an
 invented slogan.
 
-The retrieval backend does not change. The agent calls the current
-`retrieveHybrid` through its tools. A later ticket swaps the tool backend for the
-weighted cursor API that `T0004` delivers, without changing the tool surface the
-model sees.
+The retrieval backend is the weighted API that `T0009` delivers. The agent's
+tools call `retrieveWeighted`, so the model can search, page with a real cursor,
+and see the per-index scores behind each record. The legacy `retrieveHybrid`
+path is obsolete and this ticket does not use it.
 
 ## Confirmed Intent
 
-- Build on the **current** `retrieveHybrid` contract. This ticket does not depend
-  on `T0004`.
+- Build on the **weighted** `retrieveWeighted` contract from `T0009`. This ticket
+  depends on `T0009`.
 - Deliver the **backend agent and the chat user interface**.
 - Give the agent **two tools**: one search tool and one pagination tool.
 - The answer format is **cited prose plus a structured source list**.
@@ -130,31 +135,57 @@ None. This ticket owns `src/server/chat.ts` alone.
 
 Every unit and integration test is written against this section.
 
-### 1. The retrieval backend is unchanged
+### 1. The retrieval backend is the weighted API
 
-The agent calls the current retriever interface. Source:
-`src/lib/slogan-retrieval.ts`.
+The agent calls `retrieveWeighted` from `src/lib/retrieval.ts`. Source:
+`src/lib/retrieval.ts` and `src/lib/retrieval-contract.ts`.
 
 ```ts
-/** Ranking options for one legacy retrieval. */
-export type RetrievalOptions = {
-  /** Maximum number of fused results. Defaults to 5. */
-  topK?: number;
-  /** Lower bound on the year field, inclusive. */
-  yearFrom?: number;
-  /** Upper bound on the year field, inclusive. */
-  yearTo?: number;
+/** Fractional contribution weights, one entry per selected index. */
+export type IndexWeights = Partial<Record<"syntax" | "semantic" | "keyword", number>>;
+
+/** One query for weighted threshold retrieval. */
+export type WeightedQuery = {
+  text: string;
+  weights: IndexWeights;
+  minScore: number;
+  pageSize?: number;
+  cursor?: string;
+  /** Generic Qdrant payload filter. The agent does not set it in this ticket. */
+  filters?: PayloadFilter;
+  generation?: string;
 };
 
-/** Legacy hybrid retriever bound to one embedder and one Qdrant collection. */
-export type Retriever = {
-  retrieveHybrid: (query: string, options?: RetrievalOptions) => Promise<SloganHit[]>;
+/** One scored record in a weighted result page. */
+export type WeightedHit = {
+  id: number | string;
+  score: number;
+  scores: Partial<Record<"syntax" | "semantic" | "keyword", number>>;
+  payload: Record<string, unknown>;
+};
+
+/** One page of weighted results. */
+export type WeightedResultPage = {
+  results: WeightedHit[];
+  nextCursor?: string;
+  metadata: WeightedResultMetadata;
+};
+
+/** Weighted retriever bound to one embedder and one Qdrant collection. */
+export type WeightedRetriever = {
+  retrieveWeighted: (query: WeightedQuery) => Promise<WeightedResultPage>;
 };
 ```
 
-`retrieveHybrid` returns a flat, fused list. It has **no cursor**. The agent
-therefore owns pagination over the ranked list that one call returns. The
-"Known limitation" section below records the honest bound of that design.
+`retrieveWeighted` returns one page of an exhaustive, threshold-qualified
+ranking and an opaque `nextCursor`. The cursor binds to the query text, the
+weights, the minimum score, the filters, and the index generation
+(`src/lib/result-pages.ts`). A caller that reads the next page must therefore
+re-supply the same binding. The agent's session store remembers that binding
+(section 5).
+
+`WeightedHit.payload` holds the stored record fields. The agent maps them to a
+typed source with the slogan field names, exactly as the API handler does.
 
 ### 2. The agent source
 
@@ -171,13 +202,16 @@ export type AgentSource = {
   campagne: string;
   /** Slogan text. */
   slogan: string;
-  /** Fused retrieval score, as returned by the retriever. */
+  /** Combined weighted score, as returned by `retrieveWeighted`. */
   score: number;
 };
 ```
 
 `AgentSource` is the shape that the tools return to the model **and** the shape
-that the user interface renders. One shape, two consumers.
+that the user interface renders. One shape, two consumers. The agent builds it
+from one `WeightedHit`: `id` and `score` come from the hit, and `annee`,
+`marque`, `campagne`, and `slogan` come from `payload` through the slogan field
+names.
 
 ### 3. Tool `searchRecords`
 
@@ -188,36 +222,41 @@ export type SearchRecordsInput = {
   query: string;
   /** Records returned in this first page. Default 5, clamped to [1, 20]. */
   pageSize?: number;
-  /** Lower publication year bound, inclusive. */
-  yearFrom?: number;
-  /** Upper publication year bound, inclusive. */
-  yearTo?: number;
 };
 
 /** Output of the `searchRecords` tool. */
-export type SearchRecordsOutput = {
-  /** First page of the ranked result list. */
-  results: AgentSource[];
-  /** True when the cached list holds records beyond this page. */
-  hasMore: boolean;
-  /** Opaque continuation cursor. Present exactly when `hasMore` is true. */
-  nextCursor?: string;
-};
+export type SearchRecordsOutput =
+  | {
+      /** First page of the ranked result list. */
+      results: AgentSource[];
+      /** True when the ranked list holds records beyond this page. */
+      hasMore: boolean;
+      /** Opaque continuation cursor. Present exactly when `hasMore` is true. */
+      nextCursor?: string;
+    }
+  | {
+      /** Human-readable reason, so the model can recover and search again. */
+      error: string;
+    };
 ```
 
 Rules:
 
 - The tool calls
-  `retrieveHybrid(query, { topK: SEARCH_WINDOW, yearFrom, yearTo })`, with the
-  fixed `SEARCH_WINDOW = 20`.
-- It caches the returned ranked list for the conversation, keyed by the session
-  identifier of the request (section 7).
-- It returns the first `pageSize` records. `pageSize` defaults to 5 and is
-  clamped to `[1, 20]`.
-- `hasMore` is true when the cached list has more records than the returned page.
-  `nextCursor` is present exactly when `hasMore` is true.
+  `retrieveWeighted({ text: query, weights, minScore, pageSize })`, with the
+  agent's fixed `weights` and `minScore` (section 7). It sets no filter in this
+  ticket.
+- It maps each `WeightedHit` to an `AgentSource` through the slogan field names.
+- It stores the query binding (everything except the cursor) in the session store
+  for the conversation, keyed by the session identifier (section 7), and returns
+  the store's opaque token as `nextCursor`.
+- `pageSize` defaults to 5 and is clamped to `[1, 20]`.
+- `hasMore` is true exactly when the retrieval page carries a `nextCursor`.
 - A blank `query` returns `{ results: [], hasMore: false }` and does not call the
   retriever. The tool never throws for a blank query.
+- A retrieval failure (an unavailable index, a parser that cannot load) returns
+  `{ error }`. The tool never throws, so the model can recover or report the
+  failure.
 - The tool never writes to the collection.
 
 ### 4. Tool `fetchNextPage`
@@ -247,32 +286,51 @@ export type FetchNextPageOutput =
 
 Rules:
 
-- The tool reads the next `pageSize` records from the cached list. It uses the
-  same `pageSize` as the originating `searchRecords` call.
+- The tool looks the cursor up in the session store for the conversation. The
+  entry holds the query binding and the retrieval cursor.
+- It calls
+  `retrieveWeighted({ ...binding, cursor: retrievalCursor, pageSize })`, where
+  `pageSize` is the one the originating `searchRecords` call used.
+- It maps each `WeightedHit` to an `AgentSource` and updates the stored retrieval
+  cursor with the page's `nextCursor`.
 - A cursor that is unknown, expired, malformed, or from another session returns
   `{ error: "..." }`. The tool **never throws** for a bad cursor, so the model
   can call `searchRecords` again.
+- A retrieval failure from the cursor call (an expired snapshot, a changed
+  generation) returns `{ error: "..." }` and never throws.
 - The last page has no `nextCursor` and `hasMore: false`.
 
 ### 5. Search session store
 
 ```ts
-/** In-memory store of ranked result lists, one per conversation. */
+/** One cached search that a conversation can continue. */
+export type CachedSearch = {
+  /** The weighted query without its cursor. Re-supplied on every page. */
+  binding: Omit<WeightedQuery, "cursor" | "pageSize">;
+  /** Delivery size chosen by the originating search. */
+  pageSize: number;
+  /** The retrieval cursor for the next page, or `undefined` when exhausted. */
+  cursor?: string;
+};
+
+/** In-memory store of the searches that a conversation can continue. */
 export type SearchSessionStore = {
-  /** Cache one ranked list for a session and return its cursor. */
-  save: (sessionId: string, records: AgentSource[]) => string;
-  /** Read one page. Returns `undefined` for an unknown, foreign, or expired cursor. */
-  read: (sessionId: string, cursor: string, pageSize: number) => { results: AgentSource[]; nextCursor?: string } | undefined;
+  /** Cache one search for a session and return its opaque token. */
+  save: (sessionId: string, search: CachedSearch) => string;
+  /** Read one cached search. Returns `undefined` for an unknown, foreign, or expired token. */
+  read: (sessionId: string, token: string) => CachedSearch | undefined;
+  /** Replace the cached retrieval cursor after a page is read. */
+  update: (sessionId: string, token: string, cursor: string | undefined) => void;
 };
 ```
 
 Invariants, each with a test:
 
-- A cursor from another session returns `undefined`.
-- An unknown, expired, or malformed cursor returns `undefined`.
-- The cursor is opaque. It is a base64url token, not a readable offset.
-- The store is bounded by a maximum snapshot count and a time-to-live. The bound
-  never changes which records a valid cursor returns.
+- A token from another session returns `undefined`.
+- An unknown, expired, or malformed token returns `undefined`.
+- The token is opaque. It is a base64url string, not a readable offset.
+- The store is bounded by a maximum entry count and a time-to-live. The bound
+  never changes which records a valid token returns.
 - Dependencies are injected: a clock and a token generator, as in
   `src/lib/result-pages.ts`. The tests are hermetic and use a fake clock.
 
@@ -310,8 +368,8 @@ Role:
 Workflow:
 
 1. Call `searchRecords` before every answer.
-2. Build the query from the content words of the question. Keep year filters out
-   of the query text; pass them as `yearFrom` and `yearTo`.
+2. Build the query from the content words of the question. Do not put the whole
+   question or its instructions in the query text.
 3. Read the results and decide:
    - a record answers the question: write the answer;
    - the results are off-topic, too narrow, or too broad: call `searchRecords`
@@ -325,7 +383,6 @@ Tool rules:
 
 - `query` is search text, not the whole question. Strip instructions such as
   "trouve-moi" or "quels sont".
-- Use `yearFrom` and `yearTo` only when the question names a period.
 - Do not set `pageSize` above 10 unless the question asks for a long list.
 - Never invent a `cursor`. Use only a cursor that a tool returned.
 - Never call a tool that is not in the tool list.
@@ -350,10 +407,16 @@ Budget:
 ```ts
 /** Dependencies of the chat endpoint. Tests inject fakes. */
 export type ChatDependencies = {
-  /** Hybrid retriever behind the two tools. */
-  retriever: Pick<Retriever, "retrieveHybrid">;
-  /** Search snapshot store. */
+  /** Weighted retriever behind the two tools. */
+  retriever: Pick<WeightedRetriever, "retrieveWeighted">;
+  /** Search session store. */
   sessions: SearchSessionStore;
+  /** Payload field names that map one hit to a typed source. */
+  fields: SloganFields;
+  /** Index weights the agent applies to every search. */
+  weights: IndexWeights;
+  /** Minimum combined score the agent applies to every search. */
+  minScore: number;
   /** Chat provider configuration. */
   env: ChatEnv;
   /** Identity that the OpenAI-compatible gateway expects. */
@@ -364,6 +427,11 @@ export type ChatDependencies = {
   maxSteps?: number;
 };
 ```
+
+The default weights are `{ syntax: 0.5, semantic: 0.3, keyword: 0.2 }` and the
+default minimum score is `0.5`. They are dependencies so a test overrides them
+and so T0010 can tune them against the evaluation. `SloganFields` is the field
+configuration type from `src/server/api.ts`.
 
 Request:
 
@@ -479,20 +547,22 @@ vercel/ai -s ai-sdk -a opencode -y`, and the `TOOL SKILLS` section of the
       then `id`, ignoring non-tool parts and tool errors — then implement it.
       Files: `src/server/agent/sources.ts`, `src/server/agent/sources.test.ts`.
       Verify: `bun test src/server/agent/sources.test.ts`. Depends on: nothing.
-- [ ] **T8.2 — Search session store**: write failing tests for `save` and `read`
-      — first page, next page, last page, foreign session, expired cursor,
-      malformed cursor, opaque cursor, bound — then implement it. Injected clock
-      and token generator. Files: `src/server/agent/session-store.ts`,
+- [ ] **T8.2 — Search session store**: write failing tests for `save`, `read`,
+      and `update` — first page, next page, last page, foreign session, expired
+      token, malformed token, opaque token, bound — then implement it. Injected
+      clock and token generator. Files: `src/server/agent/session-store.ts`,
       `src/server/agent/session-store.test.ts`. Verify:
       `bun test src/server/agent/session-store.test.ts`. Depends on: T8.1.
 - [ ] **T8.3 — Tool `searchRecords`**: write failing tests with a fake retriever
-      — `RetrievalOptions` built from the input, `pageSize` default and clamp,
-      first page, `hasMore`, blank query — then implement it. Files:
-      `src/server/agent/tools.ts`, `src/server/agent/tools.test.ts`. Verify:
-      `bun test src/server/agent/tools.test.ts`. Depends on: T8.2.
+      — the `WeightedQuery` built from the input, the fixed weights and
+      `minScore`, the `pageSize` default and clamp, the first page, `hasMore`,
+      the `AgentSource` mapping, a blank query, a retrieval error — then implement
+      it. Files: `src/server/agent/tools.ts`, `src/server/agent/tools.test.ts`.
+      Verify: `bun test src/server/agent/tools.test.ts`. Depends on: T8.2.
 - [ ] **T8.4 — Tool `fetchNextPage`**: write failing tests — next page, last
-      page, unknown cursor, foreign cursor, malformed cursor — then implement it.
-      Every failure returns `{ error }` and never throws. Files:
+      page, the stored binding re-supplied, the cursor advanced, unknown token,
+      foreign token, malformed token, an expired retrieval cursor — then
+      implement it. Every failure returns `{ error }` and never throws. Files:
       `src/server/agent/tools.ts`, `src/server/agent/tools.test.ts`. Verify:
       `bun test src/server/agent/tools.test.ts`. Depends on: T8.3.
 - [ ] **T8.5 — System prompt**: write failing tests that assert each rule of
@@ -557,19 +627,22 @@ Each criterion is observable and testable.
 9. A missing `AI_API_KEY` returns `500` before any model call. An empty
    `messages` array returns `400`. A non-`POST` method returns `405`.
 10. No secret appears in a log line, an error message, or a response.
-11. The retrieval backend files are unchanged, and the only tools the model can
-    call are `searchRecords` and `fetchNextPage`.
+11. The retrieval files that T0009 owns (`src/lib/retrieval.ts`,
+    `src/lib/retrieval-contract.ts`, `src/lib/qdrant.ts`,
+    `src/lib/scoring.ts`, `src/lib/result-pages.ts`, `src/server/api.ts`) are
+    unchanged, and the only tools the model can call are `searchRecords` and
+    `fetchNextPage`.
 12. `bun fmt --check`, `bun run lint`, `bun test`, and `bunx tsc --noEmit` all
     pass.
 
 ## Known limitation
 
-The current `retrieveHybrid` is `topK`-bounded and has no cursor. Pagination
-therefore covers the first `SEARCH_WINDOW = 20` ranked records of one search, not
-the whole corpus. This is honest and bounded. The follow-up ticket, after `T0004`
-closes, replaces the tool backend with the weighted cursor API
-(`src/lib/retrieval.ts` and `src/lib/result-pages.ts`) and removes the window.
-The tool surface the model sees does not change.
+The agent's default weights include `syntax: 0.5`, so every search reads the
+syntax index. The environment must therefore hold a ready syntax index and the
+parser model. A search against a missing or incompatible syntax state returns
+`{ error }` from the tool instead of a silent fallback; the weights are injected
+so a deployment without syntax can pass `{ semantic: 0.5, keyword: 0.5 }`. T0010
+tunes the weights and the minimum score against the evaluation.
 
 ## Risks and mitigations
 
@@ -587,8 +660,6 @@ The tool surface the model sees does not change.
 - **Agent**: a language model that can call tools in a loop before it answers.
 - **Cursor**: an opaque token that continues a paginated result list. It hides
   the position and binds the page to one conversation and one search.
-- **Hybrid retrieval**: a search that fuses a dense vector score and a keyword
-  score into one ranking.
 - **RAG**: retrieval-augmented generation. The model answers from records that a
   search returned, not from its training data.
 - **Source**: one record that the agent consulted. The user interface shows the
@@ -602,6 +673,9 @@ The tool surface the model sees does not change.
   until a stop condition is met.
 - **`ToolLoopAgent`**: the AI SDK class that runs the tool loop. The ticket
   builds one per request and streams it with `createAgentUIStreamResponse`.
+- **Weighted query**: the T0009 query that selects one or more indexes by weight
+  and applies a minimum combined score. The agent's tools call it through
+  `retrieveWeighted`.
 - **UI message stream**: the AI SDK response format that carries text, tool
   calls, tool results, and data parts to the browser as Server-Sent Events.
 - **`useChat`**: the React hook from `@ai-sdk/react` that reads a UI message

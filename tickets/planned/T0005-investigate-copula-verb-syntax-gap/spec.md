@@ -4,7 +4,8 @@ Ticket: `T0005` — investigation. Related context: `T0004`, memo
 `memos/syntax-trees.md`, section 14.
 
 - **Status**: planned
-- **Depends on**: T0004
+- **Depends on**: nothing (the coarse syntax encoder that T0004 delivered is
+  available; T0004 is closed)
 
 No implementation has started. This ticket produces evidence and a
 recommendation, not production code.

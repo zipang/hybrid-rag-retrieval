@@ -923,3 +923,30 @@ $ bunx tsc --noEmit
   generation lifecycle through.
 - Task 14 normalizes the raw `max_sim` score to `[0, 1]` and applies the unsupported-record
   eligibility policy at query time.
+
+## Re-scope (closure, 2026-11-12)
+
+This ticket is closed. Tasks 1 to 13 are delivered: the reviewed French test data
+set, the parser decision, the parser adapter, the coarse abstraction and encoder,
+the `ast` multivector schema, the syntax backfill, and the weighted retrieval
+slice for the `semantic` and `keyword` indexes with stable pagination.
+
+The ticket grew too large. The remaining tasks moved to two smaller tickets:
+
+- **T0009** carries Task 14 (the `syntax` index in the weighted query) and Task 15
+  (the weighted HTTP parameters). It is the uniform weighted multi-vector query
+  and the pagination surface. It is the bridge the conversational agent needs.
+- **T0010** carries Task 16b (the retrieval panel), Task 16c (the full indexer,
+  the smoke script, and the legacy removal), Task 17a (the evaluation), and
+  Task 17b (the documentation).
+
+Task 16a (the chat tool migration) is carried by **T0008**, which replaces the
+chat handler and builds its tools on the weighted API that T0009 delivers.
+
+The delivered artifacts stay in this directory as the record of the work:
+`spec.md`, `plan.md`, `parser-decision.md`, `retrieval-feasibility.md`,
+`scoring-decision.md`, and `evaluation.md`. The `evaluation.md` numbers describe
+the encoder; T0010 extends them with the retrieval measurements.
+
+The specification sections 4, 5, and 6 remain the contract for T0009 and T0010.
+Sections 1 to 3 describe the delivered syntax index.
