@@ -325,6 +325,103 @@ describe("queryHybrid", () => {
 	});
 });
 
+describe("queryVector", () => {
+	test("sends a bounded query on the named vector and returns the scored hits", async () => {
+		const hits = [
+			{ id: 1, score: 0.9 },
+			{ id: 2, score: 0.4 }
+		];
+		const { client, calls } = createTestClient(() =>
+			jsonResponse({ result: { points: hits } })
+		);
+
+		const result = await client.queryVector({
+			using: "dense",
+			query: [0.1, 0.2],
+			limit: 10
+		});
+
+		expect(result).toEqual(hits);
+		expect(calls[0]?.method).toBe("POST");
+		expect(calls[0]?.url).toBe(`${BASE}/points/query`);
+		expect(calls[0]?.body).toEqual({
+			query: [0.1, 0.2],
+			using: "dense",
+			limit: 10,
+			with_payload: false
+		});
+	});
+
+	test("applies the payload filter when present", async () => {
+		const { client, calls } = createTestClient(() => jsonResponse({ result: { points: [] } }));
+		const filter = { must: [{ key: "annee", range: { gte: 2004 } }] };
+
+		await client.queryVector({ using: "dense", query: [1], limit: 5, filter });
+
+		expect(calls[0]?.body).toEqual({
+			query: [1],
+			using: "dense",
+			limit: 5,
+			with_payload: false,
+			filter
+		});
+	});
+
+	test("omits the filter when the query carries none", async () => {
+		const { client, calls } = createTestClient(() => jsonResponse({ result: { points: [] } }));
+
+		await client.queryVector({ using: "dense", query: [1], limit: 5 });
+
+		expect(calls[0]?.body).not.toHaveProperty("filter");
+	});
+
+	test("sends a BM25 inference query on the sparse vector", async () => {
+		const { client, calls } = createTestClient(() => jsonResponse({ result: { points: [] } }));
+
+		await client.queryVector({
+			using: "bm25",
+			query: { text: "sucre", model: "qdrant/bm25", options: { language: "french" } },
+			limit: 3
+		});
+
+		expect(calls[0]?.body).toEqual({
+			query: { text: "sucre", model: "qdrant/bm25", options: { language: "french" } },
+			using: "bm25",
+			limit: 3,
+			with_payload: false
+		});
+	});
+
+	test("sends a multivector query on the ast vector", async () => {
+		const { client, calls } = createTestClient(() => jsonResponse({ result: { points: [] } }));
+
+		await client.queryVector({
+			using: "ast",
+			query: [
+				[1, 0],
+				[0, 1]
+			],
+			limit: 2
+		});
+
+		expect(calls[0]?.body).toEqual({
+			query: [
+				[1, 0],
+				[0, 1]
+			],
+			using: "ast",
+			limit: 2,
+			with_payload: false
+		});
+	});
+
+	test("returns an empty list when the query matches nothing", async () => {
+		const { client } = createTestClient(() => jsonResponse({ result: { points: [] } }));
+
+		expect(await client.queryVector({ using: "dense", query: [1], limit: 10 })).toEqual([]);
+	});
+});
+
 describe("scrollIds", () => {
 	test("follows pages until the next offset is absent", async () => {
 		const { client, calls } = createTestClient((call) => {

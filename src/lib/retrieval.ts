@@ -1,10 +1,11 @@
 import type { Bm25Options } from "./bm25";
 import type { Embedder } from "./embedder";
 import type { IndexStateStore } from "./index-state";
-import type { QdrantClient } from "./qdrant";
+import type { QdrantClient, QueryHit } from "./qdrant";
 import type { ResultPageStore, SnapshotBinding } from "./result-pages";
 import { createResultPageStore } from "./result-pages";
 import type {
+	IndexName,
 	IndexScores,
 	WeightedHit,
 	WeightedQuery,
@@ -14,8 +15,7 @@ import type {
 import {
 	meetsThreshold,
 	NORMALIZATION_VERSION,
-	normalizeBm25,
-	normalizeCosine,
+	normalizeIndexScore,
 	normalizeMultivectorMaxSim,
 	scoreAndOrder,
 	validateWeights
@@ -28,15 +28,10 @@ import type { Parser } from "./syntax/parser";
 export type WeightedRetrieverDependencies = {
 	/** Dense embedder for the query text. */
 	embedder: Pick<Embedder, "embedDenseQuery">;
-	/** Qdrant transport operations for the exhaustive path. */
-	client: Pick<
-		QdrantClient,
-		"scrollIds" | "fetchPayloads" | "queryDenseExact" | "querySparseExact" | "queryAstExact"
-	>;
+	/** Qdrant transport operations for the bounded path. */
+	client: Pick<QdrantClient, "schema" | "queryVector" | "fetchPayloads">;
 	/** BM25 options, shared with ingestion. */
 	bm25: Bm25Options;
-	/** Identifier batch size for exact score queries. Defaults to `DEFAULT_ID_BATCH`. */
-	idBatchSize?: number;
 	/** Index generation label for the result metadata. */
 	generation?: string;
 	/** Result snapshot store. Defaults to a fresh in-memory store. */
@@ -69,22 +64,27 @@ export type WeightedRetriever = {
 	retrieveWeighted: (query: WeightedQuery) => Promise<WeightedResultPage>;
 };
 
-/** Default number of identifiers per exact score request. */
-const DEFAULT_ID_BATCH = 128;
+/** Default candidate count requested from Qdrant for each selected index. */
+const DEFAULT_CANDIDATE_LIMIT = 50;
 
-/** Split a list into fixed-size batches. */
-const batch = <T>(items: T[], size: number): T[][] => {
-	if (size <= 0) {
-		return [items];
+/** Smallest accepted candidate count. */
+const MIN_CANDIDATE_LIMIT = 1;
+
+/** Largest accepted candidate count. */
+const MAX_CANDIDATE_LIMIT = 1000;
+
+/**
+ * Clamp the candidate count into the documented bounds.
+ *
+ * An absent or nonfinite value falls back to {@link DEFAULT_CANDIDATE_LIMIT}. A fractional value is
+ * truncated, then clamped into `[1, 1000]`.
+ */
+const resolveCandidateLimit = (limit: number | undefined): number => {
+	if (limit === undefined || !Number.isFinite(limit)) {
+		return DEFAULT_CANDIDATE_LIMIT;
 	}
 
-	const batches: T[][] = [];
-
-	for (let index = 0; index < items.length; index += size) {
-		batches.push(items.slice(index, index + size));
-	}
-
-	return batches;
+	return Math.min(MAX_CANDIDATE_LIMIT, Math.max(MIN_CANDIDATE_LIMIT, Math.floor(limit)));
 };
 
 /** The syntax dependency pair, resolved when a query selects the syntax index. */
@@ -122,10 +122,9 @@ const resolveSyntaxDependency = (
 /**
  * Create a weighted threshold retriever.
  *
- * The retriever scores every eligible identifier. It scrolls the matching identifier set, requests
- * exact scores in identifier batches, and normalizes each index into `[0, 1]`. It never uses a
- * top-K cutoff, so a moderate score outside a small candidate list still qualifies. The function
- * keeps scoring and qualification apart, so pagination can reuse the stable order.
+ * The retriever asks Qdrant for a bounded candidate set. It runs one bounded query per selected
+ * index, each with the same candidate `limit`, unions the returned identifiers, and scores only
+ * those candidates. The work is bounded by `limit` and never by the collection size.
  *
  * One query selects any subset of `syntax`, `semantic`, and `keyword` by weight. The `syntax` index
  * adds a query-side parse and encode and a readiness check. A query that does not select syntax
@@ -136,13 +135,12 @@ const resolveSyntaxDependency = (
  * - A generation that is absent or changed fails with `StaleGenerationError`;
  * - A generation that exists but has no ready syntax run fails with `SyntaxNotReadyError`.
  *
- * A record without an `ast` vector contributes a zero syntax component score. It is not removed
- * from the candidate set, so at `minScore = 0` it can still qualify on its other indexes.
+ * A candidate that one index did not return contributes a zero component score for that index. At
+ * `minScore = 0` it can still qualify on its other indexes.
  */
 export const createWeightedRetriever = (
 	dependencies: WeightedRetrieverDependencies
 ): WeightedRetriever => {
-	const idBatchSize = dependencies.idBatchSize ?? DEFAULT_ID_BATCH;
 	const resultPages = dependencies.resultPages ?? createResultPageStore();
 
 	const retrieveWeighted = async (query: WeightedQuery): Promise<WeightedResultPage> => {
@@ -188,6 +186,7 @@ export const createWeightedRetriever = (
 		}
 
 		const filter = query.filters;
+		const limit = resolveCandidateLimit(query.limit);
 
 		if (query.cursor !== undefined) {
 			const page = resultPages.read({
@@ -204,7 +203,7 @@ export const createWeightedRetriever = (
 		}
 
 		// Resolve the readiness of the syntax index, then encode the query text once, before the
-		// identifier batches. A missing, pending, or mismatched state reaches the caller unchanged.
+		// bounded queries. A missing, pending, or mismatched state reaches the caller unchanged.
 		let syntaxRows: number[][] | undefined;
 
 		if (syntaxDependency !== undefined) {
@@ -219,82 +218,93 @@ export const createWeightedRetriever = (
 			syntaxRows = vectors.map((vector) => vector.values);
 		}
 
-		const ids = await dependencies.client.scrollIds({ filter });
+		const schema = dependencies.client.schema;
+		const scoresById = new Map<number | string, IndexScores>();
+		const candidateIds = new Set<number | string>();
 
-		if (ids.length === 0) {
-			return { results: [], metadata };
-		}
+		/**
+		 * Merge one index's bounded hits into the candidate set and the score map.
+		 *
+		 * `normalize` maps one raw index score into `[0, 1]`. Each index supplies its own
+		 * transformation, so the syntax divisor never leaks into the per-score indexes.
+		 */
+		const mergeHits = (
+			index: IndexName,
+			hits: Array<Pick<QueryHit, "id" | "score">>,
+			normalize: (raw: number) => number
+		): void => {
+			for (const hit of hits) {
+				candidateIds.add(hit.id);
 
-		const syntaxScores = new Map<number | string, number>();
-		const semantic = new Map<number | string, number>();
-		const keyword = new Map<number | string, number>();
+				const scores = scoresById.get(hit.id) ?? {};
+
+				scores[index] = normalize(hit.score);
+				scoresById.set(hit.id, scores);
+			}
+		};
 
 		if (syntaxRows !== undefined) {
-			for (const idBatch of batch(ids, idBatchSize)) {
-				const result = await dependencies.client.queryAstExact({
-					rows: syntaxRows,
-					ids: idBatch,
-					filter,
-					withRows: true,
-					onMissing: "skip"
-				});
+			const astName = schema.ast?.name;
 
-				for (const entry of result.scores) {
-					if (entry.rows === undefined) {
-						throw new Error(
-							`the ast transport reported no row count for record ${String(entry.id)}`
-						);
-					}
-
-					syntaxScores.set(
-						entry.id,
-						normalizeMultivectorMaxSim(entry.score, syntaxRows.length, entry.rows)
-					);
-				}
+			if (astName === undefined) {
+				throw new Error(
+					"the syntax index is selected but the collection schema has no ast vector"
+				);
 			}
+
+			const hits = await dependencies.client.queryVector({
+				using: astName,
+				query: syntaxRows,
+				limit,
+				filter
+			});
+
+			mergeHits("syntax", hits, (raw) =>
+				normalizeMultivectorMaxSim(raw, syntaxRows.length, syntaxRows.length)
+			);
 		}
 
 		if (weights.semantic > 0) {
 			const dense = await dependencies.embedder.embedDenseQuery(query.text);
+			const hits = await dependencies.client.queryVector({
+				using: schema.dense.name,
+				query: dense,
+				limit,
+				filter
+			});
 
-			for (const idBatch of batch(ids, idBatchSize)) {
-				const result = await dependencies.client.queryDenseExact({
-					vector: dense,
-					ids: idBatch,
-					filter
-				});
-
-				for (const entry of result.scores) {
-					semantic.set(entry.id, normalizeCosine(entry.score));
-				}
-			}
+			mergeHits("semantic", hits, (raw) => normalizeIndexScore("semantic", raw));
 		}
 
 		if (weights.keyword > 0) {
-			for (const idBatch of batch(ids, idBatchSize)) {
-				const result = await dependencies.client.querySparseExact({
-					text: query.text,
-					bm25Options: dependencies.bm25,
-					ids: idBatch,
-					filter
-				});
+			const hits = await dependencies.client.queryVector({
+				using: schema.sparse.name,
+				query: { text: query.text, model: "qdrant/bm25", options: dependencies.bm25 },
+				limit,
+				filter
+			});
 
-				for (const entry of result.scores) {
-					keyword.set(entry.id, normalizeBm25(entry.score));
-				}
-			}
+			mergeHits("keyword", hits, (raw) => normalizeIndexScore("keyword", raw));
+		}
+
+		if (candidateIds.size === 0) {
+			return { results: [], metadata };
 		}
 
 		const scored = scoreAndOrder(
 			weights,
-			ids.map((id) => ({
-				id,
-				scores: {
-					syntax: syntaxScores.get(id) ?? 0,
-					semantic: semantic.get(id) ?? 0,
-					keyword: keyword.get(id) ?? 0
-				}
-			}))
+			[...candidateIds].map((id) => {
+				const entry = scoresById.get(id) ?? {};
+
+				return {
+					id,
+					scores: {
+						syntax: entry.syntax ?? 0,
+						semantic: entry.semantic ?? 0,
+						keyword: entry.keyword ?? 0
+					}
+				};
+			})
 		);
 
 		const ranking = scored.filter((record) => meetsThreshold(record.score, query.minScore));

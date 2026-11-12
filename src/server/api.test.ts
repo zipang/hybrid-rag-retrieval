@@ -84,7 +84,8 @@ describe("createSlogansHandler (weighted)", () => {
 				text: "sucre",
 				weights: { semantic: 1 },
 				minScore: 0,
-				pageSize: 2
+				pageSize: 2,
+				limit: 50
 			}
 		]);
 	});
@@ -100,6 +101,59 @@ describe("createSlogansHandler (weighted)", () => {
 		await handler(new Request(url({ ...VALID, cursor: "abc" })));
 
 		expect(calls[0]?.cursor).toBe("abc");
+	});
+
+	test("forwards the optional limit parameter", async () => {
+		const calls: WeightedQuery[] = [];
+		const handler = createTestHandler(async (query) => {
+			calls.push(query);
+
+			return PAGE;
+		});
+
+		await handler(new Request(url({ ...VALID, limit: "25" })));
+
+		expect(calls[0]?.limit).toBe(25);
+	});
+
+	test("clamps the limit into [1, 1000]", async () => {
+		const calls: WeightedQuery[] = [];
+		const handler = createTestHandler(async (query) => {
+			calls.push(query);
+
+			return PAGE;
+		});
+
+		await handler(new Request(url({ ...VALID, limit: "0" })));
+		await handler(new Request(url({ ...VALID, limit: "5000" })));
+
+		expect(calls.map((call) => call.limit)).toEqual([1, 1000]);
+	});
+
+	test("defaults the limit to 50 when the parameter is absent", async () => {
+		const calls: WeightedQuery[] = [];
+		const handler = createTestHandler(async (query) => {
+			calls.push(query);
+
+			return PAGE;
+		});
+
+		await handler(new Request(url(VALID)));
+
+		expect(calls[0]?.limit).toBe(50);
+	});
+
+	test("rejects a non-integer limit with 400", async () => {
+		const handler = createTestHandler(async () => PAGE);
+
+		for (const limit of ["many", "2.5"]) {
+			const response = await handler(new Request(url({ ...VALID, limit })));
+
+			expect(response.status).toBe(400);
+			expect(await response.json()).toEqual({
+				error: 'Query parameter "limit" must be an integer.'
+			});
+		}
 	});
 
 	test("omits the next cursor on the last page", async () => {

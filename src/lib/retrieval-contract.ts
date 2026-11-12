@@ -34,6 +34,14 @@ export type WeightedQuery = {
 	minScore: number;
 	/** Delivery size for one page. It does not change match eligibility. */
 	pageSize?: number;
+	/**
+	 * Candidate count requested from Qdrant for EACH selected index.
+	 *
+	 * One value applies to every index. Default `50`. Bounded to `[1, 1000]`. It is the candidate
+	 * count per index, not the delivered page size; {@link WeightedQuery.pageSize} still controls
+	 * the delivered page and is unchanged.
+	 */
+	limit?: number;
 	/** Opaque continuation token from a previous page. */
 	cursor?: string;
 	/**

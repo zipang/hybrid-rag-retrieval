@@ -153,6 +153,32 @@ const readPageSize = (params: URLSearchParams): number | undefined => {
 	return value;
 };
 
+/** Candidate count used when a request does not name one. */
+const DEFAULT_LIMIT = 50;
+
+/**
+ * Read the optional `limit` parameter as a candidate count in `[1, 1000]`.
+ *
+ * The value is the candidate count requested from Qdrant for each selected index. An absent or
+ * blank parameter returns {@link DEFAULT_LIMIT}. A non-integer value is a 400, exactly as
+ * `pageSize` rejects one. A valid integer is clamped into `[1, 1000]`.
+ */
+const readLimit = (params: URLSearchParams): number => {
+	const raw = params.get("limit");
+
+	if (raw === null || raw.trim() === "") {
+		return DEFAULT_LIMIT;
+	}
+
+	const value = Number(raw);
+
+	if (!Number.isSafeInteger(value)) {
+		throw new ApiError(400, 'Query parameter "limit" must be an integer.');
+	}
+
+	return Math.min(1000, Math.max(1, value));
+};
+
 /** Read one payload value as a number. */
 const readNumber = (value: unknown): number =>
 	typeof value === "number" ? value : Number(value ?? 0);
@@ -215,9 +241,9 @@ const errorResponse = (error: unknown): Response => {
 /**
  * Create the `GET /api/slogans` handler.
  *
- * The handler reads `q`, `weights`, `minScore`, `pageSize`, and `cursor`, then calls the weighted
- * retriever. It rejects every obsolete parameter with a 400, answers OPTIONS preflight requests,
- * and maps every thrown error to a JSON response with a status code.
+ * The handler reads `q`, `weights`, `minScore`, `pageSize`, `limit`, and `cursor`, then calls the
+ * weighted retriever. It rejects every obsolete parameter with a 400, answers OPTIONS preflight
+ * requests, and maps every thrown error to a JSON response with a status code.
  */
 export const createSlogansHandler = (dependencies: ApiDependencies) => {
 	return async (request: Request): Promise<Response> => {
@@ -246,6 +272,7 @@ export const createSlogansHandler = (dependencies: ApiDependencies) => {
 			const weights = readWeights(params);
 			const minScore = readMinScore(params);
 			const pageSize = readPageSize(params);
+			const limit = readLimit(params);
 			const cursor = params.get("cursor") ?? undefined;
 
 			const page = await dependencies.retriever.retrieveWeighted({
@@ -253,6 +280,7 @@ export const createSlogansHandler = (dependencies: ApiDependencies) => {
 				weights,
 				minScore,
 				...(pageSize === undefined ? {} : { pageSize }),
+				limit,
 				...(cursor === undefined ? {} : { cursor })
 			});
 

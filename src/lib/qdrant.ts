@@ -52,9 +52,9 @@ export type Point = {
 export type QueryHit = {
 	/** Point id. */
 	id: number | string;
-	/** Fused score from the ranking method. */
+	/** Relevance score returned by the query. */
 	score: number;
-	/** Record fields stored with the point. */
+	/** Record fields stored with the point. Present when the query asks for the payload. */
 	payload: Record<string, unknown>;
 };
 
@@ -170,6 +170,24 @@ export type ExactAstQuery = {
 	withRows?: boolean;
 };
 
+/**
+ * Parameters of one bounded query on one named vector.
+ *
+ * This is the bounded counterpart of the exact score queries. The query asks Qdrant for at most
+ * `limit` hits, so the work is bounded by the requested candidate count and never by the collection
+ * size.
+ */
+export type VectorQuery = {
+	/** Named vector to search, for example `dense`, `bm25`, or `ast`. */
+	using: string;
+	/** Query value: a dense vector, a BM25 inference object, or multivector rows. */
+	query: unknown;
+	/** Maximum number of hits. Required. */
+	limit: number;
+	/** Payload filter, applied before the search. */
+	filter?: PayloadFilter;
+};
+
 /** Parameters of a hybrid dense + BM25 query. */
 export type HybridQuery = {
 	/** Dense query vector computed client-side. */
@@ -202,6 +220,8 @@ export type QdrantClient = {
 	upsert: (points: Point[], options?: { wait?: boolean }) => Promise<void>;
 	/** Run a dense + BM25 query fused with RRF. */
 	queryHybrid: (query: HybridQuery) => Promise<QueryHit[]>;
+	/** Run one bounded query on one named vector. */
+	queryVector: (query: VectorQuery) => Promise<Array<Pick<QueryHit, "id" | "score">>>;
 	/** Scroll the complete identifier set that matches a filter. */
 	scrollIds: (options?: {
 		filter?: PayloadFilter;
@@ -662,6 +682,38 @@ export const createQdrantClient = (
 		return result.points;
 	};
 
+	/**
+	 * Run one bounded query on one named vector.
+	 *
+	 * The request follows the documented Query API, `POST
+	 * /collections/{collection_name}/points/query`, with the body `{ query, using, limit,
+	 * with_payload: false }` plus the `filter` when present. This is the same shape that
+	 * {@link queryHybrid} uses for one prefetch. Because the query sets `with_payload: false`, the
+	 * method returns the identifiers and the scores only.
+	 */
+	const queryVector = async (
+		query: VectorQuery
+	): Promise<Array<Pick<QueryHit, "id" | "score">>> => {
+		const body: Record<string, unknown> = {
+			query: query.query,
+			using: query.using,
+			limit: query.limit,
+			with_payload: false
+		};
+
+		if (query.filter !== undefined) {
+			body.filter = query.filter;
+		}
+
+		const result = await request<{ points: Array<Pick<QueryHit, "id" | "score">> }>(
+			"POST",
+			`${base}/points/query`,
+			body
+		);
+
+		return result.points;
+	};
+
 	/** Combine a payload filter with an identifier restriction. */
 	const withIds = (
 		filter: PayloadFilter | undefined,
@@ -1011,6 +1063,7 @@ export const createQdrantClient = (
 		deleteCollection,
 		upsert,
 		queryHybrid,
+		queryVector,
 		scrollIds,
 		fetchPayloads,
 		queryDenseExact,
