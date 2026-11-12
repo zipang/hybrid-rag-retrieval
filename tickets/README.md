@@ -57,9 +57,10 @@ A ticket moves forward one folder at a time. A ticket returns to
 
 ### In progress
 
-| ID                                                           | Title                                                | Owner                               | Depends on          | Blocks |
-| ------------------------------------------------------------ | ---------------------------------------------------- | ----------------------------------- | ------------------- | ------ |
-| [T0004](in_progress/T0004-french-syntax-weighted-retrieval/) | French syntax index and weighted threshold retrieval | coding sub-agent, supervised by CTO | T0001, T0002, T0003 | T0005  |
+| ID                                                           | Title                                                | Owner                               | Depends on          | Blocks  |
+| ------------------------------------------------------------ | ---------------------------------------------------- | ----------------------------------- | ------------------- | ------- |
+| [T0004](in_progress/T0004-french-syntax-weighted-retrieval/) | French syntax index and weighted threshold retrieval | coding sub-agent, supervised by CTO | T0001, T0002, T0003 | T0005   |
+| [T0007](in_progress/T0007-upgrade-local-qdrant-1-20/)        | Upgrade the development Qdrant to 1.20.0             | coding sub-agent, supervised by CTO | nothing             | nothing |
 
 ### Review
 
@@ -89,6 +90,8 @@ T0002 dataset extraction
 
 T0002 dataset extraction
   └→ T0006 resumable dataset import
+
+T0007 Qdrant 1.20.0 upgrade (independent, development runtime only)
 ```
 
 `T0004` is not finished. Tasks 12 to 17b are open: `ast` vector storage,
