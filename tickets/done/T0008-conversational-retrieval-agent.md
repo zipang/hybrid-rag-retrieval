@@ -2,7 +2,7 @@
 
 - **Track**: Chat agent and retrieval application
 - **Wave**: 2 (integration — builds on the weighted retrieval API)
-- **Status**: review
+- **Status**: done
 - **Owner**: coding sub-agent, supervised by CTO
 - **Started**: 2026-11-12
 - **Depends on**: T0009
@@ -283,6 +283,8 @@ export type SearchRecordsInput = {
   query: string;
   /** Records returned in this first page. Default 5, clamped to [1, 20]. */
   pageSize?: number;
+  /** Candidate count requested from Qdrant for each selected index. Default 50, clamped to [1, 1000]. One value applies to every index. */
+  limit?: number;
 };
 
 /** Output of the `searchRecords` tool. */
@@ -304,14 +306,17 @@ export type SearchRecordsOutput =
 Rules:
 
 - The tool calls
-  `retrieveWeighted({ text: query, weights, minScore, pageSize })`, with the
-  agent's fixed `weights` and `minScore` (section 7). It sets no filter in this
-  ticket.
+  `retrieveWeighted({ text: query, weights, minScore, pageSize, limit })`, with
+  the agent's fixed `weights` and `minScore` (section 7) and the `limit` from the
+  input. It sets no filter in this ticket.
 - It maps each `WeightedHit` to an `AgentSource` through the slogan field names.
 - It stores the query binding (everything except the cursor) in the session store
   for the conversation, keyed by the session identifier (section 7), and returns
-  the store's opaque token as `nextCursor`.
+  the store's opaque token as `nextCursor`. The binding includes `limit`, so
+  `fetchNextPage` continues with the same candidate count.
 - `pageSize` defaults to 5 and is clamped to `[1, 20]`.
+- `limit` defaults to `50` and is clamped to `[1, 1000]`. The tool schema exposes
+  it, so the model may raise or lower the candidate count.
 - `hasMore` is true exactly when the retrieval page carries a `nextCursor`.
 - A blank `query` returns `{ results: [], hasMore: false }` and does not call the
   retriever. The tool never throws for a blank query.
@@ -757,10 +762,11 @@ vercel/ai -s ai-sdk -a opencode -y`, and the `TOOL SKILLS` section of the
       `bun test src/server/agent/session-store.test.ts`. Depends on: T8.1.
 - [x] **T8.3 — Tool `searchRecords`**: write failing tests with a fake retriever
       — the `WeightedQuery` built from the input, the fixed weights and
-      `minScore`, the `pageSize` default and clamp, the first page, `hasMore`,
-      the `AgentSource` mapping, a blank query, a retrieval error — then implement
-      it. Files: `src/server/agent/tools.ts`, `src/server/agent/tools.test.ts`.
-      Verify: `bun test src/server/agent/tools.test.ts`. Depends on: T8.2.
+      `minScore`, the `pageSize` default and clamp, the `limit` default (`50`)
+      and clamp, the first page, `hasMore`, the `AgentSource` mapping, a blank
+      query, a retrieval error — then implement it. Files:
+      `src/server/agent/tools.ts`, `src/server/agent/tools.test.ts`. Verify:
+      `bun test src/server/agent/tools.test.ts`. Depends on: T8.2.
 - [x] **T8.4 — Tool `fetchNextPage`**: write failing tests — next page, last
       page, the stored binding re-supplied, the cursor advanced, unknown token,
       foreign token, malformed token, an expired retrieval cursor — then
@@ -880,6 +886,9 @@ Each criterion is observable and testable.
 15. Only `agents/default.md` and `agents/citations.md` are committed. Every other
     file under `agents/` is ignored by Git, and the test suite passes on a fresh
     clone that holds only the two examples.
+16. `searchRecords` exposes a `limit` parameter: it defaults to `50`, is clamped
+    to `[1, 1000]`, is passed to `retrieveWeighted`, and is stored in the cached
+    binding so `fetchNextPage` continues with the same candidate count.
 
 ## Known limitation
 
@@ -1165,3 +1174,49 @@ $ bunx tsc --noEmit
 the multi-vector syntax search is operational, so a search cannot fail on a
 missing syntax state. The Contract §7 and the Known limitation are updated. The
 `GET /api/slogans` surface is unaffected: it takes explicit weights per request.
+
+### Candidate limit on `searchRecords`
+
+`searchRecords` exposes the candidate count (Contract §3, acceptance criterion
+16). The tool now:
+
+- `SearchRecordsInput` gains `limit?: number` (default `50`, clamped to
+  `[1, 1000]`).
+- `normalizeCandidateLimit` resolves the default and the clamp, and
+  `searchRecords` passes `limit` to `retrieveWeighted`.
+- The cached binding stores `limit`, so `fetchNextPage` re-supplies the same
+  candidate count. `CachedSearch.binding` is `Omit<WeightedQuery, "cursor" |
+"pageSize">`, so the field flows through without a type change in
+  `session-store.ts`.
+- The `searchRecords` tool `inputSchema` gains a `limit` property (default 50,
+  clamped to `[1, 1000]`) and its description mentions it.
+
+New tests cover the default (`50`), the clamp (`0 → 1`, `5000 → 1000`), the value
+passed to `retrieveWeighted` (`25`), the binding stored by `searchRecords`, and
+that `fetchNextPage` re-supplies the originating candidate count. The existing
+tool and chat tests were updated to expect `limit: 50`.
+
+Gate output:
+
+```sh
+$ bun fmt
+Formatted 0 files, 181 unchanged [12.90ms]
+
+$ bun fmt --check
+All 181 files are formatted.
+
+$ bun run lint
+$ biome lint .
+Checked 109 files in 52ms. No fixes applied.
+
+$ bun test
+bun test v1.4.4 (38afee6c8)
+
+ 590 pass
+ 0 fail
+ 4718 expect() calls
+Ran 590 tests across 34 files. [2.79s]
+
+$ bunx tsc --noEmit
+(no output, exit 0)
+```

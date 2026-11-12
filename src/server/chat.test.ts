@@ -246,7 +246,8 @@ describe("createChatHandler", () => {
 			text: "sucre",
 			weights: DEFAULT_WEIGHTS,
 			minScore: DEFAULT_MIN_SCORE,
-			pageSize: 5
+			pageSize: 5,
+			limit: 50
 		});
 	});
 

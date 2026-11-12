@@ -19,6 +19,11 @@ export type SearchRecordsInput = {
 	query: string;
 	/** Records returned in this first page. Default 5, clamped to [1, 20]. */
 	pageSize?: number;
+	/**
+	 * Candidate count requested from Qdrant for each selected index. One value applies to every
+	 * index. Default 50, clamped to [1, 1000].
+	 */
+	limit?: number;
 };
 
 /** Output of the `searchRecords` tool. */
@@ -82,6 +87,15 @@ const MIN_PAGE_SIZE = 1;
 /** Largest delivery size the tool accepts. */
 const MAX_PAGE_SIZE = 20;
 
+/** Candidate count requested from Qdrant when the model does not choose one. */
+const DEFAULT_CANDIDATE_LIMIT = 50;
+
+/** Smallest candidate count the tool accepts. */
+const MIN_CANDIDATE_LIMIT = 1;
+
+/** Largest candidate count the tool accepts. */
+const MAX_CANDIDATE_LIMIT = 1000;
+
 /** The reason both tools give for a cursor they cannot resolve. */
 const UNKNOWN_CURSOR = "the cursor is unknown or has expired";
 
@@ -98,6 +112,15 @@ const normalizePageSize = (pageSize?: number): number => {
 	return Math.min(MAX_PAGE_SIZE, Math.max(MIN_PAGE_SIZE, Math.trunc(pageSize)));
 };
 
+/** Normalize the requested candidate count into the accepted range. */
+const normalizeCandidateLimit = (limit?: number): number => {
+	if (limit === undefined || !Number.isFinite(limit)) {
+		return DEFAULT_CANDIDATE_LIMIT;
+	}
+
+	return Math.min(MAX_CANDIDATE_LIMIT, Math.max(MIN_CANDIDATE_LIMIT, Math.trunc(limit)));
+};
+
 /**
  * Run one weighted search and shape the result for the model.
  *
@@ -106,7 +129,7 @@ const normalizePageSize = (pageSize?: number): number => {
  * under an opaque token that the model can pass to `fetchNextPage`.
  *
  * @param dependencies - Retriever, session store, fields, weights, and threshold.
- * @param input - Search text and an optional page size.
+ * @param input - Search text, an optional page size, and an optional candidate limit.
  * @returns The first page, or an error object.
  */
 export const searchRecords = async (
@@ -120,13 +143,15 @@ export const searchRecords = async (
 	}
 
 	const pageSize = normalizePageSize(input.pageSize);
+	const limit = normalizeCandidateLimit(input.limit);
 
 	try {
 		const page = await dependencies.retriever.retrieveWeighted({
 			text: query,
 			weights: dependencies.weights,
 			minScore: dependencies.minScore,
-			pageSize
+			pageSize,
+			limit
 		});
 		const results = page.results.map((hit) => toAgentSource(hit, dependencies.fields));
 
@@ -138,7 +163,8 @@ export const searchRecords = async (
 			binding: {
 				text: query,
 				weights: dependencies.weights,
-				minScore: dependencies.minScore
+				minScore: dependencies.minScore,
+				limit
 			},
 			pageSize,
 			cursor: page.nextCursor
@@ -195,7 +221,7 @@ export const fetchNextPage = async (
 export const createSearchRecordsTool = (dependencies: ToolDependencies) =>
 	tool({
 		description:
-			"Search the slogan corpus with a weighted query. Returns a first page of ranked records and an opaque cursor when more records remain.",
+			"Search the slogan corpus with a weighted query. Returns a first page of ranked records and an opaque cursor when more records remain. The optional limit sets how many candidates each index returns.",
 		inputSchema: jsonSchema<SearchRecordsInput>({
 			type: "object",
 			properties: {
@@ -207,6 +233,11 @@ export const createSearchRecordsTool = (dependencies: ToolDependencies) =>
 					type: "number",
 					description:
 						"Records returned in this first page. Defaults to 5, clamped to [1, 20]."
+				},
+				limit: {
+					type: "number",
+					description:
+						"Candidate count requested from each index. Defaults to 50, clamped to [1, 1000]."
 				}
 			},
 			required: ["query"],

@@ -111,7 +111,34 @@ describe("searchRecords", () => {
 
 		await searchRecords(dependencies, { query: "sucre" });
 
-		expect(queries).toEqual([{ text: "sucre", weights: WEIGHTS, minScore: 0.5, pageSize: 5 }]);
+		expect(queries).toEqual([
+			{ text: "sucre", weights: WEIGHTS, minScore: 0.5, pageSize: 5, limit: 50 }
+		]);
+	});
+
+	test("defaults the candidate limit to 50", async () => {
+		const { dependencies, queries } = createDependencies(async () => lastPage());
+
+		await searchRecords(dependencies, { query: "sucre" });
+
+		expect(queries[0]?.limit).toBe(50);
+	});
+
+	test("clamps the candidate limit to [1, 1000]", async () => {
+		const { dependencies, queries } = createDependencies(async () => lastPage());
+
+		await searchRecords(dependencies, { query: "sucre", limit: 0 });
+		await searchRecords(dependencies, { query: "sucre", limit: 5000 });
+
+		expect(queries.map((query) => query.limit)).toEqual([1, 1000]);
+	});
+
+	test("passes the candidate limit from the input to the retriever", async () => {
+		const { dependencies, queries } = createDependencies(async () => lastPage());
+
+		await searchRecords(dependencies, { query: "sucre", limit: 25 });
+
+		expect(queries[0]?.limit).toBe(25);
 	});
 
 	test("clamps the page size to [1, 20]", async () => {
@@ -166,12 +193,20 @@ describe("searchRecords", () => {
 			{
 				sessionId: "s1",
 				search: {
-					binding: { text: "sucre", weights: WEIGHTS, minScore: 0.5 },
+					binding: { text: "sucre", weights: WEIGHTS, minScore: 0.5, limit: 50 },
 					pageSize: 3,
 					cursor: "retrieval-next"
 				}
 			}
 		]);
+	});
+
+	test("stores the chosen candidate limit in the cached binding", async () => {
+		const { dependencies, saved } = createDependencies(async () => pageWithMore());
+
+		await searchRecords(dependencies, { query: "sucre", limit: 25 });
+
+		expect(saved[0]?.search.binding.limit).toBe(25);
 	});
 
 	test("returns an empty page for a blank query without calling the retriever", async () => {
@@ -198,7 +233,7 @@ describe("searchRecords", () => {
 describe("fetchNextPage", () => {
 	/** A cached search bound to the test session. */
 	const cached: CachedSearch = {
-		binding: { text: "sucre", weights: WEIGHTS, minScore: 0.5 },
+		binding: { text: "sucre", weights: WEIGHTS, minScore: 0.5, limit: 25 },
 		pageSize: 4,
 		cursor: "retrieval-1"
 	};
@@ -219,10 +254,25 @@ describe("fetchNextPage", () => {
 				text: "sucre",
 				weights: WEIGHTS,
 				minScore: 0.5,
+				limit: 25,
 				pageSize: 4,
 				cursor: "retrieval-1"
 			}
 		]);
+	});
+
+	test("re-supplies the candidate limit of the originating search", async () => {
+		const { dependencies, queries } = createDependencies(async () => lastPage(), {
+			sessions: {
+				save: () => "unused",
+				read: () => cached,
+				update: () => {}
+			}
+		});
+
+		await fetchNextPage(dependencies, { cursor: "tok-1" });
+
+		expect(queries[0]?.limit).toBe(25);
 	});
 
 	test("maps the page and advances the stored cursor", async () => {
