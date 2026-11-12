@@ -115,6 +115,8 @@ Observable, testable outcomes (never internal implementation trivia).
 
 When work starts or completes, an `## Implementation Notes` section is appended at the bottom recording architectural decisions, deviations, review feedback addressed, and exact gate outputs.
 
+A repository may hold **legacy tickets** written before this template, such as a `TNNNN-short-kebab-title/` directory with a separate `spec.md` and `plan.md`. Leave them in their existing shape; never convert them, and never copy their layout into a new ticket. Only new tickets follow the single-file template above.
+
 ---
 
 ## Full CTO Workflow

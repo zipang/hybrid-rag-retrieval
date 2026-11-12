@@ -19,20 +19,33 @@ tickets/
 └── done/             validated, merged, and verified
 ```
 
-Each ticket is a directory named `TNNNN-short-kebab-title`, for example
-`T0004-french-syntax-weighted-retrieval`. The directory holds the ticket
-artifacts:
+A ticket is one file named `TNNNN-short-kebab-title.md`, for example
+`T0008-conversational-retrieval-agent.md`. One file holds the whole ticket: the
+requirements, the contract, the acceptance criteria, and the task list with its
+checkboxes. The CTO template in `.opencode/agents/cto.md` defines the sections,
+in this order:
 
 ```text
-TNNNN-short-kebab-title/
-├── spec.md           the requirements, the contract, and the acceptance criteria
-├── plan.md           the task list and its checkboxes
-├── README.md         optional user guide for the delivered feature
-└── *.md              optional decision records and evaluation reports
+TNNNN-short-kebab-title.md
+├── header            Track, Wave, Status, Depends on, Blocks, References
+├── Context & Goal    why the change is needed, and what "done" means
+├── Scope Boundary    the files a ticket may create or modify
+├── Contract          types, signatures, invariants, and documented APIs
+├── TDD Tasks         the ordered checkboxes, tests before implementation
+├── Acceptance Criteria  the observable outcomes
+└── Glossary          the terms the document uses
 ```
 
+An `## Implementation Notes` section is appended at the bottom when work starts
+or completes.
+
+The older tickets `T0001` to `T0007` use a directory named
+`TNNNN-short-kebab-title/` with a `spec.md` and a `plan.md`. That is the legacy
+layout. New tickets use the single-file template. Both layouts live in the same
+status folders.
+
 The ticket ID is stable. It is never reused and never renumbered. The title in
-the directory name never changes after creation; only the status folder
+the file or directory name never changes after creation; only the status folder
 changes.
 
 ## Statuses
@@ -54,6 +67,7 @@ A ticket moves forward one folder at a time. A ticket returns to
 | ID                                                         | Title                                         | Depends on | Blocks  |
 | ---------------------------------------------------------- | --------------------------------------------- | ---------- | ------- |
 | [T0005](planned/T0005-investigate-copula-verb-syntax-gap/) | Investigate the copula-versus-verb syntax gap | T0004      | nothing |
+| [T0008](planned/T0008-conversational-retrieval-agent.md)   | Conversational retrieval agent on the AI SDK  | nothing    | nothing |
 
 ### In progress
 
@@ -92,10 +106,17 @@ T0002 dataset extraction
   └→ T0006 resumable dataset import
 
 T0007 Qdrant 1.20.0 upgrade (independent, development runtime only)
+
+T0008 conversational retrieval agent (independent, current retrieveHybrid)
 ```
 
 `T0007` is closed. The development machine runs Qdrant `1.20.0`; the NixOS
 server still runs `1.19.1` and needs its own ticket.
+
+`T0008` is independent. It builds on the current `retrieveHybrid` contract and
+does not wait for `T0004`. A later ticket replaces the agent tool backend with
+the weighted cursor API that `T0004` delivers, without changing the tool surface
+the model sees.
 
 `T0004` is not finished. Tasks 12 to 17b are open: `ast` vector storage,
 syntax backfill, syntax-weighted retrieval, the weighted API, the caller
@@ -106,11 +127,12 @@ delivers.
 ## Ticket rules
 
 - **One owner per ticket.** A ticket in `in_progress/` has one owner. Another
-  agent must not edit the same ticket directory.
-- **Strict scope.** `spec.md` lists the files and directories that a ticket
-  may change. Shared registration and manifest files are append-only.
+  agent must not edit the same ticket file.
+- **Strict scope.** The `Scope Boundary` section lists the files and directories
+  that a ticket may change. Shared registration and manifest files are
+  append-only.
 - **Tests first.** A ticket writes failing tests before production code. The
-  `plan.md` task list records the order.
+  `TDD Tasks` list records the order.
 - **Gates before review.** Format, lint, typecheck, and tests from `AGENTS.md`
   pass before the ticket enters `review/`.
 - **Independent review.** A reviewer sub-agent audits the diff before the
@@ -131,6 +153,7 @@ delivers.
 - **Planned**: specified and ready to start, with no implementation yet.
 - **Scope boundary**: the exact files and directories that a ticket may change.
 - **Ticket**: one unit of planned work with an ID, a specification, a plan, and
-  acceptance criteria.
+  acceptance criteria. A new ticket is one Markdown file; the older tickets use
+  a directory with a `spec.md` and a `plan.md`.
 - **Wave**: a group of tickets that can run in parallel because their scopes do
   not overlap.

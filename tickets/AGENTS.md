@@ -3,6 +3,20 @@
 These rules take precedence over the parent `AGENTS.md` for files inside
 `tickets/`.
 
+## Ticket file layout
+
+- A new ticket is **one file**: `tickets/<status>/TNNNN-short-kebab-title.md`.
+- The file follows the CTO template in `.opencode/agents/cto.md`: a header
+  (`Track`, `Wave`, `Status`, `Depends on`, `Blocks`, `References`), then
+  `Context & Goal`, `Scope Boundary`, `Contract`, `TDD Tasks`, and
+  `Acceptance Criteria`. Keep the section order.
+- Add a `## Glossary` section when the ticket uses a specialized term.
+- An `## Implementation Notes` section is appended at the bottom when work starts
+  or completes.
+- The legacy tickets `T0001` to `T0007` are directories that hold a `spec.md` and
+  a `plan.md`. Do not convert them. Do not copy their layout into a new ticket.
+  When you edit a legacy ticket, keep its two-file shape.
+
 ## Status folders
 
 - A ticket lives in exactly one of `planned/`, `in_progress/`, `review/`, or
@@ -14,17 +28,17 @@ These rules take precedence over the parent `AGENTS.md` for files inside
 
 ## Starting a ticket
 
-1. Move the ticket directory from `planned/` to `in_progress/`.
+1. Move the ticket file from `planned/` to `in_progress/`.
 2. Add `- **Status**: in_progress`, `- **Owner**: ...`, and
-   `- **Started**: YYYY-MM-DD` to the header of `spec.md`.
+   `- **Started**: YYYY-MM-DD` to the ticket header.
 3. Update the tables in `tickets/README.md`.
 
 ## Finishing a ticket
 
-1. Check off every completed task in `plan.md`.
-2. Append an `## Implementation Notes` section to `plan.md`. Record the
-   architectural decisions, the deviations, the review feedback addressed, and
-   the exact gate output.
+1. Check off every completed task in `TDD Tasks`.
+2. Append an `## Implementation Notes` section. Record the architectural
+   decisions, the deviations, the review feedback addressed, and the exact gate
+   output.
 3. Move the ticket to `review/` only after the independent reviewer sub-agent
    approves and every quality gate passes.
 4. Move the ticket to `done/` only after the CEO/PM validates it.
@@ -32,10 +46,9 @@ These rules take precedence over the parent `AGENTS.md` for files inside
 
 ## Writing tickets
 
-- Use `spec.md` for the requirements, the contract, and the acceptance
-  criteria.
-- Use `plan.md` for the ordered task list. Put one checkbox per task.
-- Keep the ticket ID and the directory title stable.
+- One file holds the requirements, the contract, the acceptance criteria, and the
+  task list. Put one checkbox per task under `TDD Tasks`.
+- Keep the ticket ID and the title stable.
 - Do not use a ticket ID to describe a feature in a `README.md` or an
   `AGENTS.md` outside `tickets/`.
 - Quote every third-party API in the contract with its documented signature
