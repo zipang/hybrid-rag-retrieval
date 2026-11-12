@@ -361,16 +361,50 @@ section 12.
 
 The project found two transport quirks during the measurement:
 
-1. A two-row matrix whose rows are unit basis vectors fails validation with
-   `indices: must be unique`. The JSON parser reads the outer array as a sparse
-   vector. A matrix with general float rows does not fail. The transport must
-   send the multivector in an unambiguous form.
-2. A multivector query needs one row per query sentence. The parser rejects two
-   identical query rows with the same `must be unique` error. The query rows
-   must differ, or the caller must send the query as a single matrix with a
+1. A two-row matrix of integer rows fails. The JSON parser reads the outer
+   array as a sparse vector. The message depends on the shape: `[[1,0],[0,1]]`
+   fails with `Conversion between sparse and regular vectors failed`, and
+   `[[1,1],[0,0]]` fails earlier with `indices: must be unique`. A matrix with
+   general float rows does not fail. The transport must send the multivector in
+   an unambiguous form.
+2. A multivector query with integer rows fails the same way: the exact query
+   `[[1,0],[1,0]]` is refused with the sparse conversion error. The query rows
+   must be float rows, and the caller must send the query as a matrix with the
    documented shape.
 
 The project records both quirks for Task 6 and Task 12.
+
+#### Re-check on Qdrant 1.20.0, 2026-11-12
+
+The re-check ran both versions side by side, because a message can only be
+called "changed" against the same probe on the old version. The `1.20.0` side
+ran on port `6333`. The `1.19.1` side ran on a separate scratch storage on port
+`6533`, with the binary from the `v1.19.1` release asset, and was deleted
+afterwards. Both probes used the throwaway collection `cto-probe-quirk`, with a
+`syntax` multivector of size `2`, comparator `max_sim`, and `distance: Dot`.
+
+| Probe                               | `1.19.1` response                                                                                                           | `1.20.0` response                                                                                                           | Verdict   |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | --------- |
+| Upsert `[[1,0],[0,1]]`              | `{"status":{"error":"Wrong input: Conversion between sparse and regular vectors failed"}}`                                  | `{"status":{"error":"Wrong input: Conversion between sparse and regular vectors failed"}}`                                  | Unchanged |
+| Upsert `[[1,1],[0,0]]`              | `{"status":{"error":"Validation error in JSON body: [points[0].vector.?.indices: Validation error: must be unique [{}]]"}}` | `{"status":{"error":"Validation error in JSON body: [points[0].vector.?.indices: Validation error: must be unique [{}]]"}}` | Unchanged |
+| Exact query `[[1,0],[1,0]]`         | `{"status":{"error":"Wrong input: Conversion between sparse and regular vectors failed"}}`                                  | `{"status":{"error":"Wrong input: Conversion between sparse and regular vectors failed"}}`                                  | Unchanged |
+| Exact query `[[0.5,0.5],[0.5,0.5]]` | `{"points":[{"id":3,"version":3,"score":1.0}]}`                                                                             | `{"points":[{"id":3,"version":1,"score":1.0}]}`                                                                             | Unchanged |
+
+Both quirks still reproduce, for the integer form. The float form is accepted
+on both versions, and it scores the same. No message changed.
+
+The error text depends on the shape of the matrix, not on the server version.
+The matrix `[[1,0],[0,1]]` fails in the sparse conversion, because the JSON
+parser reads the outer array as a sparse vector. The matrix `[[1,1],[0,0]]`
+fails earlier, in validation, because the first row repeats an index. Both
+failures come from the same misreading.
+
+An earlier draft of this note called the float query a change. That probe ran
+only on `1.20.0`, with the `Cosine` distance, so it had no `1.19.1` counterpart
+and its score was not comparable. The side-by-side table above replaces it.
+
+No code change is necessary. The rule stays: the transport writes every matrix
+value as a float, so Qdrant never reads a matrix as a sparse vector.
 
 The alternatives were:
 

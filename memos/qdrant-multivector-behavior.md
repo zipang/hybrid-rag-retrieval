@@ -14,19 +14,32 @@ result here. A future upgrade must re-run the checks in the last section.
 
 ## Method
 
-Every measurement below ran against the local server, started by
-`bun run qdrant:start`:
+The behaviors below were first measured on Qdrant `1.19.1` on 2026-11-10. That
+measurement stays here as the historical record. On 2026-11-12 the box was
+upgraded to `1.20.0`, and the five checks at the end were repeated; the section
+"Re-check on Qdrant 1.20.0" records the result.
+
+Every measurement ran against the local server, started by
+`bun run qdrant:start`. The 1.19.1 measurement read:
 
 ```sh
 curl -s http://127.0.0.1:6333/
 # {"title":"qdrant - vector search engine","version":"1.19.1", ...}
 ```
 
+The 1.20.0 re-check read:
+
+```sh
+curl -s http://127.0.0.1:6333/
+# {"title":"qdrant - vector search engine","version":"1.20.0","commit":"222b2e44ab1c3f17e8246396ead6558e45041df7"}
+```
+
 Each probe used a throwaway collection named `cto-probe-*`. A probe never
 touched `slogans` or `citations`. Each probe collection was deleted after the
 measurement.
 
-The reference mirror is `docs/Qdrant - 1.19.1/`.
+The reference mirror for the first measurement was `docs/Qdrant - 1.19.1/`. The
+mirror for the `1.20.0` re-check is `docs/Qdrant - 1.20.0/`.
 
 ## 1. The vector-add endpoint accepts `multivector_config`
 
@@ -205,10 +218,12 @@ matrix value with a decimal point. The value does not change. `1` becomes
 
 **Note on the message.** The error text depends on the row shape. The matrix
 `[[1,2],[3,4]]` produces
-`Wrong input: Conversion between sparse and regular vectors failed`. A matrix of
-integer unit rows, recorded in `memos/syntax-trees.md` section "Transport quirks
-on Qdrant 1.19.1", produces `indices: must be unique`. Both errors come from the
-same misreading, so the project treats the shape as the cause, not the message.
+`Wrong input: Conversion between sparse and regular vectors failed`. A matrix
+whose first row repeats an index, such as `[[1,1],[0,0]]`, produces
+`indices: must be unique`. Both errors come from the same misreading, so the
+project treats the shape as the cause, not the message. The shapes and their
+messages were measured on both `1.19.1` and `1.20.0` and are identical; see
+`memos/syntax-trees.md`, section "Re-check on Qdrant 1.20.0, 2026-11-12".
 
 **Risk.** None for the score. The encoder produces floats, so the guard costs
 nothing and removes an edge case.
@@ -240,6 +255,33 @@ layout. Each check uses a throwaway collection.
    the present identifiers are cleared.
 5. Try to store `4096` rows of `256` dimensions. Confirm that the server refuses
    the request.
+
+## Re-check on Qdrant 1.20.0
+
+Every probe below ran on 2026-11-12 against `GET /` reporting `1.20.0` with
+commit `222b2e44ab1c3f17e8246396ead6558e45041df7`. Each collection was named
+`cto-probe-*` and was deleted after the measurement.
+
+| Check                             | Command                                                                                 | Actual response                                                                                         | Verdict |
+| --------------------------------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | ------- |
+| 1. Add a multivector definition   | `PUT /collections/cto-probe-vec/vectors/syntax` with `multivector_config`               | `{"result":{"operation_id":2,"status":"acknowledged"}}`; the info reports `max_sim`                     | Pass    |
+| 2. Update one vector key only     | `PUT /collections/cto-probe-update/points/vectors?wait=true` with the `syntax` key only | `{"result":{"operation_id":2,"status":"completed"}}`; `dense` and the payload are unchanged             | Pass    |
+| 3. Two identical rows score `2.0` | Exact query with the two rows of the stored record                                      | `{"points":[{"id":1,"version":1,"score":2.0}]}`                                                         | Pass    |
+| 4. Batch delete with an absent id | `POST /collections/cto-probe-mix/points/vectors/delete` with points `[1,99]`            | `{"status":{"error":"Not found: No point with id 99 found"}}`; point 1 keeps `dense`, point 2 unchanged | Pass    |
+| 5. The sub-vector limit           | Upsert `4096` rows of `256` dimensions                                                  | `Validation error ... Total size of all vectors (1048576) must be less than 1048576`                    | Pass    |
+
+All five behaviors are the same as on `1.19.1`. No code change was necessary.
+
+The two transport quirks of `memos/syntax-trees.md` were re-checked in the same
+pass, side by side against `1.19.1` on a scratch server. Both reproduce
+unchanged for the integer row form, the float row form is accepted on both
+versions, and no error message changed. The responses of the two versions are
+in `memos/syntax-trees.md`, section "Re-check on Qdrant 1.20.0, 2026-11-12".
+
+Check 2 measured the stored `dense` vector as `[0.070014, 0.140028, 0.21004201,
+0.280056, 0.35007, 0.42008403, 0.490098, 0.560112]` before and after the
+update. The values are the cosine-normalized form of the input
+`[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]`, and the update left them untouched.
 
 ## Glossary
 

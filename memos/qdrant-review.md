@@ -6,6 +6,9 @@ This memo records the Qdrant decisions and the measurements for the POC. The
 project pins Qdrant `1.19.1`. All behavior below is checked against the local
 mirror in `docs/Qdrant - 1.19.1/`.
 
+The measurements below are the `1.19.1` baseline, recorded on 2026-11-10 and
+dated here on 2026-11-12.
+
 ## 1. The problem this pattern solves
 
 This memo describes a generic retrieval pattern. Use it when the following

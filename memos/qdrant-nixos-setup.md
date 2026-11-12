@@ -13,6 +13,9 @@ The project needs Qdrant `1.19.1`. The local mirror is
 behaviors measured on that version. Another version breaks the basis of those
 measurements.
 
+**Status, 2026-11-12:** the development binary runs Qdrant `1.20.0`; this server
+stays on `1.19.1` until a separate ticket moves it.
+
 ## 1. Why the release binary fails on NixOS
 
 The release asset is a Rust binary that links to the system C library at run
