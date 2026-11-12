@@ -15,3 +15,7 @@ singleQuote = false
 trailingComma = "none"
 arrowParens = "always"
 jsdoc = true
+# The installed tool skills keep the upstream bytes: reformatting one breaks the
+# hash recorded in `skills-lock.json`. The lock file is written by the skills
+# CLI. See AGENTS.md, "TOOL SKILLS".
+ignorePatterns = [".agents/skills/", "skills-lock.json"]

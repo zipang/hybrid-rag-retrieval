@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "skills": {
+    "ai-sdk": {
+      "source": "vercel/ai",
+      "sourceType": "github",
+      "skillPath": "skills/use-ai-sdk/SKILL.md",
+      "computedHash": "59cd2dc82c5458f2819992fc3d27204ed16edfc9170870c6f8f04c44bac17772"
+    },
+    "qdrant-advisor": {
+      "source": "qdrant/skills",
+      "sourceType": "github",
+      "skillPath": "meta/qdrant-advisor/SKILL.md",
+      "computedHash": "78cf7ee4b9cf5c377ad5bfdb8db2f81d28c59e7db58988853740ff4c56ffde78"
+    }
+  }
+}

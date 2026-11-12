@@ -12,12 +12,17 @@ with a tool, verify its behavior against the latest official documentation.
 - Read the release notes and API reference of the current version. Do not rely
   on memory, on older tutorials, or on blog posts.
 - When a documented feature replaces custom code, use the documented feature.
-- Mirror official documentation locally with the `librarian` agent and the
-  `index-tool-docs` skill, under `docs/<tool> - <version>/`, and read the local
-  mirror before you use web search. Use `fix-bun-docs` to normalize a Bun mirror
-  after acquisition.
-- When a newer version is available, reindex the local mirror and advertise the
-  new version in the `LOCAL DOCUMENTATION FOR TOOLS` section below.
+- Prefer the installed tool skill over a web search. The skills in
+  `.agents/skills/` load current, version-aware guidance on demand. See the
+  `TOOL SKILLS` section below.
+- The AI SDK ships its own documentation inside the package. Read
+  `node_modules/ai/docs/**` for the installed version. That directory is
+  documentation, not code, and it is the only path under `node_modules/` that
+  this project allows.
+- Do not read the source of any dependency: not `node_modules/ai/src/**`, not
+  `node_modules/**/src/**`, not a vendored copy. A documented surface that lacks
+  a capability you need is a question for the CTO, not a licence to read the
+  code.
 
 ## Explain technical terms with a glossary
 
@@ -192,16 +197,21 @@ Just tell the user the values to insert into if they need to be edited.
 - Leave a blank line before control statements like : `if`, loops (`while`, `for`..) and `return` to make the code more readable
 - Prefer arrow function definitions: `const fn = () => {}`. Do not use the `function` keyword.
 
-## LOCAL DOCUMENTATION FOR TOOLS
+## TOOL SKILLS
 
-The project runs two Qdrant deployments, pinned to two versions. Read the
-mirror of the deployment you work on.
+The project installs one agent skill per third-party tool. A skill answers
+"when?" and "why?"; the official documentation answers "how?". Load the skill
+before you design, implement, or debug with the tool.
 
-- [Qdrant - 1.20.0](./docs/Qdrant%20-%201.20.0/index.md) Open-source vector search engine used for the hybrid dense+sparse retrieval index. **Development machine** and every local run. This is the default mirror.
-- [Qdrant - 1.19.1](./docs/Qdrant%20-%201.19.1/index.md) The same engine at the version that the **NixOS server** still runs, and the version of the measurements recorded in `memos/qdrant-review.md` and `memos/qdrant-multivector-behavior.md` before the upgrade.
+- [qdrant-advisor](./.agents/skills/qdrant-advisor/SKILL.md) Qdrant, the vector
+  search engine behind the hybrid dense+sparse index. The project runs two
+  deployments: `1.20.0` on the **development machine** and every local run, and
+  `1.19.1` on the **NixOS server**. The skill loads the current guidance live
+  from <https://skills.qdrant.tech> and cites the Qdrant documentation it used.
+- [ai-sdk](./.agents/skills/ai-sdk/SKILL.md) The Vercel AI SDK (`ai@7.0.124`),
+  used for the chat agent. The skill points at the version-matched documentation
+  in `node_modules/ai/docs/` and at <https://ai-sdk.dev/docs>.
 
-Anytime you must generate code or instructions to use these tools in the
-project, you **MUST** refer to this local documentation first. This will
-ensure efficiency, low latency, and conformance to the version of the tool
-actually used inside the project. Preload the `index.md` content of each
-available documentation to keep this in your context for rapid access.
+The installed set and its source commits live in `skills-lock.json`. Refresh a
+skill with `bunx skills update`. Add a skill with
+`bunx skills add <source> -s <skill> -a opencode -y`, then list it here.
