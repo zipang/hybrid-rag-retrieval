@@ -2,7 +2,9 @@
 
 - **Track**: Retrieval and API
 - **Wave**: 1 (independent — builds on the syntax index that T0004 delivered)
-- **Status**: planned
+- **Status**: done
+- **Owner**: coding sub-agent, supervised by CTO
+- **Started**: 2026-11-12
 - **Depends on**: nothing (the syntax index and its backfill are delivered; T0004 is closed)
 - **Blocks**: T0008, T0010
 - **References**:
@@ -66,10 +68,13 @@ Create or modify **only** these paths.
 
 - `src/lib/retrieval.ts`, `src/lib/retrieval.test.ts` — add the `syntax` index to
   the weighted query, and remove the hard-coded year filter.
+- `src/lib/qdrant-genericity.test.ts` — the dataset-agnostic transport proof
+  calls the removed `filterField` option and the removed `yearFrom` filter; update
+  it to the generic `PayloadFilter`.
 - `src/lib/retrieval-contract.ts` — the query and result types; the year-typed
   `RetrievalFilters` becomes the generic `PayloadFilter`.
-- `src/lib/result-pages.ts` — type the snapshot binding filter as
-  `PayloadFilter`.
+- `src/lib/result-pages.ts`, `src/lib/result-pages.test.ts` — type the snapshot
+  binding filter as `PayloadFilter` and test the stable binding key.
 - `src/lib/qdrant.ts`, `src/lib/qdrant.test.ts` — return the record row count
   from the exact ast query.
 - `src/lib/scoring.ts`, `src/lib/scoring.test.ts` — only if the syntax
@@ -357,21 +362,21 @@ report to the CTO.
 
 ## TDD Tasks
 
-- [ ] **T9.1 — The transport reports the record row count**: write failing tests
+- [x] **T9.1 — The transport reports the record row count**: write failing tests
       for `queryAstExact` with `withRows: true` — the request body carries
       `with_vectors` and the name of the ast vector, each returned `IndexScore`
       carries the matrix row count, and `withRows: false` leaves the body
       unchanged — then implement it. Files: `src/lib/qdrant.ts`,
       `src/lib/qdrant.test.ts`. Verify: `bun test src/lib/qdrant.test.ts`.
       Depends on: nothing.
-- [ ] **T9.2 — The syntax index scores in the weighted query**: write failing
+- [x] **T9.2 — The syntax index scores in the weighted query**: write failing
       tests — syntax alone (`weights={syntax:1}`), all three combined, the raw
       `max_sim` normalized by `max(queryRows, recordRows)`, a record without an
       `ast` vector outside the syntax scope, a blank query without a parser call
       — then implement the syntax branch. Files: `src/lib/retrieval.ts`,
       `src/lib/retrieval.test.ts`, `src/lib/retrieval-contract.ts`. Verify:
       `bun test src/lib/retrieval.test.ts`. Depends on: T9.1.
-- [ ] **T9.2b — Make the filter generic**: write a failing test that a generic
+- [x] **T9.2b — Make the filter generic**: write a failing test that a generic
       `PayloadFilter` reaches the transport unchanged, then replace
       `RetrievalFilters` with `PayloadFilter` on `WeightedQuery` in
       `src/lib/retrieval-contract.ts`, remove `buildFilter` and the `filterField`
@@ -380,23 +385,23 @@ report to the CTO.
       stable JSON binding key in `src/lib/result-pages.ts`. Delete the two
       year-filter tests. Verify: `bun test src/lib/retrieval.test.ts
 src/lib/result-pages.test.ts` and `bunx tsc --noEmit`. Depends on: T9.2.
-- [ ] **T9.3 — Readiness and eligibility errors**: write failing tests for a
+- [x] **T9.3 — Readiness and eligibility errors**: write failing tests for a
       missing, pending, and config-mismatched syntax state, a changed generation,
       and a missing parser model — each throws its typed error, and a query
       without a positive syntax weight never reads the syntax dependency. Files:
       `src/lib/retrieval.ts`, `src/lib/retrieval.test.ts`. Verify:
       `bun test src/lib/retrieval.test.ts`. Depends on: T9.2.
-- [ ] **T9.4 — The weighted HTTP parameters**: write failing tests for the
+- [x] **T9.4 — The weighted HTTP parameters**: write failing tests for the
       parameter validation, the obsolete-parameter rejection (`topK`, `mode`,
       `yearFrom`, `yearTo`), the response shape, and each error mapping in
       section 5, with a fake retriever — then implement the handler. Files:
       `src/server/api.ts`, `src/server/api.test.ts`. Verify:
       `bun test src/server/api.test.ts`. Depends on: T9.2b.
-- [ ] **T9.5 — Wiring**: build the weighted retriever with the syntax dependency
+- [x] **T9.5 — Wiring**: build the weighted retriever with the syntax dependency
       and the syntax state store, and pass the slogan field configuration to the
       handler. Files: `src/server/index.ts`. Verify: `bun run dev` starts and a
       `syntax`-weighted request answers. Depends on: T9.4.
-- [ ] **T9.6 — Gates**: run the project commands from `AGENTS.md` —
+- [x] **T9.6 — Gates**: run the project commands from `AGENTS.md` —
       `bun fmt --check`, `bun run lint`, `bunx tsc --noEmit`, `bun test`. Depends
       on: T9.1–T9.5, including T9.2b.
 
@@ -408,13 +413,14 @@ Each criterion is observable and testable.
    all three combined, with weights that sum to `1`.
 2. A record's syntax component score equals `max_sim / max(queryRows,
 recordRows)`, in `[0, 1]`.
-3. A record with no `ast` vector is outside the syntax eligibility scope and
-   never breaks the query.
+3. A record with no `ast` vector contributes no syntax component score and never
+   breaks the query. It is not removed from the candidate set, so at
+   `minScore = 0` it can still qualify on its other indexes.
 4. A query without a positive syntax weight works without a parser and without a
    ready syntax index.
-5. A query with a positive syntax weight against a missing or incompatible syntax
-   state fails with `SyntaxNotReadyError`; against a changed generation it fails
-   with `StaleGenerationError`.
+5. A query with a positive syntax weight fails when the syntax state is not ready:
+   `StaleGenerationError` when the generation is absent or changed, and
+   `SyntaxNotReadyError` when the generation exists but has no ready syntax run.
 6. Every eligible record at or above `minScore` appears exactly once when the
    caller follows all cursors. A cursor from another query, an expired cursor,
    and a malformed cursor each fail explicitly.
@@ -456,3 +462,210 @@ recordRows)`, in `[0, 1]`.
   The weights sum to `1`.
 - **Weighted query**: one query that selects one or more indexes by weight,
   scores every eligible record, applies a minimum score, and returns one page.
+
+## Implementation Notes
+
+### The `with_vectors` measurement (T9.1)
+
+The Contract §3 assumes that a query with `with_vectors: ["ast"]` returns the
+stored `ast` matrix, so its row count is the sentence count. This was measured on
+the running local Qdrant before any code changed.
+
+Server identity:
+
+```sh
+curl -s http://127.0.0.1:6333/
+# {"title":"qdrant - vector search engine","version":"1.20.0","commit":"222b2e44ab1c3f17e8246396ead6558e45041df7"}
+```
+
+Probe on a throwaway collection named `cto-probe-withvectors` (deleted after the
+measurement; `slogans` and `citations` were never touched). The collection held a
+named multivector `ast` of size `4`, distance `Cosine`, comparator `max_sim`.
+
+```http
+POST /collections/cto-probe-withvectors/points/query
+{
+  "query": [[1.0,0.0,0.0,0.0],[0.0,1.0,0.0,0.0]],
+  "using": "ast",
+  "filter": { "must": [ { "has_id": [1,2,3] } ] },
+  "params": { "exact": true },
+  "limit": 10,
+  "with_payload": false,
+  "with_vectors": ["ast"]
+}
+```
+
+Response:
+
+```json
+{
+  "result": {
+    "points": [
+      {
+        "id": 1,
+        "version": 3,
+        "score": 2.0,
+        "vector": {
+          "ast": [
+            [1.0, 0.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0, 0.0]
+          ]
+        }
+      },
+      { "id": 2, "version": 4, "score": 1.0, "vector": { "ast": [[0.0, 1.0, 0.0, 0.0]] } }
+    ]
+  },
+  "status": "ok"
+}
+```
+
+Findings:
+
+- The stored `ast` matrix is returned under `vector.ast` when `with_vectors:
+["ast"]` is set. The matrix row count equals the sentence count: point `1`
+  returned `2` rows, point `2` returned `1` row.
+- Point `3` had no `ast` vector and was not returned by the `ast` query at all.
+  This confirms the Contract §2 rule that a record without an `ast` vector is
+  outside the syntax eligibility scope.
+- The same query without `with_vectors` returned no `vector` field. The
+  `withRows: false` path is therefore byte-identical to the previous behavior.
+
+Conclusion: the documented surface supports the design. No workaround was
+needed, and `memos/qdrant-multivector-behavior.md` was **not** changed because
+the ticket's Scope Boundary does not list it. The measurement is recorded here
+instead.
+
+### Architectural decisions
+
+- **Transport row count.** `IndexScore` gained an optional `rows`. `ExactAstQuery`
+  gained `withRows`. When `withRows` is true, `queryAstExact` appends
+  `"with_vectors":[<ast name>]` beside `"with_payload"` and reads each row count
+  from the returned matrix length. When it is false, the body and the scores are
+  unchanged. `QueryHitWithVector` is a local type for the optional `vector` field.
+- **Syntax branch.** `createWeightedRetriever` no longer rejects a positive syntax
+  weight. It calls `state.assertSyntaxReady(generation, syntax.configId)` before
+  any transport query, parses and encodes the query text once with
+  `parser.parse` → `abstractTree` → `encode`, then calls
+  `queryAstExact({ rows, ids, filter, withRows: true, onMissing: "skip" })` per
+  identifier batch and normalizes each raw score with
+  `normalizeMultivectorMaxSim(raw, queryRows, recordRows)`.
+- **Readiness ordering.** The blank-text early return stays before the readiness
+  check, so a blank query returns an empty page with no parser call and no state
+  read. On the fresh-query path the readiness check runs before `scrollIds`; the
+  cursor path performs no readiness check and no parse, because it reads a stored
+  snapshot.
+- **Metadata.** `metadata.syntaxConfigId` is set from `syntax.configId` whenever a
+  positive syntax weight is selected, on both the fresh and the cursor paths.
+- **Component scores.** Every hit now carries all three component scores
+  (`syntax`, `semantic`, `keyword`). The one existing semantic test that asserted
+  the old two-key shape was updated to the three-key shape.
+- **Generic filter.** `WeightedQuery.filters` and `SnapshotBinding.filters` are
+  typed `PayloadFilter`. `buildFilter` and the `filterField` dependency were
+  removed; `query.filters` is passed straight to `scrollIds`, `queryDenseExact`,
+  `querySparseExact`, and `queryAstExact`. The binding key uses a recursive
+  `stableJson` serializer that sorts object keys and preserves array order, so
+  two equal filters produce the same cursor key.
+- **HTTP surface.** `createSlogansHandler` reads `q`, `weights`, `minScore`,
+  `pageSize`, and `cursor`; it rejects `topK`, `mode`, `yearFrom`, and `yearTo`
+  with 400, parses and validates `weights` with `validateWeights` without
+  normalizing, and maps each typed error to the status in Contract §5 through
+  `errorResponse`.
+- **Wiring.** `src/server/index.ts` builds the weighted retriever with
+  `createSyntaxParser(process.env)`, `encodeTree`, the `coarse` mode, and the
+  `configId` from `buildSyntaxIndexConfiguration("coarse")`, and passes the
+  `slogan` field configuration to the handler. The legacy fused retriever stays
+  for `src/server/chat.ts`, which T0010 owns.
+
+### Deviations
+
+- **Scope ratified: `src/lib/qdrant-genericity.test.ts`.** The dataset-agnostic
+  transport proof directly calls the removed `filterField` option and the removed
+  `yearFrom` filter, so it cannot stay green or typecheck against the Contract §1
+  change. The CTO added it to "May modify" and ratified the minimal update:
+  `filterField` removed, and the year filter replaced by a generic `PayloadFilter`
+  (`{ must: [{ key: "published", range: { gte: 1850 } }] }`).
+- **T9.5 runtime verification.** `bun run dev` starts and answers. A
+  `semantic`-weighted request returns `200` with the typed records, the
+  `nextCursor`, and the metadata. A `syntax`-weighted request answers `409`
+  (`StaleGenerationError`), because the local `slogans` collection has no `ast`
+  vector and no published syntax state (`data/index-state.json` is absent). A
+  `200` syntax response needs the T0004 syntax backfill to have run, which is
+  outside this ticket. The endpoint wiring and the error mapping were verified
+  directly.
+
+### Gate output (T9.6)
+
+```sh
+$ bun fmt --check
+All 160 files are formatted.
+
+$ bun run lint
+$ biome lint .
+Checked 96 files in 43ms. No fixes applied.
+
+$ bunx tsc --noEmit
+(no output)
+
+$ bun test
+bun test v1.4.4 (38afee6c8)
+
+ 508 pass
+ 0 fail
+ 4599 expect() calls
+Ran 508 tests across 29 files. [2.64s]
+```
+
+### Polish round (review feedback)
+
+The independent review found one untested behavior and three code-clarity items.
+All are addressed.
+
+1. **Untested stable binding key (fixed).** Added two hermetic cases to
+   `src/lib/result-pages.test.ts`, using the file's injected clock and token
+   source:
+   - `treats equal filters with a different key order as the same binding`: two
+     `PayloadFilter` values with the same data but a different object key order
+     produce the same binding key, so a snapshot stored under one is read under
+     the other.
+   - `rejects a cursor when the filter value differs`: a binding whose filter
+     value differs yields `CursorMismatchError` against the stored snapshot.
+2. **Redundant syntax guard removed.** The second
+   `syntax !== undefined && state !== undefined` check was dead after the outer
+   guard. `src/lib/retrieval.ts` now resolves the pair once through
+   `resolveSyntaxDependency`, which returns a `ResolvedSyntaxDependency`
+   (`NonNullable` fields, no cast) or `undefined`. The readiness and encode block
+   reads the resolved pair, so the types stay narrow.
+3. **Row-count fallback replaced by a guarantee.** `entry.rows ?? 0` is gone.
+   Because the ast query sets `withRows: true`, the transport must report a row
+   count; a missing one now throws
+   `the ast transport reported no row count for record <id>` instead of silently
+   scoring `raw / queryRows`. A regression test
+   (`fails loudly when the ast transport omits the row count`) covers the branch.
+4. **JSDoc clarified.** The `createWeightedRetriever` doc now states that an
+   absent or changed generation fails with `StaleGenerationError` and a
+   generation with no ready syntax run fails with `SyntaxNotReadyError`, and that
+   a record without an `ast` vector contributes a zero syntax component score and
+   stays in the candidate set, so at `minScore = 0` it can still qualify on its
+   other indexes.
+
+### Gate output (polish round)
+
+```sh
+$ bun fmt --check
+All 160 files are formatted.
+
+$ bun run lint
+$ biome lint .
+Checked 96 files in 44ms. No fixes applied.
+
+$ bunx tsc --noEmit
+(no output)
+
+$ bun test
+bun test v1.4.4 (38afee6c8)
+
+ 511 pass
+ 0 fail
+ 4602 expect() calls
+Ran 511 tests across 29 files. [2.64s]
+```
