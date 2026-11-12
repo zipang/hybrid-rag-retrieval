@@ -6,13 +6,13 @@ Every component under `src/components` follows one rule set.
 
 Folders follow Atomic Design: generic pieces live low, product pieces high.
 
-| Folder    | Holds                                                          | Import direction |
-| --------- | -------------------------------------------------------------- | ---------------- |
-| `layout/` | `VStack`, `HStack`, `Grid` — structure only                    | lowest           |
-| `base/`   | `Heading`, `Text` — typography only                            | from `layout` up |
-| `ui/`     | `Panel`, `Button`, `TextField` — reusable controls             | from `base` up   |
-| `app/`    | `ChatPanel`, `RetrievalPanel`, `MessageBubble`, `RetrievalHit` | from `ui` up     |
-| `pages/`  | `ChatPage` — the screen                                        | top              |
+| Folder    | Holds                                                                                                          | Import direction |
+| --------- | -------------------------------------------------------------------------------------------------------------- | ---------------- |
+| `layout/` | `VStack`, `HStack`, `Grid` — structure only                                                                    | lowest           |
+| `base/`   | `Heading`, `Text` — typography only                                                                            | from `layout` up |
+| `ui/`     | `Panel`, `Button`, `TextField` — reusable controls                                                             | from `base` up   |
+| `app/`    | `ChatPanel`, `RetrievalPanel`, `MessageBubble`, `MarkdownText`, `SourcesPanel`, `ToolActivity`, `RetrievalHit` | from `ui` up     |
+| `pages/`  | `ChatPage` — the screen                                                                                        | top              |
 
 Imports flow downward only: `pages → app → ui → base → layout`.
 
@@ -47,6 +47,22 @@ group, or align things.
 Compose from the kit instead of building a new one. A panel is `Panel`, not a
 `div` with a border rule. A list row is `RetrievalHit`, not an `li`.
 
+## Markdown rendering
+
+The agent writes its answer in Markdown. `MarkdownText` renders it with
+`react-markdown` and `remark-gfm`. It is the only Markdown renderer, and the
+only component allowed to render a raw `<ul>`, `<ol>`, `<li>`, `<table>`,
+`<thead>`, `<tbody>`, `<tr>`, `<th>`, or `<td>`, because the kit has no
+primitive for a list or a table. Those elements may also carry their own layout
+(`display`, `flex-direction`) in `MarkdownText.css`, since no primitive covers
+them. It maps paragraphs and headings through `Text` and `Heading`, keeps the
+inline `<strong>`, `<em>`, `<code>`, and `<a>` elements, drops raw HTML, and
+reads every value from a token. The same exception is recorded in
+[`AGENTS.md`](./AGENTS.md).
+
+`SourcesPanel` renders the records the agent consulted, under the answer.
+`ToolActivity` shows a one-line notice while a tool runs.
+
 ## Glossary
 
 - **Atomic Design**: a folder rule. Generic components live low and product
@@ -55,4 +71,8 @@ Compose from the kit instead of building a new one. A panel is `Panel`, not a
   through `var(--token)`.
 - **layout primitive**: one of `VStack`, `HStack`, or `Grid`. They are the only
   way to arrange content.
+- **Markdown**: a plain-text format for formatted prose. `**bold**`, `*italic*`,
+  and `| a | b |` tables. The agent writes its answer in Markdown.
 - **region**: one part of the page with its own id, for example `#chat-panel`.
+- **source**: one record that the agent consulted. `SourcesPanel` shows the
+  sources under the answer.

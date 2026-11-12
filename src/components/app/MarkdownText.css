@@ -1,0 +1,55 @@
+/* MarkdownText: the formatted agent answer. Every value is a token. This
+   component is the one documented place allowed to render raw list and table
+   elements, because the component kit has no primitive for them. */
+.markdown-text {
+	min-width: 0;
+}
+
+.markdown-text__list {
+	margin: 0;
+	padding-left: var(--space-base);
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-xs);
+}
+
+.markdown-text__item {
+	font-size: var(--font-size-sm);
+	line-height: var(--line-height-normal);
+}
+
+.markdown-text__table {
+	border-collapse: collapse;
+	width: 100%;
+	font-size: var(--font-size-sm);
+}
+
+.markdown-text__cell {
+	border: var(--border-sm) solid var(--color-surface-alt);
+	padding: var(--space-xs) var(--space-sm);
+	text-align: left;
+}
+
+.markdown-text__cell--head {
+	font-weight: var(--font-weight-semibold);
+	background: var(--color-surface-alt);
+}
+
+.markdown-text__strong {
+	font-weight: var(--font-weight-semibold);
+}
+
+.markdown-text__em {
+	font-style: italic;
+}
+
+.markdown-text__code {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-xs);
+	background: var(--color-surface-alt);
+	padding: var(--space-xs);
+}
+
+.markdown-text__link {
+	color: var(--color-text-accent);
+}

@@ -27,6 +27,16 @@ The single exception is a semantic element the kit cannot render and that
 carries its own meaning: `<input>`, `<button>`, `<form>` behaviour, or a
 `<label>`. Add a one-line comment when you use one.
 
+`MarkdownText` is one documented, narrow exception. It is the **only** component
+that may render a raw `<ul>`, `<ol>`, `<li>`, `<table>`, `<thead>`, `<tbody>`,
+`<tr>`, `<th>`, or `<td>`, because the kit has no primitive for a list or a
+table. It also keeps the inline semantic elements `<strong>`, `<em>`, `<code>`,
+and `<a>`, which no primitive covers. Because no primitive covers a list or a
+table, those elements may also carry their own layout (`display`,
+`flex-direction`) in `MarkdownText.css`; rule 3 does not apply to them. Every
+rule in that stylesheet reads a design token. No other component may render
+those elements.
+
 ## 2. Typography goes through `base/`
 
 Use `Heading` and `Text`. Never write `<h1>`–`<h6>` or `<p>`.

@@ -2,6 +2,7 @@ import type { FC } from "react";
 
 import { VStack } from "../layout/VStack";
 import { Text } from "../base/Text";
+import { MarkdownText } from "./MarkdownText";
 
 import "./MessageBubble.css";
 
@@ -20,7 +21,8 @@ export interface MessageBubbleProps {
 
 /**
  * One chat message, at the same size as the question field. The two roles are distinguished by
- * surface tone and by which edge the block sits against.
+ * surface tone and by which edge the block sits against. The assistant body is rendered as Markdown
+ * through {@link MarkdownText}; the user body is plain text.
  *
  * @example
  * 	<MessageBubble role="user" text="Slogans sur le sucre" />;
@@ -32,19 +34,17 @@ export const MessageBubble: FC<MessageBubbleProps> = ({ role, text, isStreaming 
 	<VStack
 		gap="xs"
 		align="start"
-		id={isStreaming ? "message-streaming" : undefined}
 		className={`message-bubble message-bubble--${role}${isStreaming ? " message-bubble--streaming" : ""}`}
 	>
 		<Text size="xs" weight="medium" as="span" className="message-bubble__author">
 			{role === "user" ? "Vous" : "Assistant"}
 		</Text>
-		<Text
-			size="sm"
-			tone={role === "user" ? "ondark" : "base"}
-			as="span"
-			className="message-bubble__body"
-		>
-			{text}
-		</Text>
+		{role === "assistant" ? (
+			<MarkdownText text={text} />
+		) : (
+			<Text size="sm" tone="ondark" as="span" className="message-bubble__body">
+				{text}
+			</Text>
+		)}
 	</VStack>
 );

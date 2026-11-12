@@ -1,0 +1,4 @@
+/* ToolActivity: a one-line notice while the agent runs a tool. */
+.tool-activity {
+	font-style: italic;
+}

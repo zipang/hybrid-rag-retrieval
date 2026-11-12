@@ -67,8 +67,8 @@ A ticket moves forward one folder at a time. A ticket returns to
 | ID                                                         | Title                                                          | Depends on   | Blocks  |
 | ---------------------------------------------------------- | -------------------------------------------------------------- | ------------ | ------- |
 | [T0005](planned/T0005-investigate-copula-verb-syntax-gap/) | Investigate the copula-versus-verb syntax gap                  | nothing      | nothing |
-| [T0008](planned/T0008-conversational-retrieval-agent.md)   | Conversational retrieval agent on the AI SDK                   | T0009        | T0010   |
 | [T0010](planned/T0010-migrate-callers-and-evaluate.md)     | Migrate the callers, evaluate, and document weighted retrieval | T0009, T0008 | nothing |
+| [T0011](planned/T0011-agent-resource-api-server.md)        | Agent resource API server                                      | T0008        | nothing |
 
 ### In progress
 
@@ -78,9 +78,9 @@ A ticket moves forward one folder at a time. A ticket returns to
 
 ### Review
 
-| ID  | Title                    | Depends on | Blocks |
-| --- | ------------------------ | ---------- | ------ |
-| —   | No ticket awaits review. | —          | —      |
+| ID                                                      | Title                                        | Depends on | Blocks       |
+| ------------------------------------------------------- | -------------------------------------------- | ---------- | ------------ |
+| [T0008](review/T0008-conversational-retrieval-agent.md) | Conversational retrieval agent on the AI SDK | T0009      | T0010, T0011 |
 
 ### Done
 
@@ -130,7 +130,10 @@ subset of the three indexes by weight; to query one index, its weight is `1` and
 the others are `0`. `T0008` and `T0010` no longer wait for it.
 
 `T0008` is the conversational agent. It builds its tools on the weighted API that
-`T0009` delivered, so it does not start on the obsolete `topK` path.
+`T0009` delivered, so it does not start on the obsolete `topK` path. It also owns
+the **agent resource** layer: an agent is a Markdown document with a YAML
+frontmatter under `agents/`, loaded at runtime and never hard-coded. `T0011`
+serves those resources over HTTP and waits for `T0008`.
 
 `T0005` is independent now. It measures the `coarse` encoder that `T0004`
 delivered, so it no longer waits for a retrieval ticket.

@@ -124,6 +124,7 @@ The POC also serves as a comparison bench. The bench compares:
 ## Project layout
 
 ```
+agents/     agent resources: one Markdown document per agent
 datasets/   datasets (not committed)
 docs/       local documentation mirrors (not committed)
 memos/      technical review memos
@@ -168,6 +169,47 @@ slogan fields, and the scoring metadata. It holds `nextCursor` while more
 records remain. The obsolete parameters `topK`, `mode`, `yearFrom`, and `yearTo`
 are rejected with HTTP 400.
 
+## Chat agent
+
+`POST /api/chat` is a conversational retrieval agent. It answers only from the
+records a tool returned, and never from its own knowledge: when no record
+matches, it says so instead of inventing an answer.
+
+The agent has two tools. `searchRecords` runs a weighted search and returns the
+first page of records with a cursor when more remain. `fetchNextPage` reads the
+next page of the same ranked list through that cursor. The agent may search
+again when the first results are weak, inside a bounded step budget. The budget
+is `AGENT_MAX_STEPS` (default `6`).
+
+The answer is written in Markdown. The browser renders the Markdown and lists
+the records the agent consulted under the answer.
+
+### Agent resources
+
+An agent is a **resource**: a Markdown document with a YAML frontmatter
+(`description`, `language`), living in the committed `agents/` directory. The
+frontmatter describes the agent; the body holds its durable instructions, in
+five sections: `## Role`, `## Workflow`, `## Tool rules`, `## Answer format`, and
+`## Budget`. The server loads a resource at runtime and never bundles it.
+
+The repository commits two example resources:
+
+- `agents/default.md` — the generic default. It answers about a collection of
+  text records, in the language of the question, and names no language and no
+  dataset.
+- `agents/citations.md` — an example for a corpus of literary citations.
+
+Every other file under `agents/` is **local**: the repository ignores `agents/*`
+except those two, so a deployment adds its own agents without committing them.
+The directory holds only `.md` agent files, so the format is documented here and
+in the loader, not in an `agents/README.md`.
+
+A chat request selects a resource by `agentId`. When the body names none, the
+server uses `AGENT_ID` (default `default`). The server loads the resource once
+per chat session and caches it. The directory is `AGENTS_DIR` (default
+`agents/`). The team edits a resource over time; the loader validates the
+frontmatter and the five sections on every read.
+
 ## Memos
 
 These memos record our findings
@@ -178,6 +220,11 @@ These memos record our findings
 
 ## Glossary
 
+- **agent**: a language model that can call tools in a loop before it answers.
+  The chat endpoint runs one conversational retrieval agent.
+- **agent resource**: one Markdown document with a YAML frontmatter that holds an
+  agent's durable instructions. It lives in `agents/`, is loaded at runtime, and
+  is never hard-coded. The team improves it over time.
 - **ast vector**: the Qdrant multivector that stores one encoded abstract tree
   per record, with one row per sentence. It backs the `syntax` search index, so
   the storage name is `ast` and the public index name is `syntax`.
@@ -190,6 +237,8 @@ These memos record our findings
 - **content field**: the one short text field that carries the meaning of a
   record, for example the citation text.
 - **corpus**: the full set of records that the project indexes.
+- **cursor**: an opaque token that continues a paginated result list. It hides
+  the position and binds the page to one conversation and one search.
 - **dense vector**: a fixed-length list of numbers that represents the meaning
   of a text. It answers a semantic search.
 - **design token**: a named value, such as a color or a spacing step, defined
@@ -223,6 +272,8 @@ These memos record our findings
   label when the label differs from the property key.
 - **semantic proximity**: a match on the meaning of a text, even with different
   words. The dense vector answers it.
+- **source**: one record that the agent consulted. The user interface shows the
+  sources under the answer.
 - **sparse vector**: a vector with few non-zero values. It represents keywords.
   It answers a syntactic search.
 - **syntactic proximity**: a match on the exact words of a text. The sparse
@@ -237,6 +288,8 @@ These memos record our findings
   run uses. A test builds the test environment from the test data set.
 - **ticket**: one unit of planned work with an ID, a specification, a plan, and
   acceptance criteria. Every ticket lives in `tickets/`.
+- **tool**: a function the model may call. The retrieval agent has two:
+  `searchRecords` and `fetchNextPage`.
 - **vector database**: a database that stores vectors and finds the nearest
   vectors to a query vector.
 - **weighted retrieval**: retrieval that combines normalized index scores with

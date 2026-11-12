@@ -1,19 +1,40 @@
-import { type FormEvent, type FC, useCallback, useEffect, useRef, useState } from "react";
+import { type FC, type FormEvent, useEffect, useRef, useState } from "react";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
 
 import { VStack } from "../layout/VStack";
 import { Heading } from "../base/Heading";
 import { Text } from "../base/Text";
+import { Button } from "../ui/Button";
 import { Panel } from "../ui/Panel";
 import { TextArea } from "../ui/TextArea";
+import { collectSources } from "../../server/agent/sources";
+import type { RetrievalAgentUIMessage } from "../../server/agent/agent";
 import { MessageBubble } from "./MessageBubble";
+import { SourcesPanel } from "./SourcesPanel";
+import { ToolActivity } from "./ToolActivity";
 
 import "./ChatPanel.css";
 
-/** One turn of the conversation, as sent to and returned by the API. */
-type ChatTurn = {
-	role: "user" | "assistant";
-	content: string;
-};
+/** One part of an agent UI message. */
+type AgentMessagePart = RetrievalAgentUIMessage["parts"][number];
+
+/** Test whether a part carries answer text. */
+const isTextPart = (part: AgentMessagePart): part is Extract<AgentMessagePart, { type: "text" }> =>
+	part.type === "text";
+
+/** Test whether a part is one of the two retrieval tool calls. */
+const isToolPart = (
+	part: AgentMessagePart
+): part is Extract<AgentMessagePart, { type: "tool-searchRecords" | "tool-fetchNextPage" }> =>
+	part.type === "tool-searchRecords" || part.type === "tool-fetchNextPage";
+
+/** Read the visible text of one message. */
+const readText = (message: RetrievalAgentUIMessage): string =>
+	message.parts
+		.filter(isTextPart)
+		.map((part) => part.text)
+		.join("");
 
 /** Props of the chat panel. */
 export interface ChatPanelProps {
@@ -25,6 +46,9 @@ export interface ChatPanelProps {
  * Owns the conversation and the in-flight request. The panel fills the height it is given: the
  * message list scrolls, the composer sits in the footer.
  *
+ * The hook reads the UI message stream from `POST /api/chat`. The assistant body is rendered as
+ * Markdown, and the records the agent consulted are shown under the answer.
+ *
  * @example
  * 	<ChatPanel onQuestionAsked={setQuestion} />;
  *
@@ -32,12 +56,14 @@ export interface ChatPanelProps {
  * @returns The scrolling message list and the question field.
  */
 export const ChatPanel: FC<ChatPanelProps> = ({ onQuestionAsked }) => {
-	const [turns, setTurns] = useState<ChatTurn[]>([]);
 	const [draft, setDraft] = useState("");
-	const [streamingAnswer, setStreamingAnswer] = useState("");
-	const [error, setError] = useState("");
-	const [isAnswering, setIsAnswering] = useState(false);
 	const listRef = useRef<HTMLDivElement | null>(null);
+	const { messages, status, error, sendMessage, stop } = useChat<RetrievalAgentUIMessage>({
+		transport: new DefaultChatTransport({ api: "/api/chat" })
+	});
+	const isBusy = status === "submitted" || status === "streaming";
+	const sources = collectSources(messages);
+	const lastMessageId = messages.at(-1)?.id;
 
 	// Keeps the newest text in view while the answer streams in.
 	useEffect(() => {
@@ -46,77 +72,21 @@ export const ChatPanel: FC<ChatPanelProps> = ({ onQuestionAsked }) => {
 		if (list) {
 			list.scrollTop = list.scrollHeight;
 		}
-	}, [turns, streamingAnswer]);
+	}, [messages]);
 
-	const ask = useCallback(async (history: ChatTurn[]) => {
-		setStreamingAnswer("");
-		setError("");
-		setIsAnswering(true);
-
-		try {
-			const response = await fetch("/api/chat", {
-				method: "POST",
-				headers: { "content-type": "application/json" },
-				body: JSON.stringify({
-					messages: history.map(({ role, content }) => ({
-						role,
-						parts: [{ type: "text", text: content }]
-					}))
-				})
-			});
-
-			if (!response.ok || response.body === null) {
-				const detail = (await response.json().catch(() => ({}))) as {
-					error?: string;
-				};
-				throw new Error(detail.error ?? `HTTP ${response.status}`);
-			}
-
-			const reader = response.body.getReader();
-			const decoder = new TextDecoder();
-			let received = "";
-
-			for (;;) {
-				const chunk = await reader.read();
-
-				if (chunk.done) {
-					break;
-				}
-
-				received += decoder.decode(chunk.value, { stream: true });
-				setStreamingAnswer(received);
-			}
-
-			// Close the turn and clear the live buffer so the answer is not
-			// rendered twice.
-			received += decoder.decode();
-			setStreamingAnswer("");
-			setTurns((current) => [...current, { role: "assistant", content: received }]);
-		} catch (cause) {
-			setStreamingAnswer("");
-			setError(cause instanceof Error ? cause.message : "La requête a échoué.");
-		} finally {
-			setIsAnswering(false);
-		}
-	}, []);
-
-	const send = useCallback(() => {
+	/** Submit the trimmed draft as the next question and clear the field. */
+	const send = () => {
 		const question = draft.trim();
 
 		// Ignore empty questions, and re-entry while an answer is streaming.
-		if (question === "" || isAnswering) {
+		if (question === "" || isBusy) {
 			return;
 		}
 
-		const history: ChatTurn[] = [...turns, { role: "user", content: question }];
-
-		setTurns(history);
 		setDraft("");
 		onQuestionAsked?.(question);
-		void ask(history);
-	}, [ask, draft, isAnswering, onQuestionAsked, turns]);
-
-	const isEmpty = turns.length === 0 && streamingAnswer === "";
+		void sendMessage({ text: question });
+	};
 
 	return (
 		<Panel as="section" gap="sm" padding="md" id="chat-panel">
@@ -126,31 +96,45 @@ export const ChatPanel: FC<ChatPanelProps> = ({ onQuestionAsked }) => {
 
 			{/* min-height:0 lets this child shrink and scroll inside the panel. */}
 			<VStack gap="md" id="chat-panel-messages" ref={listRef}>
-				{isEmpty ? (
+				{messages.length === 0 ? (
 					<Text size="sm" tone="muted">
 						Posez une question, par exemple : slogans sur le sucre.
 					</Text>
 				) : (
 					<VStack gap="sm" id="chat-panel-turns">
-						{turns.map((turn, index) => (
-							<MessageBubble
-								// The conversation is append-only, so the index is
-								// the only stable identity available.
-								key={`${turn.role}-${index}`}
-								role={turn.role}
-								text={turn.content}
-							/>
+						{messages.map((message) => (
+							<VStack key={message.id} gap="xs">
+								{(message.role === "user" || message.role === "assistant") &&
+									readText(message) !== "" && (
+										<MessageBubble
+											role={message.role}
+											text={readText(message)}
+											isStreaming={
+												status === "streaming" &&
+												message.id === lastMessageId
+											}
+										/>
+									)}
+								{message.parts
+									.filter(isToolPart)
+									.map((part, index) =>
+										part.state === "input-available" ? (
+											<ToolActivity
+												key={`${message.id}-tool-${index}`}
+												tool={part.type.slice(5)}
+											/>
+										) : null
+									)}
+							</VStack>
 						))}
-						{streamingAnswer !== "" && (
-							<MessageBubble role="assistant" text={streamingAnswer} isStreaming />
-						)}
+						<SourcesPanel sources={sources} />
 					</VStack>
 				)}
 			</VStack>
 
-			{error !== "" && (
+			{error !== undefined && (
 				<Text size="sm" role="alert" className="chat-panel__error" id="chat-panel-error">
-					Erreur : {error}
+					Erreur : {error.message}
 				</Text>
 			)}
 
@@ -158,7 +142,6 @@ export const ChatPanel: FC<ChatPanelProps> = ({ onQuestionAsked }) => {
 				<VStack
 					as="form"
 					gap="sm"
-					id="chat-panel-composer"
 					// Keeps the form usable if Enter is pressed outside the field.
 					onSubmit={(event: FormEvent<HTMLElement>) => {
 						event.preventDefault();
@@ -171,11 +154,16 @@ export const ChatPanel: FC<ChatPanelProps> = ({ onQuestionAsked }) => {
 						onValueChange={setDraft}
 						onSubmit={send}
 						placeholder="Slogans sur le sucre"
-						disabled={isAnswering}
+						disabled={isBusy}
 					/>
 					<Text size="xs" tone="muted" as="span" id="chat-panel-hint">
 						Entrée pour envoyer, Maj+Entrée pour une nouvelle ligne.
 					</Text>
+					{isBusy && (
+						<Button variant="secondary" onClick={stop}>
+							Arrêter
+						</Button>
+					)}
 				</VStack>
 			</VStack>
 		</Panel>

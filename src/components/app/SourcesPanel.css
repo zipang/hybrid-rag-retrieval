@@ -1,0 +1,25 @@
+/* SourcesPanel: the records the agent consulted, under the answer. */
+#sources-panel {
+	/* A source list never crowds the conversation above it. */
+	margin-top: var(--space-sm);
+}
+
+#sources-panel-list {
+	min-width: 0;
+}
+
+.source-item {
+	padding-bottom: var(--space-sm);
+	border-bottom: var(--border-sm) solid var(--color-surface-alt);
+}
+
+.source-item:last-child {
+	border-bottom: 0;
+	padding-bottom: 0;
+}
+
+/* A long slogan breaks rather than widening the panel. */
+.source-item__slogan {
+	min-width: 0;
+	overflow-wrap: anywhere;
+}

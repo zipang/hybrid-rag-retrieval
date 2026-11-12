@@ -5,11 +5,12 @@ import { createEmbedder } from "../lib/embedder";
 import { createIndexStateStore, DEFAULT_INDEX_STATE_PATH } from "../lib/index-state";
 import { createQdrantClient } from "../lib/qdrant";
 import { createWeightedRetriever } from "../lib/retrieval";
-import { createRetriever } from "../lib/slogan-retrieval";
 import { buildSyntaxIndexConfiguration, createSyntaxParser } from "../lib/syntax/config";
 import { encodeTree } from "../lib/syntax/encoder";
+import { createSearchSessionStore } from "./agent/session-store";
+import { createAgentSessionCache, loadAgentResource } from "./agent/resource";
 import { createSlogansHandler } from "./api";
-import { createChatHandler } from "./chat";
+import { DEFAULT_MIN_SCORE, DEFAULT_WEIGHTS, createChatHandler, createChatModel } from "./chat";
 
 const port = Number(process.env.PORT ?? 3000);
 const isDev = process.env.NODE_ENV !== "production";
@@ -23,10 +24,7 @@ const fields = {
 	content: "slogan"
 };
 
-// The legacy fused retriever stays for the chat tool until T0010 migrates the callers.
-const retriever = createRetriever({ embedder, client, bm25, fields });
-
-// The weighted retriever serves `GET /api/slogans` and scores the syntax index.
+// The weighted retriever serves `GET /api/slogans` and the agent's two tools.
 const state = createIndexStateStore(DEFAULT_INDEX_STATE_PATH);
 const syntaxConfiguration = await buildSyntaxIndexConfiguration("coarse");
 const weighted = createWeightedRetriever({
@@ -44,12 +42,37 @@ const weighted = createWeightedRetriever({
 });
 const slogans = createSlogansHandler({ retriever: weighted, fields });
 
-/** Identity that the OpenCode Go gateway expects on every chat request. */
+/** Read `AGENT_MAX_STEPS` as an integer of at least one, or fall back to the default. */
+const readMaxSteps = (raw: string | undefined): number | undefined => {
+	if (raw === undefined || raw.trim() === "") {
+		return undefined;
+	}
+
+	const value = Number(raw);
+
+	return Number.isSafeInteger(value) && value >= 1 ? value : undefined;
+};
+
+/** Identity that the OpenAI-compatible gateway expects on every chat request. */
 const identity = {
 	userAgent: "hybrid-rag-retrieval/1.0",
 	sessionId: crypto.randomUUID()
 };
-const chat = createChatHandler({ retriever, env: process.env, identity });
+const sessions = createSearchSessionStore();
+const agents = createAgentSessionCache(loadAgentResource);
+const chat = createChatHandler({
+	retriever: weighted,
+	sessions,
+	agents,
+	defaultAgentId: process.env.AGENT_ID ?? "default",
+	fields,
+	weights: DEFAULT_WEIGHTS,
+	minScore: DEFAULT_MIN_SCORE,
+	env: process.env,
+	identity,
+	createModel: createChatModel,
+	maxSteps: readMaxSteps(process.env.AGENT_MAX_STEPS)
+});
 
 const server = Bun.serve({
 	port,

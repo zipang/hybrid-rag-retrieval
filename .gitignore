@@ -16,3 +16,9 @@ local_cache/
 # Local parser models are downloaded by scripts/init.sh; see models/README.md
 /models/*
 !/models/README.md
+
+# Agent resources are data. Only the two example agents are committed; every
+# other file under agents/ is local and ignored.
+agents/*
+!agents/default.md
+!agents/citations.md
