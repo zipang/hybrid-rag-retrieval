@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import type { PayloadFilter } from "./qdrant";
 import {
 	CursorExpiredError,
 	CursorMismatchError,
@@ -116,6 +117,46 @@ describe("createResultPageStore", () => {
 				binding: { ...binding, text: "autre" },
 				cursor: first.nextCursor ?? ""
 			})
+		).toThrow(CursorMismatchError);
+	});
+
+	test("treats equal filters with a different key order as the same binding", () => {
+		const { dependencies } = createDeps();
+		const store = createResultPageStore(dependencies);
+		const filters: PayloadFilter = {
+			must: [{ key: "annee", range: { gte: 2004, lte: 2005 } }]
+		};
+		// The same values, with the object keys in a different order.
+		const reordered: PayloadFilter = {
+			must: [{ range: { lte: 2005, gte: 2004 }, key: "annee" }]
+		};
+		const snapshot = store.create(ranking(4), { ...binding, filters });
+
+		const page = store.read({
+			snapshotId: snapshot.id,
+			binding: { ...binding, filters: reordered },
+			pageSize: 2
+		});
+
+		expect(page.records.map((record) => record.id)).toEqual([1, 2]);
+	});
+
+	test("rejects a cursor when the filter value differs", () => {
+		const { dependencies } = createDeps();
+		const store = createResultPageStore(dependencies);
+		const filters: PayloadFilter = {
+			must: [{ key: "annee", range: { gte: 2004, lte: 2005 } }]
+		};
+		const other: PayloadFilter = { must: [{ key: "annee", range: { gte: 2000 } }] };
+		const snapshot = store.create(ranking(4), { ...binding, filters });
+		const first = store.read({
+			snapshotId: snapshot.id,
+			binding: { ...binding, filters },
+			pageSize: 2
+		});
+
+		expect(() =>
+			store.read({ binding: { ...binding, filters: other }, cursor: first.nextCursor ?? "" })
 		).toThrow(CursorMismatchError);
 	});
 

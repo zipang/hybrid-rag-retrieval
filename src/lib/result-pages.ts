@@ -13,6 +13,7 @@
  * snapshot after `ttlMs`. Bounds keep memory finite; they never change which records qualify.
  */
 
+import type { PayloadFilter } from "./qdrant";
 import type { FullIndexWeights, IndexWeights } from "./retrieval-contract";
 import type { ScoredRecord } from "./scoring";
 import { SCORE_TOLERANCE } from "./scoring";
@@ -70,8 +71,8 @@ export type SnapshotBinding = {
 	weights: FullIndexWeights;
 	/** Minimum combined score. */
 	minScore: number;
-	/** Payload filter bounds. */
-	filters?: { yearFrom?: number; yearTo?: number };
+	/** Generic payload filter, exactly as the query carries it. */
+	filters?: PayloadFilter;
 	/** Index generation. */
 	generation: string;
 };
@@ -133,12 +134,27 @@ const defaultDependencies = (): ResultPageDependencies => ({
 	now: () => Date.now()
 });
 
-/** Normalize a filter object for a stable binding key. */
-const normalizeFilters = (filters: SnapshotBinding["filters"]): string => {
-	const from = filters?.yearFrom;
-	const to = filters?.yearTo;
+/**
+ * Serialize a value into a stable JSON string with sorted object keys.
+ *
+ * The binding key must not depend on the insertion order of the filter object, because two equal
+ * filters must produce the same key. Arrays keep their order, because the order of filter
+ * conditions is meaningful to Qdrant.
+ */
+const stableJson = (value: unknown): string => {
+	if (Array.isArray(value)) {
+		return `[${value.map((entry) => stableJson(entry)).join(",")}]`;
+	}
 
-	return `${from ?? ""}:${to ?? ""}`;
+	if (typeof value === "object" && value !== null) {
+		const entries = Object.entries(value as Record<string, unknown>).sort(([left], [right]) =>
+			left < right ? -1 : left > right ? 1 : 0
+		);
+
+		return `{${entries.map(([key, entry]) => `${JSON.stringify(key)}:${stableJson(entry)}`).join(",")}}`;
+	}
+
+	return JSON.stringify(value) ?? "null";
 };
 
 /** Build a stable string key for the query binding. */
@@ -154,7 +170,7 @@ const bindingKey = (binding: SnapshotBinding): string => {
 		binding.text,
 		JSON.stringify(weights),
 		String(minScore),
-		normalizeFilters(binding.filters),
+		stableJson(binding.filters ?? null),
 		binding.generation
 	].join("|");
 };

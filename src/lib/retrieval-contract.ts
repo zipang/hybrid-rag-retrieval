@@ -7,6 +7,8 @@
  * score from one generation never mixes with a score from another.
  */
 
+import type { PayloadFilter } from "./qdrant";
+
 /** The three indexes that a weighted query can select. */
 export type IndexName = "syntax" | "semantic" | "keyword";
 
@@ -22,14 +24,6 @@ export type FullIndexWeights = Record<IndexName, number>;
 /** Finite component scores in `[0, 1]`, one entry per selected index. */
 export type IndexScores = Partial<Record<IndexName, number>>;
 
-/** Filters that select eligible records before qualification. */
-export type RetrievalFilters = {
-	/** Lower bound on the publication year, inclusive. */
-	yearFrom?: number;
-	/** Upper bound on the publication year, inclusive. */
-	yearTo?: number;
-};
-
 /** One query for weighted threshold retrieval. */
 export type WeightedQuery = {
 	/** Query text. Keyword and syntax indexes use it as-is. */
@@ -42,8 +36,13 @@ export type WeightedQuery = {
 	pageSize?: number;
 	/** Opaque continuation token from a previous page. */
 	cursor?: string;
-	/** Payload filters applied before qualification. */
-	filters?: RetrievalFilters;
+	/**
+	 * Generic Qdrant payload filter applied before qualification.
+	 *
+	 * The filter targets the filter fields of a collection. It carries no field name that is
+	 * hard-coded for one dataset.
+	 */
+	filters?: PayloadFilter;
 	/** Index generation that the query targets. */
 	generation?: string;
 };

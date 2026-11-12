@@ -58,6 +58,12 @@ export type QueryHit = {
 	payload: Record<string, unknown>;
 };
 
+/** One scored point with the stored vectors that a query asked for. */
+type QueryHitWithVector = QueryHit & {
+	/** Stored vectors, keyed by vector name, when the query asked for them. */
+	vector?: Record<string, unknown>;
+};
+
 /** A single payload condition. */
 export type FilterCondition =
 	| { key: string; range: { gte?: number; lte?: number } }
@@ -76,6 +82,13 @@ export type IndexScore = {
 	id: number | string;
 	/** Raw score from Qdrant, exactly as returned. */
 	score: number;
+	/**
+	 * Number of rows of the stored vector, when the query asked for it.
+	 *
+	 * Only the ast query sets this. It is the row count of the returned matrix, which is the
+	 * sentence count of the record.
+	 */
+	rows?: number;
 };
 
 /** Result of an exact score query for one identifier batch. */
@@ -148,6 +161,13 @@ export type ExactAstQuery = {
 	filter?: PayloadFilter;
 	/** What to do when an identifier has no ast vector. Defaults to `throw`. */
 	onMissing?: DenseMissingPolicy;
+	/**
+	 * Ask Qdrant for the stored ast matrix, so the transport can report its row count.
+	 *
+	 * The stored `ast` value is a multivector, so its row count is the sentence count of the
+	 * record. The transport reads that count from the returned matrix and never stores it.
+	 */
+	withRows?: boolean;
 };
 
 /** Parameters of a hybrid dense + BM25 query. */
@@ -870,18 +890,31 @@ export const createQdrantClient = (
 			return { scores: [], missing: [] };
 		}
 
-		const result = await send<{ points: QueryHit[] }>(
+		// The body is built by hand, so the documented `with_vectors` key sits beside
+		// `with_payload`. When `withRows` is true, Qdrant returns the stored ast matrix and the
+		// transport reads its row count.
+		const withVectors =
+			query.withRows === true ? `,"with_vectors":[${JSON.stringify(name)}]` : "";
+
+		const result = await send<{ points: QueryHitWithVector[] }>(
 			"POST",
 			`${base}/points/query`,
 			`{"query":${jsonMatrix("query", query.rows)},"using":${JSON.stringify(
 				name
-			)},"filter":${JSON.stringify(withIds(query.filter, query.ids))},"params":{"exact":true},"limit":${query.ids.length},"with_payload":false}`
+			)},"filter":${JSON.stringify(withIds(query.filter, query.ids))},"params":{"exact":true},"limit":${query.ids.length},"with_payload":false${withVectors}}`
 		);
 
-		const scores: IndexScore[] = result.points.map((point) => ({
-			id: point.id,
-			score: point.score
-		}));
+		const scores: IndexScore[] = result.points.map((point) => {
+			const entry: IndexScore = { id: point.id, score: point.score };
+
+			if (query.withRows === true) {
+				const matrix = point.vector?.[name];
+
+				entry.rows = Array.isArray(matrix) ? matrix.length : 0;
+			}
+
+			return entry;
+		});
 		const returned = new Set(scores.map((entry) => entry.id));
 		const missing = query.ids.filter((id) => !returned.has(id));
 

@@ -154,15 +154,14 @@ suite("[T0004] dataset-agnostic transport proof", () => {
 		const retriever = createWeightedRetriever({
 			embedder: { embedDenseQuery: async () => [1, 0, 0, 0] },
 			client,
-			bm25: { language: "french" },
-			filterField: "published"
+			bm25: { language: "french" }
 		});
 
 		const page = await retriever.retrieveWeighted({
 			text: "les fleurs du mal",
 			weights: { semantic: 1 },
 			minScore: 0.5,
-			filters: { yearFrom: 1850 }
+			filters: { must: [{ key: "published", range: { gte: 1850 } }] }
 		});
 
 		expect(page.results.map((hit) => hit.id)).toEqual([1, 2]);
@@ -177,8 +176,7 @@ suite("[T0004] dataset-agnostic transport proof", () => {
 		const retriever = createWeightedRetriever({
 			embedder: { embedDenseQuery: async () => [0, 0, 0, 0] },
 			client,
-			bm25: { language: "french" },
-			filterField: "published"
+			bm25: { language: "french" }
 		});
 
 		const page = await retriever.retrieveWeighted({

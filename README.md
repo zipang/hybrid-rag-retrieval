@@ -148,6 +148,26 @@ tokens in `design-tokens.css` and never writes a colour, radius, or shadow
 literally. See [`src/components/README.md`](src/components/README.md) for the
 rules.
 
+## Retrieval API
+
+`GET /api/slogans` answers one weighted query. The caller gives a search text
+and a weight for each search index. The weights are fractions that sum to one.
+
+| Parameter  | Meaning                                                                              |
+| ---------- | ------------------------------------------------------------------------------------ |
+| `q`        | The search text. It is required.                                                     |
+| `weights`  | A JSON object with one fraction per selected index: `syntax`, `semantic`, `keyword`. |
+| `minScore` | The lowest combined score a record must reach, from `0` to `1`.                      |
+| `pageSize` | The number of records in one page. Optional.                                         |
+| `cursor`   | The token that continues a previous page. Optional.                                  |
+
+A caller that wants one index sets its weight to `1` and leaves the others out.
+A caller that wants all three sets three weights that sum to `1`. The response
+holds the records, their combined score, their per-index scores, the typed
+slogan fields, and the scoring metadata. It holds `nextCursor` while more
+records remain. The obsolete parameters `topK`, `mode`, `yearFrom`, and `yearTo`
+are rejected with HTTP 400.
+
 ## Memos
 
 These memos record our findings

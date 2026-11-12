@@ -1213,6 +1213,105 @@ describe("ast vector storage", () => {
 			});
 			expect(calls).toHaveLength(0);
 		});
+
+		test("asks for the stored ast matrix when withRows is true", async () => {
+			const { client, calls } = createClientFor(AST_SCHEMA, () =>
+				jsonResponse({ result: { points: [{ id: 1, score: 2.0 }] } })
+			);
+
+			await client.queryAstExact({
+				rows: [
+					[1, 0],
+					[0, 1]
+				],
+				ids: [1],
+				withRows: true,
+				onMissing: "skip"
+			});
+
+			expect(calls[0]?.body).toEqual({
+				query: [
+					[1, 0],
+					[0, 1]
+				],
+				using: "ast",
+				filter: { must: [{ has_id: [1] }] },
+				params: { exact: true },
+				limit: 1,
+				with_payload: false,
+				with_vectors: ["ast"]
+			});
+		});
+
+		test("reports the stored matrix row count per record when withRows is true", async () => {
+			const { client } = createClientFor(AST_SCHEMA, () =>
+				jsonResponse({
+					result: {
+						points: [
+							{
+								id: 1,
+								score: 2.0,
+								vector: {
+									ast: [
+										[1, 0],
+										[0, 1]
+									]
+								}
+							},
+							{ id: 5, score: 1.0, vector: { ast: [[1, 0]] } }
+						]
+					}
+				})
+			);
+
+			const result = await client.queryAstExact({
+				rows: [
+					[1, 0],
+					[0, 1]
+				],
+				ids: [1, 5],
+				withRows: true,
+				onMissing: "skip"
+			});
+
+			expect(result.scores).toEqual([
+				{ id: 1, score: 2.0, rows: 2 },
+				{ id: 5, score: 1.0, rows: 1 }
+			]);
+		});
+
+		test("leaves the request body and the scores unchanged when withRows is false", async () => {
+			const { client, calls } = createClientFor(AST_SCHEMA, () =>
+				jsonResponse({
+					result: {
+						points: [
+							{
+								id: 1,
+								score: 2.0,
+								vector: {
+									ast: [
+										[1, 0],
+										[0, 1]
+									]
+								}
+							}
+						]
+					}
+				})
+			);
+
+			const result = await client.queryAstExact({
+				rows: [
+					[1, 0],
+					[0, 1]
+				],
+				ids: [1],
+				onMissing: "skip"
+			});
+
+			expect(calls[0]?.body).not.toHaveProperty("with_vectors");
+			expect(result.scores).toEqual([{ id: 1, score: 2.0 }]);
+		});
 	});
 });
 
