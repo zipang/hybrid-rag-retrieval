@@ -78,9 +78,9 @@ A ticket moves forward one folder at a time. A ticket returns to
 
 ### Review
 
-| ID                                                      | Title                                        | Depends on | Blocks       |
-| ------------------------------------------------------- | -------------------------------------------- | ---------- | ------------ |
-| [T0008](review/T0008-conversational-retrieval-agent.md) | Conversational retrieval agent on the AI SDK | T0009      | T0010, T0011 |
+| ID  | Title                    | Depends on | Blocks |
+| --- | ------------------------ | ---------- | ------ |
+| —   | No ticket awaits review. | —          | —      |
 
 ### Done
 
@@ -92,7 +92,9 @@ A ticket moves forward one folder at a time. A ticket returns to
 | [T0004](done/T0004-french-syntax-weighted-retrieval/) | French syntax index and weighted retrieval           | UDPipe parser, coarse encoder, `ast` multivector, syntax backfill, and weighted semantic+keyword retrieval with pagination. Closed early; the remainder moved to T0009 and T0010. |
 | [T0006](done/T0006-resumable-dataset-import/)         | Resumable dataset import                             | Dataset-agnostic, non-destructive, resumable dense import                                                                                                                         |
 | [T0007](done/T0007-upgrade-local-qdrant-1-20/)        | Upgrade the development Qdrant to 1.20.0             | Pinned 1.20.0 install, verified in-place upgrade, baseline harness                                                                                                                |
+| [T0008](done/T0008-conversational-retrieval-agent.md) | Conversational retrieval agent on the AI SDK         | Agent as a Markdown resource, two query tools, per-session cache, Markdown answer and source list, and the `POST /api/chat` UI message stream                                     |
 | [T0009](done/T0009-weighted-retrieval-api.md)         | Weighted multi-vector retrieval API and HTTP surface | Uniform weighted query over `syntax`/`semantic`/`keyword`, generic `PayloadFilter`, cursor pagination, and the weighted `GET /api/slogans` surface                                |
+| [T0012](done/T0012-bound-weighted-retrieval.md)       | Bound the weighted retrieval                         | Bounded per-index Query API search with a candidate `limit` (default 50); no full-collection scan                                                                                 |
 
 ## Delivery order
 
@@ -104,7 +106,9 @@ T0002 dataset extraction
        └→ T0003 React UI and Design System
             └→ T0004 syntax index and weighted retrieval (closed early)
                  ├→ T0009 weighted multi-vector retrieval API and HTTP surface
+                 │    ├→ T0012 bound the weighted retrieval
                  │    └→ T0008 conversational retrieval agent
+                 │         ├→ T0011 agent resource API server
                  │         └→ T0010 migrate the callers, evaluate, and document
                  └→ T0005 copula-versus-verb investigation
 
@@ -129,14 +133,19 @@ filter generic, and published the weighted HTTP surface. A caller selects any
 subset of the three indexes by weight; to query one index, its weight is `1` and
 the others are `0`. `T0008` and `T0010` no longer wait for it.
 
-`T0008` is the conversational agent. It builds its tools on the weighted API that
-`T0009` delivered, so it does not start on the obsolete `topK` path. It also owns
-the **agent resource** layer: an agent is a Markdown document with a YAML
-frontmatter under `agents/`, loaded at runtime and never hard-coded. `T0011`
-serves those resources over HTTP and waits for `T0008`.
+`T0008` is closed. It is the conversational agent. It builds its tools on the
+weighted API that `T0009` delivered, so it does not start on the obsolete `topK`
+path. It also owns the **agent resource** layer: an agent is a Markdown document
+with a YAML frontmatter under `agents/`, loaded at runtime and never hard-coded.
+`T0011` serves those resources over HTTP and waits for `T0008`.
 
 `T0005` is independent now. It measures the `coarse` encoder that `T0004`
 delivered, so it no longer waits for a retrieval ticket.
+
+`T0012` is closed. The exhaustive scroll that `T0009` delivered times out on a
+large collection, so `T0012` replaced it with a bounded per-index Query API
+search and a candidate `limit` (default `50`). It blocks `T0010`, which migrates
+the callers onto the bounded path.
 
 ## Ticket rules
 
