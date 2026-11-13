@@ -3,7 +3,8 @@ import { simulateReadableStream } from "ai";
 import { MockLanguageModelV4 } from "ai/test";
 import type { WeightedHit, WeightedQuery, WeightedResultPage } from "../lib/retrieval-contract";
 import { createAgentSessionCache, type AgentResource } from "./agent/resource";
-import { createSearchSessionStore } from "./agent/session-store";
+import { createSearchSessionStore, type CachedSearch } from "./agent/session-store";
+import { fetchNextPage } from "./agent/tools";
 import { createChatHandler, DEFAULT_MIN_SCORE, DEFAULT_WEIGHTS } from "./chat";
 import type { SloganFields } from "./api";
 
@@ -13,6 +14,13 @@ const FIELDS: SloganFields = {
 	brand: "marque",
 	campaign: "campagne",
 	content: "slogan"
+};
+
+/** A query binding that the session store accepts. */
+const BINDING: CachedSearch["binding"] = {
+	text: "sucre",
+	weights: DEFAULT_WEIGHTS,
+	minScore: DEFAULT_MIN_SCORE
 };
 
 /** One weighted hit with the slogan payload. */
@@ -101,6 +109,24 @@ const toolThenTextModel = () =>
 		]
 	});
 
+/**
+ * A model whose stream opens and then stays open.
+ *
+ * It emits text but no `finish` chunk and never closes, so the turn can end only through an abort.
+ * The abort test uses it to prove that the end-of-stream cleanup runs on abort, not on completion.
+ */
+const openStreamModel = () =>
+	new MockLanguageModelV4({
+		doStream: async () => ({
+			stream: new ReadableStream({
+				start(controller) {
+					controller.enqueue({ type: "text-start", id: "t1" });
+					controller.enqueue({ type: "text-delta", id: "t1", delta: "Bonjour" });
+				}
+			})
+		})
+	});
+
 /** Build the request body for one question. */
 const body = (id?: string, agentId?: string) =>
 	JSON.stringify({
@@ -118,9 +144,16 @@ const createTestHandler = (
 	options: { maxSteps?: number; defaultAgentId?: string } = {}
 ) => {
 	const queries: WeightedQuery[] = [];
-	const saved: Array<{ sessionId: string; search: unknown }> = [];
+	const saved: Array<{ sessionId: string; search: unknown; token: string }> = [];
 	const loaded: string[] = [];
 	const sessions = createSearchSessionStore();
+	const retriever = {
+		retrieveWeighted: async (query: WeightedQuery) => {
+			queries.push(query);
+
+			return PAGE;
+		}
+	};
 	const loadAgent = (id: string): AgentResource => {
 		loaded.push(id);
 
@@ -130,21 +163,17 @@ const createTestHandler = (
 	let created = 0;
 
 	const handler = createChatHandler({
-		retriever: {
-			retrieveWeighted: async (query) => {
-				queries.push(query);
-
-				return PAGE;
-			}
-		},
+		retriever,
 		sessions: {
 			save: (sessionId, search) => {
-				saved.push({ sessionId, search });
+				const token = sessions.save(sessionId, search);
+				saved.push({ sessionId, search, token });
 
-				return sessions.save(sessionId, search);
+				return token;
 			},
 			read: sessions.read,
-			update: sessions.update
+			update: sessions.update,
+			clear: sessions.clear
 		},
 		agents,
 		defaultAgentId: "default",
@@ -161,7 +190,7 @@ const createTestHandler = (
 		...options
 	});
 
-	return { handler, queries, saved, loaded, getCreated: () => created };
+	return { handler, queries, saved, loaded, sessions, retriever, getCreated: () => created };
 };
 
 /** Send one POST request to the handler. */
@@ -173,6 +202,18 @@ const post = (handler: (request: Request) => Promise<Response>, id?: string, age
 			body: body(id, agentId)
 		})
 	);
+
+/**
+ * Yield the event loop until `isDone` returns true, or the attempt bound is reached.
+ *
+ * The stream teardown that runs `onEnd` settles after a few event-loop turns, so a test waits for
+ * the observable state instead of guessing a fixed delay.
+ */
+const until = async (isDone: () => boolean): Promise<void> => {
+	for (let attempt = 0; attempt < 50 && !isDone(); attempt += 1) {
+		await new Promise((resolve) => setTimeout(resolve, 0));
+	}
+};
 
 describe("createChatHandler", () => {
 	test("answers a preflight request with 204 and CORS headers", async () => {
@@ -321,5 +362,74 @@ describe("createChatHandler", () => {
 		await (await post(handler, "conv-1", "citations")).text();
 
 		expect(JSON.stringify(model.doStreamCalls)).toContain("instructions-citations");
+	});
+
+	test("clears the session store when a turn completes", async () => {
+		const { handler, saved, sessions, retriever } = createTestHandler(toolThenTextModel());
+
+		await (await post(handler, "conv-1")).text();
+
+		const token = saved[0]?.token;
+		expect(token).toBeDefined();
+
+		const result = await fetchNextPage(
+			{
+				retriever,
+				sessions,
+				fields: FIELDS,
+				weights: DEFAULT_WEIGHTS,
+				minScore: DEFAULT_MIN_SCORE,
+				sessionId: "conv-1"
+			},
+			{ cursor: token ?? "" }
+		);
+
+		expect(result).toEqual({ error: "the cursor is unknown or has expired" });
+	});
+
+	test("clears only the current session at the end of a turn", async () => {
+		const { handler, sessions } = createTestHandler(textModel());
+		const other = sessions.save("conv-2", { binding: BINDING, pageSize: 5, cursor: "c" });
+
+		await (await post(handler, "conv-1")).text();
+
+		expect(sessions.read("conv-2", other)).toBeDefined();
+	});
+
+	test("clears the session store when the client aborts the stream", async () => {
+		const { handler, sessions } = createTestHandler(openStreamModel());
+		const token = sessions.save("conv-1", { binding: BINDING, pageSize: 5, cursor: "c" });
+		const controller = new AbortController();
+
+		const response = await handler(
+			new Request("http://localhost/api/chat", {
+				method: "POST",
+				headers: { "content-type": "application/json" },
+				body: body("conv-1"),
+				signal: controller.signal
+			})
+		);
+		const reader = response.body?.getReader();
+
+		// Read one chunk so the turn is streaming, then abort. The open stream never finishes, so
+		// only the abort can end the turn and run the end-of-stream cleanup.
+		await reader?.read();
+		controller.abort();
+		await until(() => sessions.read("conv-1", token) === undefined);
+
+		expect(sessions.read("conv-1", token)).toBeUndefined();
+	});
+
+	test("clears the session store when the client cancels the stream", async () => {
+		const { handler, sessions } = createTestHandler(textModel());
+		const token = sessions.save("conv-1", { binding: BINDING, pageSize: 5, cursor: "c" });
+
+		const response = await post(handler, "conv-1");
+		const reader = response.body?.getReader();
+
+		await reader?.cancel();
+		await until(() => sessions.read("conv-1", token) === undefined);
+
+		expect(sessions.read("conv-1", token)).toBeUndefined();
 	});
 });

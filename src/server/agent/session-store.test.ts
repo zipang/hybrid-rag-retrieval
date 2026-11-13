@@ -120,6 +120,38 @@ describe("createSearchSessionStore", () => {
 	});
 });
 
+describe("createSearchSessionStore clear", () => {
+	test("drops every search owned by the session", () => {
+		const { store } = createTestStore();
+		const first = store.save("s1", { binding: BINDING, pageSize: 5, cursor: "a" });
+		const second = store.save("s1", { binding: BINDING, pageSize: 5, cursor: "b" });
+
+		store.clear("s1");
+
+		expect(store.read("s1", first)).toBeUndefined();
+		expect(store.read("s1", second)).toBeUndefined();
+	});
+
+	test("keeps a search owned by another session", () => {
+		const { store } = createTestStore();
+		const mine = store.save("s1", { binding: BINDING, pageSize: 5 });
+		const other = store.save("s2", { binding: BINDING, pageSize: 5 });
+
+		store.clear("s1");
+
+		expect(store.read("s1", mine)).toBeUndefined();
+		expect(store.read("s2", other)).toBeDefined();
+	});
+
+	test("is a no-op for a session that saved nothing", () => {
+		const { store } = createTestStore();
+		const other = store.save("s2", { binding: BINDING, pageSize: 5 });
+
+		expect(() => store.clear("s1")).not.toThrow();
+		expect(store.read("s2", other)).toBeDefined();
+	});
+});
+
 describe("createSearchSessionStore default token", () => {
 	test("is an opaque base64url string that never contains a colon or whitespace", () => {
 		const store = createSearchSessionStore();

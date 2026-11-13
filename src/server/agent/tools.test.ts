@@ -63,7 +63,8 @@ const createFakeSessions = () => {
 		},
 		update: (sessionId, token, cursor) => {
 			updated.push({ sessionId, token, cursor });
-		}
+		},
+		clear: () => {}
 	};
 
 	return { sessions, saved, updated };
@@ -243,7 +244,8 @@ describe("fetchNextPage", () => {
 			sessions: {
 				save: () => "unused",
 				read: () => cached,
-				update: () => {}
+				update: () => {},
+				clear: () => {}
 			}
 		});
 
@@ -266,7 +268,8 @@ describe("fetchNextPage", () => {
 			sessions: {
 				save: () => "unused",
 				read: () => cached,
-				update: () => {}
+				update: () => {},
+				clear: () => {}
 			}
 		});
 
@@ -280,7 +283,8 @@ describe("fetchNextPage", () => {
 			sessions: {
 				save: () => "unused",
 				read: () => cached,
-				update: (sessionId, token, cursor) => updated.push({ sessionId, token, cursor })
+				update: (sessionId, token, cursor) => updated.push({ sessionId, token, cursor }),
+				clear: () => {}
 			}
 		});
 
@@ -309,7 +313,8 @@ describe("fetchNextPage", () => {
 			sessions: {
 				save: () => "unused",
 				read: () => cached,
-				update: (_sessionId, token, cursor) => updated.push({ token, cursor })
+				update: (_sessionId, token, cursor) => updated.push({ token, cursor }),
+				clear: () => {}
 			}
 		});
 
@@ -336,7 +341,8 @@ describe("fetchNextPage", () => {
 			sessions: {
 				save: () => "unused",
 				read: () => undefined,
-				update: () => {}
+				update: () => {},
+				clear: () => {}
 			}
 		});
 
@@ -354,7 +360,8 @@ describe("fetchNextPage", () => {
 				sessions: {
 					save: () => "unused",
 					read: () => cached,
-					update: () => {}
+					update: () => {},
+					clear: () => {}
 				}
 			}
 		);
@@ -369,7 +376,8 @@ describe("fetchNextPage", () => {
 			sessions: {
 				save: () => "unused",
 				read: () => ({ ...cached, cursor: undefined }),
-				update: () => {}
+				update: () => {},
+				clear: () => {}
 			}
 		});
 

@@ -29,6 +29,8 @@ export type SearchSessionStore = {
 	read: (sessionId: string, token: string) => CachedSearch | undefined;
 	/** Replace the cached retrieval cursor after a page is read. */
 	update: (sessionId: string, token: string, cursor: string | undefined) => void;
+	/** Drop every cached search owned by the session. */
+	clear: (sessionId: string) => void;
 };
 
 /** Dependencies of the session store. Tests inject a clock and a token source. */
@@ -161,5 +163,14 @@ export const createSearchSessionStore = (
 		entry.lastAccessAt = dependencies.now();
 	};
 
-	return { save, read, update };
+	/** Drop every cached search owned by the session. */
+	const clear = (sessionId: string): void => {
+		for (const [token, entry] of entries) {
+			if (entry.sessionId === sessionId) {
+				entries.delete(token);
+			}
+		}
+	};
+
+	return { save, read, update, clear };
 };

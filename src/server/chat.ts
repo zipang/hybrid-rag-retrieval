@@ -7,7 +7,9 @@
  * message stream, which carries the answer text and the tool parts that hold the sources.
  *
  * The handler never calls `convertToModelMessages`: the agent and `createAgentUIStreamResponse`
- * validate the UI messages and convert them.
+ * validate the UI messages and convert them. When the stream ends, whether it completed, aborted,
+ * or was cancelled, the handler drops the conversation's cached searches, so a binding never
+ * outlives its turn.
  */
 
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
@@ -174,6 +176,9 @@ export const createChatHandler = (dependencies: ChatDependencies) => {
 				agent,
 				uiMessages: body.messages,
 				abortSignal: request.signal,
+				onEnd: () => {
+					dependencies.sessions.clear(sessionId);
+				},
 				onError: (error) => {
 					console.error("[api/chat] stream error:", error);
 
