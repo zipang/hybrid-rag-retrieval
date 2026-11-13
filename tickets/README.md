@@ -84,17 +84,18 @@ A ticket moves forward one folder at a time. A ticket returns to
 
 ### Done
 
-| ID                                                    | Title                                                | Delivered                                                                                                                                                                         |
-| ----------------------------------------------------- | ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [T0001](done/T0001-hybrid-slogan-retrieval/)          | Hybrid slogan retrieval and chat demo                | Qdrant hybrid index, retrieval API, and streaming chat                                                                                                                            |
-| [T0002](done/T0002-schema-driven-dataset-extraction/) | Schema-driven dataset extraction                     | Record models, dataset configuration, and generic readers                                                                                                                         |
-| [T0003](done/T0003-react-ui-design-system/)           | React UI on an Applied Design System                 | Design System, component kit, and the rebuilt chat surface                                                                                                                        |
-| [T0004](done/T0004-french-syntax-weighted-retrieval/) | French syntax index and weighted retrieval           | UDPipe parser, coarse encoder, `ast` multivector, syntax backfill, and weighted semantic+keyword retrieval with pagination. Closed early; the remainder moved to T0009 and T0010. |
-| [T0006](done/T0006-resumable-dataset-import/)         | Resumable dataset import                             | Dataset-agnostic, non-destructive, resumable dense import                                                                                                                         |
-| [T0007](done/T0007-upgrade-local-qdrant-1-20/)        | Upgrade the development Qdrant to 1.20.0             | Pinned 1.20.0 install, verified in-place upgrade, baseline harness                                                                                                                |
-| [T0008](done/T0008-conversational-retrieval-agent.md) | Conversational retrieval agent on the AI SDK         | Agent as a Markdown resource, two query tools, per-session cache, Markdown answer and source list, and the `POST /api/chat` UI message stream                                     |
-| [T0009](done/T0009-weighted-retrieval-api.md)         | Weighted multi-vector retrieval API and HTTP surface | Uniform weighted query over `syntax`/`semantic`/`keyword`, generic `PayloadFilter`, cursor pagination, and the weighted `GET /api/slogans` surface                                |
-| [T0012](done/T0012-bound-weighted-retrieval.md)       | Bound the weighted retrieval                         | Bounded per-index Query API search with a candidate `limit` (default 50); no full-collection scan                                                                                 |
+| ID                                                    | Title                                                | Delivered                                                                                                                                                                                                                                     |
+| ----------------------------------------------------- | ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [T0001](done/T0001-hybrid-slogan-retrieval/)          | Hybrid slogan retrieval and chat demo                | Qdrant hybrid index, retrieval API, and streaming chat                                                                                                                                                                                        |
+| [T0002](done/T0002-schema-driven-dataset-extraction/) | Schema-driven dataset extraction                     | Record models, dataset configuration, and generic readers                                                                                                                                                                                     |
+| [T0003](done/T0003-react-ui-design-system/)           | React UI on an Applied Design System                 | Design System, component kit, and the rebuilt chat surface                                                                                                                                                                                    |
+| [T0004](done/T0004-french-syntax-weighted-retrieval/) | French syntax index and weighted retrieval           | UDPipe parser, coarse encoder, `ast` multivector, syntax backfill, and weighted semantic+keyword retrieval with pagination. Closed early; the remainder moved to T0009 and T0010.                                                             |
+| [T0006](done/T0006-resumable-dataset-import/)         | Resumable dataset import                             | Dataset-agnostic, non-destructive, resumable dense import                                                                                                                                                                                     |
+| [T0007](done/T0007-upgrade-local-qdrant-1-20/)        | Upgrade the development Qdrant to 1.20.0             | Pinned 1.20.0 install, verified in-place upgrade, baseline harness                                                                                                                                                                            |
+| [T0008](done/T0008-conversational-retrieval-agent.md) | Conversational retrieval agent on the AI SDK         | Agent as a Markdown resource, two query tools, per-session cache, Markdown answer and source list, and the `POST /api/chat` UI message stream                                                                                                 |
+| [T0009](done/T0009-weighted-retrieval-api.md)         | Weighted multi-vector retrieval API and HTTP surface | Uniform weighted query over `syntax`/`semantic`/`keyword`, generic `PayloadFilter`, cursor pagination, and the weighted `GET /api/slogans` surface                                                                                            |
+| [T0012](done/T0012-bound-weighted-retrieval.md)       | Bound the weighted retrieval                         | Bounded per-index Query API search with a candidate `limit` (default 50); no full-collection scan                                                                                                                                             |
+| [T0013](done/T0013-fix-chat-interface-defects.md)     | Fix the chat interface defects                       | Removed the dead right column, moved the real agent sources there grouped by query, added a "Nouvelle session" button, showed the French turn state in the assistant bubble, and dropped a session's cached searches at the end of every turn |
 
 ## Delivery order
 
@@ -146,6 +147,12 @@ delivered, so it no longer waits for a retrieval ticket.
 large collection, so `T0012` replaced it with a bounded per-index Query API
 search and a candidate `limit` (default `50`). It blocks `T0010`, which migrates
 the callers onto the bounded path.
+
+`T0013` is closed. It cleans the chat interface after the first proof of concept:
+it removes the dead right column and its obsolete `topK` request, moves the real
+agent sources there grouped by query, adds a "Nouvelle session" button, shows the
+French turn state in the assistant bubble, and drops a session's cached searches
+at the end of every turn. It depends on no other ticket.
 
 ## Ticket rules
 
