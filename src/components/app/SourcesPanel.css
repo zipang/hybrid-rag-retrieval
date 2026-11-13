@@ -1,11 +1,25 @@
-/* SourcesPanel: the records the agent consulted, under the answer. */
+/* SourcesPanel: the searches the agent ran in the current turn. Every rule is
+   scoped under the panel id or is a shared row class. */
 #sources-panel {
-	/* A source list never crowds the conversation above it. */
-	margin-top: var(--space-sm);
+	/* Fill the grid row and scroll on its own, like the conversation. */
+	height: 100%;
+	min-height: 0;
+	overflow-y: auto;
 }
 
 #sources-panel-list {
 	min-width: 0;
+}
+
+#sources-panel-empty {
+	overflow-wrap: anywhere;
+}
+
+/* One query and the sources it returned, set off by a left rule. */
+.source-group {
+	min-width: 0;
+	border-left: var(--border-sm) solid var(--color-surface-dark);
+	padding-left: var(--space-sm);
 }
 
 .source-item {

@@ -1,5 +1,5 @@
 /* ChatPanel: the conversation region. Every rule is scoped under the panel id
-   so nothing here can reach the retrieval panel or the page. */
+   so nothing here can reach the page. */
 #chat-panel {
 	/* Fill the grid row and never grow past the viewport. */
 	height: 100%;
@@ -11,7 +11,7 @@
 	flex: 1;
 	min-height: 0;
 	min-width: 0;
-	/* The only scrolling area on the page. */
+	/* The conversation scrolls on its own, as the source list does. */
 	overflow-y: auto;
 }
 

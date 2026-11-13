@@ -27,7 +27,7 @@ export interface PanelProps {
  * separates it, never a shadow.
  *
  * @example
- * 	<Panel as="aside" id="retrieval-panel" gap="sm">
+ * 	<Panel as="aside" id="sources-panel" gap="sm">
  * 		Slogans
  * 	</Panel>;
  *

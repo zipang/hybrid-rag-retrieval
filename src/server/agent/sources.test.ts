@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import type { UIMessage } from "ai";
 import type { WeightedHit } from "../../lib/retrieval-contract";
 import type { SloganFields } from "../api";
-import { type AgentSource, collectSources, toAgentSource } from "./sources";
+import { type AgentSource, collectTurnActivity, toAgentSource } from "./sources";
 
 /** Payload field names used by the mapping under test. */
 const FIELDS: SloganFields = {
@@ -23,20 +23,20 @@ const source = (id: number | string, score: number): AgentSource => ({
 });
 
 /**
- * Build an assistant UI message from parts.
+ * Build a UI message with the given role from parts.
  *
  * The cast injects the exact part shapes that the runtime produces; the test asserts the pure
  * collector, not the SDK types.
  */
-const message = (parts: unknown[]): UIMessage =>
-	({ id: "m1", role: "assistant", parts }) as unknown as UIMessage;
+const message = (role: "user" | "assistant", parts: unknown[]): UIMessage =>
+	({ id: `${role}-1`, role, parts }) as unknown as UIMessage;
 
 /** Build one `output-available` tool part. */
-const outputPart = (tool: string, output: unknown) => ({
+const outputPart = (tool: string, output: unknown, input: unknown = {}) => ({
 	type: `tool-${tool}`,
 	state: "output-available",
 	toolCallId: "call-1",
-	input: {},
+	input,
 	output
 });
 
@@ -84,76 +84,107 @@ describe("toAgentSource", () => {
 	});
 });
 
-describe("collectSources", () => {
-	test("collects the results of both tools", () => {
+describe("collectTurnActivity", () => {
+	test("reads only the parts after the last user message", () => {
 		const messages = [
-			message([
-				outputPart("searchRecords", { results: [source(1, 0.9)], hasMore: true }),
-				outputPart("fetchNextPage", { results: [source(2, 0.4)], hasMore: false })
+			message("assistant", [
+				outputPart("searchRecords", { results: [source(1, 0.9)] }, { query: "ancien" })
+			]),
+			message("user", [{ type: "text", text: "sucre" }]),
+			message("assistant", [
+				outputPart("searchRecords", { results: [source(2, 0.5)] }, { query: "sucre" })
 			])
 		];
 
-		expect(collectSources(messages).map((entry) => entry.id)).toEqual([1, 2]);
+		expect(collectTurnActivity(messages)).toEqual([
+			{ tool: "searchRecords", query: "sucre", sources: [source(2, 0.5)] }
+		]);
 	});
 
-	test("deduplicates by id and keeps the highest score", () => {
+	test("returns one entry per tool call in message order", () => {
 		const messages = [
-			message([
-				outputPart("searchRecords", { results: [source(1, 0.3)], hasMore: false }),
-				outputPart("fetchNextPage", { results: [source(1, 0.8)], hasMore: false })
+			message("user", [{ type: "text", text: "sucre" }]),
+			message("assistant", [
+				outputPart("searchRecords", { results: [source(1, 0.9)] }, { query: "sucre" }),
+				outputPart("fetchNextPage", { results: [source(2, 0.4)] }, { cursor: "c" })
 			])
 		];
 
-		expect(collectSources(messages)).toEqual([{ ...source(1, 0.8) }]);
+		expect(collectTurnActivity(messages)).toEqual([
+			{ tool: "searchRecords", query: "sucre", sources: [source(1, 0.9)] },
+			{ tool: "fetchNextPage", query: "", sources: [source(2, 0.4)] }
+		]);
 	});
 
-	test("orders by descending score then ascending id", () => {
+	test("trims the searchRecords query and defaults a missing input to empty", () => {
 		const messages = [
-			message([
-				outputPart("searchRecords", {
-					results: [source(3, 0.5), source(1, 0.9), source(2, 0.5), source(10, 0.5)],
-					hasMore: false
-				})
+			message("user", [{ type: "text", text: "q" }]),
+			message("assistant", [
+				outputPart("searchRecords", { results: [source(1, 0.9)] }, { query: "  sucre  " }),
+				outputPart("searchRecords", { results: [source(2, 0.5)] }, { query: 42 })
 			])
 		];
 
-		expect(collectSources(messages).map((entry) => entry.id)).toEqual([1, 2, 3, 10]);
+		expect(collectTurnActivity(messages).map((entry) => entry.query)).toEqual(["sucre", ""]);
 	});
 
-	test("ignores text parts and unknown part types", () => {
+	test("labels a fetchNextPage call with an empty query", () => {
 		const messages = [
-			message([
-				{ type: "text", text: "Bonjour" },
-				{ type: "step-start" },
-				{
-					type: "tool-other",
-					state: "output-available",
-					output: { results: [source(9, 1)] }
-				}
+			message("user", [{ type: "text", text: "q" }]),
+			message("assistant", [
+				outputPart("fetchNextPage", { results: [source(1, 0.9)] }, { cursor: "c" })
 			])
 		];
 
-		expect(collectSources(messages)).toEqual([]);
+		expect(collectTurnActivity(messages)[0]?.query).toBe("");
 	});
 
-	test("ignores a tool part that has not produced an output", () => {
+	test("keeps the per-call source order without deduplicating", () => {
 		const messages = [
-			message([
-				{ type: "tool-searchRecords", state: "input-available", input: { query: "sucre" } },
-				{ type: "tool-fetchNextPage", state: "output-error", errorText: "boom" }
+			message("user", [{ type: "text", text: "q" }]),
+			message("assistant", [
+				outputPart("searchRecords", { results: [source(1, 0.9)] }, { query: "a" }),
+				outputPart("fetchNextPage", { results: [source(1, 0.2)] }, { cursor: "c" })
 			])
 		];
 
-		expect(collectSources(messages)).toEqual([]);
+		expect(collectTurnActivity(messages)).toEqual([
+			{ tool: "searchRecords", query: "a", sources: [source(1, 0.9)] },
+			{ tool: "fetchNextPage", query: "", sources: [source(1, 0.2)] }
+		]);
 	});
 
-	test("ignores an error output", () => {
-		const messages = [message([outputPart("searchRecords", { error: "index unavailable" })])];
+	test("skips an error output", () => {
+		const messages = [
+			message("user", [{ type: "text", text: "q" }]),
+			message("assistant", [
+				outputPart("searchRecords", { error: "index unavailable" }, { query: "sucre" })
+			])
+		];
 
-		expect(collectSources(messages)).toEqual([]);
+		expect(collectTurnActivity(messages)).toEqual([]);
+	});
+
+	test("returns an empty list without a user message", () => {
+		const messages = [
+			message("assistant", [
+				outputPart("searchRecords", { results: [source(1, 0.9)] }, { query: "sucre" })
+			])
+		];
+
+		expect(collectTurnActivity(messages)).toEqual([]);
+	});
+
+	test("returns an empty list when no tool part follows the user message", () => {
+		const messages = [
+			message("user", [{ type: "text", text: "q" }]),
+			message("assistant", [{ type: "text", text: "answer" }])
+		];
+
+		expect(collectTurnActivity(messages)).toEqual([]);
 	});
 
 	test("returns an empty list for no messages", () => {
-		expect(collectSources([])).toEqual([]);
+		expect(collectTurnActivity([])).toEqual([]);
 	});
 });

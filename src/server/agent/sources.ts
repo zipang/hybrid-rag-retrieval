@@ -2,8 +2,9 @@
  * Agent sources: the records the conversational retrieval agent consulted.
  *
  * One shape serves two consumers. The tools return an {@link AgentSource} to the model, and the
- * browser renders the same shape under the answer. The collector reads the UI message stream on the
- * client side and is pure, so a test proves it without a browser.
+ * sources panel renders the same shape grouped by the tool call that returned it. The collector
+ * reads the UI message stream on the client side and is pure, so a test proves it without a
+ * browser.
  */
 
 import type { UIMessage } from "ai";
@@ -52,26 +53,17 @@ export const toAgentSource = (hit: WeightedHit, fields: SloganFields): AgentSour
 	score: hit.score
 });
 
-/** Compare two record identifiers in ascending order. */
-const compareId = (left: number | string, right: number | string): number => {
-	if (typeof left === "number" && typeof right === "number") {
-		return left - right;
-	}
-
-	return String(left).localeCompare(String(right), undefined, { numeric: true });
-};
-
 /**
  * Read a UI message part as the shape that carries agent sources.
  *
  * The UI message part union is generic, so the two tool part types are read through a minimal
  * structural type. The runtime shape is documented: an `output-available` tool part holds its
- * `output`.
+ * `output`, and a tool part holds its `input`.
  */
 const asSourcePart = (
 	part: UIMessage["parts"][number]
-): { type: string; state?: string; output?: unknown } =>
-	part as { type: string; state?: string; output?: unknown };
+): { type: string; state?: string; input?: unknown; output?: unknown } =>
+	part as { type: string; state?: string; input?: unknown; output?: unknown };
 
 /**
  * Narrow a tool part output to a successful page of sources.
@@ -89,20 +81,47 @@ const readResults = (output: unknown): AgentSource[] | undefined => {
 	return Array.isArray(results) ? (results as AgentSource[]) : undefined;
 };
 
+/** One tool call the agent ran in the current turn. */
+export type TurnQuery = {
+	/** Tool that ran. */
+	tool: "searchRecords" | "fetchNextPage";
+	/** Search text for `searchRecords`; an empty string for `fetchNextPage`. */
+	query: string;
+	/** Sources the call returned, in the order the tool returned them. */
+	sources: AgentSource[];
+};
+
+/** Read the trimmed search text of a `searchRecords` input, or an empty string. */
+const readQuery = (input: unknown): string => {
+	if (typeof input !== "object" || input === null) {
+		return "";
+	}
+
+	const query = (input as { query?: unknown }).query;
+
+	return typeof query === "string" ? query.trim() : "";
+};
+
 /**
- * Collect the deduplicated sources from a list of UI messages.
+ * Collect the tool activity of the last turn.
  *
- * It reads the `output-available` parts of `searchRecords` and `fetchNextPage`, ignores every other
- * part, and deduplicates by record identifier. The list is ordered by descending score, then by
- * ascending identifier.
+ * It reads only the parts that follow the last `user` message. Each `output-available` part of
+ * `searchRecords` or `fetchNextPage` becomes one {@link TurnQuery}, in message order. An error
+ * output is skipped, and the sources keep the order the tool returned them.
  *
  * @param messages - The UI messages of the conversation.
- * @returns The deduplicated, ordered sources.
+ * @returns The tool calls of the last turn, or an empty list.
  */
-export const collectSources = (messages: UIMessage[]): AgentSource[] => {
-	const byId = new Map<number | string, AgentSource>();
+export const collectTurnActivity = (messages: UIMessage[]): TurnQuery[] => {
+	const lastUserIndex = messages.findLastIndex((message) => message.role === "user");
 
-	for (const message of messages) {
+	if (lastUserIndex === -1) {
+		return [];
+	}
+
+	const queries: TurnQuery[] = [];
+
+	for (const message of messages.slice(lastUserIndex + 1)) {
 		for (const rawPart of message.parts) {
 			const part = asSourcePart(rawPart);
 
@@ -114,23 +133,19 @@ export const collectSources = (messages: UIMessage[]): AgentSource[] => {
 				continue;
 			}
 
-			const results = readResults(part.output);
+			const sources = readResults(part.output);
 
-			if (results === undefined) {
+			if (sources === undefined) {
 				continue;
 			}
 
-			for (const entry of results) {
-				const existing = byId.get(entry.id);
-
-				if (existing === undefined || entry.score > existing.score) {
-					byId.set(entry.id, entry);
-				}
-			}
+			queries.push({
+				tool: part.type === "tool-searchRecords" ? "searchRecords" : "fetchNextPage",
+				query: part.type === "tool-searchRecords" ? readQuery(part.input) : "",
+				sources
+			});
 		}
 	}
 
-	return [...byId.values()].sort(
-		(left, right) => right.score - left.score || compareId(left.id, right.id)
-	);
+	return queries;
 };

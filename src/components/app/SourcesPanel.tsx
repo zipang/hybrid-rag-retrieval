@@ -4,48 +4,63 @@ import { VStack } from "../layout/VStack";
 import { Heading } from "../base/Heading";
 import { Text } from "../base/Text";
 import { Panel } from "../ui/Panel";
-import type { AgentSource } from "../../server/agent/sources";
+import type { TurnQuery } from "../../server/agent/sources";
 
 import "./SourcesPanel.css";
 
 /** Props of the source list. */
 export interface SourcesPanelProps {
-	/** Deduplicated, ordered records the agent consulted. */
-	sources: AgentSource[];
+	/** Tool calls of the current turn, in order. */
+	queries: TurnQuery[];
 }
 
 /**
- * The records the agent consulted, under the answer. Each row gives the brand, the year, and the
- * slogan. The list is empty until a tool returns a record.
+ * The searches the agent ran in the current turn, grouped by query.
+ *
+ * Each group shows the tool's query and the sources that call returned. A continuation shows the
+ * marker "Suite (page suivante)". The panel resets on each new question, because its `queries` prop
+ * holds the last turn only.
  *
  * @example
- * 	<SourcesPanel sources={sources} />;
+ * 	<SourcesPanel queries={queries} />;
  *
- * @param props - The deduplicated sources.
- * @returns The source list, or nothing when it is empty.
+ * @param props - The tool calls of the current turn.
+ * @returns The grouped source list, or the empty state.
  */
-export const SourcesPanel: FC<SourcesPanelProps> = ({ sources }) => {
-	if (sources.length === 0) {
-		return null;
-	}
+export const SourcesPanel: FC<SourcesPanelProps> = ({ queries }) => (
+	<Panel as="aside" gap="sm" padding="md" id="sources-panel">
+		<Heading level={2} size="md">
+			Sources
+		</Heading>
 
-	return (
-		<Panel as="aside" gap="sm" padding="md" id="sources-panel">
-			<Heading level={3} size="sm">
-				Sources
-			</Heading>
-			<VStack gap="xs" id="sources-panel-list">
-				{sources.map((source) => (
-					<VStack key={String(source.id)} gap="xs" className="source-item">
+		{queries.length === 0 ? (
+			<Text size="sm" tone="muted" id="sources-panel-empty">
+				Aucune recherche pour l'instant.
+			</Text>
+		) : (
+			<VStack gap="md" id="sources-panel-list">
+				{queries.map((query, index) => (
+					<VStack
+						key={`${query.tool}-${String(index)}`}
+						gap="xs"
+						className="source-group"
+					>
 						<Text size="xs" tone="muted" weight="medium" as="span">
-							{source.marque} {source.annee}
+							{query.tool === "fetchNextPage" ? "Suite (page suivante)" : query.query}
 						</Text>
-						<Text size="sm" as="span" className="source-item__slogan">
-							{source.slogan}
-						</Text>
+						{query.sources.map((source) => (
+							<VStack key={String(source.id)} gap="xs" className="source-item">
+								<Text size="xs" tone="muted" weight="medium" as="span">
+									{source.marque} {source.annee}
+								</Text>
+								<Text size="sm" as="span" className="source-item__slogan">
+									{source.slogan}
+								</Text>
+							</VStack>
+						))}
 					</VStack>
 				))}
 			</VStack>
-		</Panel>
-	);
-};
+		)}
+	</Panel>
+);

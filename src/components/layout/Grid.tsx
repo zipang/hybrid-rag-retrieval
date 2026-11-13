@@ -38,7 +38,7 @@ export interface GridProps {
  * @example
  * 	<Grid columns="split" gap="lg" as="main">
  * 		<ChatPanel />
- * 		<RetrievalPanel />
+ * 		<SourcesPanel />
  * 	</Grid>;
  *
  * @param props - Column layout, gap, and padding.

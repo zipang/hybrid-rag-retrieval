@@ -1,5 +1,5 @@
 /* ChatPage: the single screen. Exactly one viewport tall, so the page itself
-   never scrolls; only the conversation list does. */
+   never scrolls; the conversation and the source list scroll on their own. */
 #page {
 	height: 100vh;
 	max-width: 80rem;
@@ -21,11 +21,6 @@
 
 #page-header-meta {
 	color: var(--color-text-muted);
-}
-
-#page-toggle {
-	cursor: pointer;
-	white-space: nowrap;
 }
 
 /* The two regions take the rest of the viewport. */

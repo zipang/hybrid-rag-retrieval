@@ -19,7 +19,7 @@ align. A raw `<div>`, `<ul>`, `<ol>`, or `<li>` used for layout is forbidden:
 
 // ✅ REQUIRED
 <VStack gap="sm">
-  <RetrievalHit hit={hit} />
+  <Text size="sm">{hit.slogan}</Text>
 </VStack>
 ```
 
@@ -55,10 +55,10 @@ is wrong, fix the primitive.
 - Read every colour, space, radius, and border through `var(--token)`. A
   literal is a defect.
 - **Scope a region's specific rules under its id.** `#chat-panel`, `#page`,
-  `#retrieval-panel`: id selectors match one element and cannot leak into a
+  `#sources-panel`: id selectors match one element and cannot leak into a
   sibling region. Write them as `#chat-panel { … }` in the owning stylesheet.
 - Use a class only for appearance shared by many elements, such as
-  `.retrieval-hit` or `.message-bubble--user`.
+  `.source-item` or `.message-bubble--user`.
 - No `border-radius` and no `box-shadow`. The system is flat and square.
 - Use the derived `-muted` and `-active` variants for interaction states.
 

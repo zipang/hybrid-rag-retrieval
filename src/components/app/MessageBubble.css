@@ -27,3 +27,8 @@
 	overflow-wrap: anywhere;
 	white-space: pre-wrap;
 }
+
+/* The in-flight turn status: a quiet line until the answer text arrives. */
+.message-bubble__status {
+	font-style: italic;
+}

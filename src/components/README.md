@@ -6,13 +6,13 @@ Every component under `src/components` follows one rule set.
 
 Folders follow Atomic Design: generic pieces live low, product pieces high.
 
-| Folder    | Holds                                                                                                          | Import direction |
-| --------- | -------------------------------------------------------------------------------------------------------------- | ---------------- |
-| `layout/` | `VStack`, `HStack`, `Grid` — structure only                                                                    | lowest           |
-| `base/`   | `Heading`, `Text` — typography only                                                                            | from `layout` up |
-| `ui/`     | `Panel`, `Button`, `TextField` — reusable controls                                                             | from `base` up   |
-| `app/`    | `ChatPanel`, `RetrievalPanel`, `MessageBubble`, `MarkdownText`, `SourcesPanel`, `ToolActivity`, `RetrievalHit` | from `ui` up     |
-| `pages/`  | `ChatPage` — the screen                                                                                        | top              |
+| Folder    | Holds                                                        | Import direction |
+| --------- | ------------------------------------------------------------ | ---------------- |
+| `layout/` | `VStack`, `HStack`, `Grid` — structure only                  | lowest           |
+| `base/`   | `Heading`, `Text` — typography only                          | from `layout` up |
+| `ui/`     | `Panel`, `Button`, `TextField` — reusable controls           | from `base` up   |
+| `app/`    | `ChatPanel`, `MessageBubble`, `MarkdownText`, `SourcesPanel` | from `ui` up     |
+| `pages/`  | `ChatPage` — the screen                                      | top              |
 
 Imports flow downward only: `pages → app → ui → base → layout`.
 
@@ -35,7 +35,7 @@ group, or align things.
 
 - **No raw layout elements.** Never write `<div>`, `<ul>`, `<ol>`, or `<li>` to arrange things. Use `VStack`, `HStack`, or `Grid`.
 - **No raw text tags.** Never write `<h1>`–`<h6>` or `<p>`. Use `Heading` and `Text`.
-- **An id, not a class, for a region's own rules.** Give each region a unique id (`#chat-panel`, `#retrieval-panel`, `#page`) and write its specific rules in the owning stylesheet, scoped under that id. A class is for shared, reusable appearance; an id is for one element on the page.
+- **An id, not a class, for a region's own rules.** Give each region a unique id (`#chat-panel`, `#sources-panel`, `#page`) and write its specific rules in the owning stylesheet, scoped under that id. A class is for shared, reusable appearance; an id is for one element on the page.
 - **No overriding a primitive's basics.** Do not pass `flex`, `display`, or `grid-template-columns` through `style` to fight a prop. If the layout is wrong, fix the component.
 - **No colour literals.** Every value is `var(--token)`. A hex code in a stylesheet is a defect.
 - **No radius, no shadow.** The Design System is flat and square.
@@ -45,7 +45,8 @@ group, or align things.
 ## Components are small on purpose
 
 Compose from the kit instead of building a new one. A panel is `Panel`, not a
-`div` with a border rule. A list row is `RetrievalHit`, not an `li`.
+`div` with a border rule. A chat message is `MessageBubble`, not a `div` with a
+border rule.
 
 ## Markdown rendering
 
@@ -60,8 +61,9 @@ inline `<strong>`, `<em>`, `<code>`, and `<a>` elements, drops raw HTML, and
 reads every value from a token. The same exception is recorded in
 [`AGENTS.md`](./AGENTS.md).
 
-`SourcesPanel` renders the records the agent consulted, under the answer.
-`ToolActivity` shows a one-line notice while a tool runs.
+`SourcesPanel` groups the records the agent consulted by the search that
+returned them. `MessageBubble` shows the turn status in the assistant bubble
+while the answer is built.
 
 ## Glossary
 
@@ -74,5 +76,5 @@ reads every value from a token. The same exception is recorded in
 - **Markdown**: a plain-text format for formatted prose. `**bold**`, `*italic*`,
   and `| a | b |` tables. The agent writes its answer in Markdown.
 - **region**: one part of the page with its own id, for example `#chat-panel`.
-- **source**: one record that the agent consulted. `SourcesPanel` shows the
-  sources under the answer.
+- **source**: one record that the agent consulted. `SourcesPanel` groups the
+  sources by the search that returned them.

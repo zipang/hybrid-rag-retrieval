@@ -1,6 +1,4 @@
 import { type FC, type FormEvent, useEffect, useRef, useState } from "react";
-import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
 
 import { VStack } from "../layout/VStack";
 import { Heading } from "../base/Heading";
@@ -8,62 +6,54 @@ import { Text } from "../base/Text";
 import { Button } from "../ui/Button";
 import { Panel } from "../ui/Panel";
 import { TextArea } from "../ui/TextArea";
-import { collectSources } from "../../server/agent/sources";
 import type { RetrievalAgentUIMessage } from "../../server/agent/agent";
+import { type ChatStatus, readTurnStatus } from "../../server/agent/turn-status";
 import { MessageBubble } from "./MessageBubble";
-import { SourcesPanel } from "./SourcesPanel";
-import { ToolActivity } from "./ToolActivity";
 
 import "./ChatPanel.css";
 
 /** One part of an agent UI message. */
 type AgentMessagePart = RetrievalAgentUIMessage["parts"][number];
 
-/** Test whether a part carries answer text. */
-const isTextPart = (part: AgentMessagePart): part is Extract<AgentMessagePart, { type: "text" }> =>
-	part.type === "text";
-
-/** Test whether a part is one of the two retrieval tool calls. */
-const isToolPart = (
-	part: AgentMessagePart
-): part is Extract<AgentMessagePart, { type: "tool-searchRecords" | "tool-fetchNextPage" }> =>
-	part.type === "tool-searchRecords" || part.type === "tool-fetchNextPage";
-
 /** Read the visible text of one message. */
 const readText = (message: RetrievalAgentUIMessage): string =>
 	message.parts
-		.filter(isTextPart)
+		.filter((part): part is Extract<AgentMessagePart, { type: "text" }> => part.type === "text")
 		.map((part) => part.text)
 		.join("");
 
 /** Props of the chat panel. */
 export interface ChatPanelProps {
-	/** Reports each new question so the retrieval panel can search for it. */
-	onQuestionAsked?: (question: string) => void;
+	/** Conversation messages, oldest first. */
+	messages: RetrievalAgentUIMessage[];
+	/** Status of the in-flight request. */
+	status: ChatStatus;
+	/** Stream error, when the last turn failed. @defaultValue none (unset) */
+	error?: Error;
+	/** Sends one question. */
+	onSend: (question: string) => void;
+	/** Stops the in-flight answer. */
+	onStop: () => void;
 }
 
 /**
- * Owns the conversation and the in-flight request. The panel fills the height it is given: the
- * message list scrolls, the composer sits in the footer.
- *
- * The hook reads the UI message stream from `POST /api/chat`. The assistant body is rendered as
- * Markdown, and the records the agent consulted are shown under the answer.
+ * The conversation region. The page owns the conversation state, so this panel renders it and keeps
+ * only the composer draft locally. The message list scrolls, the composer sits in the footer. While
+ * the agent builds its answer, the in-flight assistant bubble shows the turn state.
  *
  * @example
- * 	<ChatPanel onQuestionAsked={setQuestion} />;
+ * 	<ChatPanel messages={messages} status={status} onSend={send} onStop={stop} />;
  *
- * @param props - Optional callback receiving each new question.
+ * @param props - The conversation state and the two actions.
  * @returns The scrolling message list and the question field.
  */
-export const ChatPanel: FC<ChatPanelProps> = ({ onQuestionAsked }) => {
+export const ChatPanel: FC<ChatPanelProps> = ({ messages, status, error, onSend, onStop }) => {
 	const [draft, setDraft] = useState("");
 	const listRef = useRef<HTMLDivElement | null>(null);
-	const { messages, status, error, sendMessage, stop } = useChat<RetrievalAgentUIMessage>({
-		transport: new DefaultChatTransport({ api: "/api/chat" })
-	});
 	const isBusy = status === "submitted" || status === "streaming";
-	const sources = collectSources(messages);
-	const lastMessageId = messages.at(-1)?.id;
+	const turnStatus = readTurnStatus(status, messages);
+	const lastMessage = messages.at(-1);
+	const lastMessageId = lastMessage?.id;
 
 	// Keeps the newest text in view while the answer streams in.
 	useEffect(() => {
@@ -84,8 +74,7 @@ export const ChatPanel: FC<ChatPanelProps> = ({ onQuestionAsked }) => {
 		}
 
 		setDraft("");
-		onQuestionAsked?.(question);
-		void sendMessage({ text: question });
+		onSend(question);
 	};
 
 	return (
@@ -102,32 +91,40 @@ export const ChatPanel: FC<ChatPanelProps> = ({ onQuestionAsked }) => {
 					</Text>
 				) : (
 					<VStack gap="sm" id="chat-panel-turns">
-						{messages.map((message) => (
-							<VStack key={message.id} gap="xs">
-								{(message.role === "user" || message.role === "assistant") &&
-									readText(message) !== "" && (
-										<MessageBubble
-											role={message.role}
-											text={readText(message)}
-											isStreaming={
-												status === "streaming" &&
-												message.id === lastMessageId
-											}
-										/>
-									)}
-								{message.parts
-									.filter(isToolPart)
-									.map((part, index) =>
-										part.state === "input-available" ? (
-											<ToolActivity
-												key={`${message.id}-tool-${index}`}
-												tool={part.type.slice(5)}
-											/>
-										) : null
-									)}
-							</VStack>
-						))}
-						<SourcesPanel sources={sources} />
+						{messages.map((message) => {
+							const text = readText(message);
+							const isAssistant = message.role === "assistant";
+							const isLast = message.id === lastMessageId;
+
+							// The in-flight turn shows its status before any answer text arrives.
+							if (isAssistant && isLast && text === "" && isBusy) {
+								return (
+									<MessageBubble
+										key={message.id}
+										role="assistant"
+										text=""
+										status={turnStatus}
+									/>
+								);
+							}
+
+							if (message.role === "system" || text === "") {
+								return null;
+							}
+
+							return (
+								<MessageBubble
+									key={message.id}
+									role={message.role}
+									text={text}
+									isStreaming={status === "streaming" && isLast}
+								/>
+							);
+						})}
+						{/* The status bubble appears before the assistant message exists. */}
+						{isBusy && lastMessage?.role !== "assistant" && (
+							<MessageBubble role="assistant" text="" status={turnStatus} />
+						)}
 					</VStack>
 				)}
 			</VStack>
@@ -160,7 +157,7 @@ export const ChatPanel: FC<ChatPanelProps> = ({ onQuestionAsked }) => {
 						Entrée pour envoyer, Maj+Entrée pour une nouvelle ligne.
 					</Text>
 					{isBusy && (
-						<Button variant="secondary" onClick={stop}>
+						<Button variant="secondary" onClick={onStop}>
 							Arrêter
 						</Button>
 					)}

@@ -1,12 +1,17 @@
-import { type FC, useState } from "react";
+import type { FC } from "react";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
 
 import { Grid } from "../layout/Grid";
 import { VStack } from "../layout/VStack";
 import { HStack } from "../layout/HStack";
 import { Heading } from "../base/Heading";
 import { Text } from "../base/Text";
+import { Button } from "../ui/Button";
 import { ChatPanel } from "../app/ChatPanel";
-import { RetrievalPanel } from "../app/RetrievalPanel";
+import { SourcesPanel } from "../app/SourcesPanel";
+import type { RetrievalAgentUIMessage } from "../../server/agent/agent";
+import { collectTurnActivity } from "../../server/agent/sources";
 
 import "./ChatPage.css";
 
@@ -17,8 +22,11 @@ export interface ChatPageProps {
 }
 
 /**
- * The single screen: a header, the conversation, and the ranked slogans beside it. The page is
- * exactly one viewport tall; the conversation scrolls.
+ * The single screen: a header, the conversation, and the sources the agent consulted. The page is
+ * exactly one viewport tall; the conversation and the source list scroll.
+ *
+ * The page owns the `useChat` hook, so it derives the turn activity from the messages and can reset
+ * the conversation with the "Nouvelle session" button.
  *
  * @example
  * 	<ChatPage />;
@@ -27,8 +35,11 @@ export interface ChatPageProps {
  * @returns The page composition.
  */
 export const ChatPage: FC<ChatPageProps> = ({ className = "" }) => {
-	const [question, setQuestion] = useState("");
-	const [isRetrievalVisible, setIsRetrievalVisible] = useState(true);
+	const { messages, status, error, sendMessage, setMessages, stop } =
+		useChat<RetrievalAgentUIMessage>({
+			transport: new DefaultChatTransport({ api: "/api/chat" })
+		});
+	const queries = collectTurnActivity(messages);
 
 	return (
 		<VStack
@@ -39,29 +50,28 @@ export const ChatPage: FC<ChatPageProps> = ({ className = "" }) => {
 			className={`chat-page ${className}`.trim()}
 		>
 			<VStack as="header" gap="xs" id="page-header">
-				<Heading level={1} size="xl">
-					Recherche de slogans
-				</Heading>
-				<HStack gap="base" align="center" wrap id="page-header-meta">
-					<Text size="sm" tone="muted" as="span">
-						Recherche hybride dense + BM25, réponses par un LLM.
-					</Text>
-					<HStack gap="xs" align="center" as="label" id="page-toggle">
-						<input
-							type="checkbox"
-							checked={isRetrievalVisible}
-							onChange={(event) => setIsRetrievalVisible(event.target.checked)}
-						/>
-						<Text size="xs" tone="muted" as="span">
-							Afficher les résultats de recherche
-						</Text>
-					</HStack>
+				<HStack gap="base" align="center" justify="between" wrap>
+					<Heading level={1} size="xl">
+						Recherche de slogans
+					</Heading>
+					<Button variant="secondary" onClick={() => setMessages([])}>
+						Nouvelle session
+					</Button>
 				</HStack>
+				<Text size="sm" tone="muted" as="span" id="page-header-meta">
+					Recherche hybride dense + BM25, réponses par un LLM.
+				</Text>
 			</VStack>
 
 			<Grid columns="split" gap="base" id="page-columns">
-				<ChatPanel onQuestionAsked={setQuestion} />
-				<RetrievalPanel query={question} isVisible={isRetrievalVisible} />
+				<ChatPanel
+					messages={messages}
+					status={status}
+					error={error}
+					onSend={(question) => void sendMessage({ text: question })}
+					onStop={stop}
+				/>
+				<SourcesPanel queries={queries} />
 			</Grid>
 		</VStack>
 	);

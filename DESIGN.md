@@ -87,7 +87,7 @@ components:
     textUser: "--color-text-ondark"
     backgroundAssistant: "--color-surface-alt"
     textAssistant: "--color-text"
-  RetrievalPanel:
+  SourcesPanel:
     background: "--color-surface-card"
     border: "--border-sm solid --color-surface-alt"
   MessageBubbleError:
